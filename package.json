@@ -22,10 +22,15 @@
     "globals": "^17.4.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-router": "^7.14.0",
+    "rxjs": "^7.8.2",
+    "strata-data-sync": "^0.1.6",
     "tailwindcss": "^4.2.2",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.0",
-    "vite": "^8.0.4"
+    "vite": "^8.0.4",
+    "vitest": "^4.1.3",
+    "wrangler": "^4.81.0"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.8",
