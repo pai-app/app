@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "fin",
+  "compatibility_date": "2025-04-01",
+  "pages_build_output_dir": "./dist",
+
+  // Dev settings
+  "dev": {
+    "port": 8788
+  },
+
+  // Environment variables (secrets set via `wrangler secret put`)
+  "vars": {
+    "GOOGLE_CLIENT_ID": "8125620125-sqefru4kf3s3b3idlkr2l27be0ili1fk.apps.googleusercontent.com",
+    "GOOGLE_CALLBACK_URL": "http://localhost:5173/api/auth/callback"
+  }
+}
