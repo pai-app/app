@@ -1,10 +1,10 @@
 import { handleLogin, handleCallback, handleRefresh, handleLogout, handleFeatureRevoke } from "../auth/handlers"
 import { errorResponse } from "../auth/utils"
 
-interface Route {
-  method: string
-  path: string
-  handler: (request: Request, env: Env) => Promise<Response>
+type Route = {
+  readonly method: string
+  readonly path: string
+  readonly handler: (request: Request, env: Env) => Promise<Response>
 }
 
 const routes: Route[] = [

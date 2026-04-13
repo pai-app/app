@@ -1,10 +1,20 @@
-import { AuthProvider } from "@/providers/AuthProvider"
+import { StrataProvider } from "strata-adapters/react"
+import { authService } from "@/services/core/auth-service"
+import { featureAccountDef } from "@/services/entities/feature-account"
 import { AppRouter } from "./router"
+
+authService.tryRestoreSession()
+const authAdapter = authService.toAuthAdapter()
 
 export function App() {
   return (
-    <AuthProvider>
+    <StrataProvider
+      auth={authAdapter}
+      appId="fin"
+      entities={[featureAccountDef]}
+      cloudProvider="google-drive"
+    >
       <AppRouter />
-    </AuthProvider>
+    </StrataProvider>
   )
 }

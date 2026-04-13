@@ -1,22 +1,22 @@
-export interface OAuthProviderConfig {
-  authUrl: string
-  tokenUrl: string
-  revokeUrl: string
-  clientId: string
-  clientSecret: string
-  callbackUrl: string
-  scopes: {
-    login: string[]
-    [feature: string]: string[]
+export type OAuthProviderConfig = {
+  readonly authUrl: string
+  readonly tokenUrl: string
+  readonly revokeUrl: string
+  readonly clientId: string
+  readonly clientSecret: string
+  readonly callbackUrl: string
+  readonly scopes: {
+    readonly login: readonly string[]
+    readonly [feature: string]: readonly string[]
   }
 }
 
-export interface OAuthTokenResponse {
-  access_token: string
-  refresh_token?: string
-  expires_in: number
-  token_type: string
-  scope?: string
+export type OAuthTokenResponse = {
+  readonly access_token: string
+  readonly refresh_token?: string
+  readonly expires_in: number
+  readonly token_type: string
+  readonly scope?: string
 }
 
 export function getProviderConfig(provider: string, env: Env): OAuthProviderConfig {
@@ -31,7 +31,10 @@ export function getProviderConfig(provider: string, env: Env): OAuthProviderConf
         callbackUrl: env.GOOGLE_CALLBACK_URL,
         scopes: {
           login: [
-            "https://www.googleapis.com/auth/drive.file",
+            'openid', 'email', 'profile',
+            'https://www.googleapis.com/auth/drive',
+            'https://www.googleapis.com/auth/drive.readonly',
+            'https://www.googleapis.com/auth/drive.appdata',
             "https://www.googleapis.com/auth/userinfo.profile",
             "https://www.googleapis.com/auth/userinfo.email",
           ],
