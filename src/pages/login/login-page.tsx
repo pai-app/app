@@ -1,6 +1,6 @@
-import { AuthTemplate } from "@/templates/AuthTemplate"
+import { AuthTemplate } from "@/templates/auth-template"
 import { Button } from "@/ui/button"
-import { AuthService } from "@/services/core/AuthService"
+import { authService } from "@/services/core/auth-service"
 
 export function LoginPage() {
   return (
@@ -9,7 +9,7 @@ export function LoginPage() {
         <Button
           variant="outline"
           className="w-full"
-          onClick={() => AuthService.login("google")}
+          onClick={() => authService.login("google")}
         >
           Continue with Google
         </Button>

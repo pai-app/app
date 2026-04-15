@@ -1,22 +1,33 @@
-import { useEffect } from "react"
-import { useSearchParams, useNavigate } from "react-router"
-import { AuthTemplate } from "@/templates/AuthTemplate"
-import { AuthService } from "@/services/core/AuthService"
+import { useEffect, useRef } from "react"
+import { useNavigate } from "react-router"
+import { AuthTemplate } from "@/templates/auth-template"
+import { authService } from "@/services/core/auth-service"
+import { fetchGoogleUserInfo } from "@/services/core/google-userinfo"
 
 export function FeatureCallbackPage() {
-  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const processed = useRef(false)
 
   useEffect(() => {
-    AuthService.saveFeatureCreds({
-      provider: searchParams.get("provider") ?? "",
-      feature: searchParams.get("feature") ?? "",
-      accessToken: searchParams.get("access_token") ?? "",
-      refreshToken: searchParams.get("refresh_token") ?? "",
-      expiresIn: Number(searchParams.get("expires_in")),
+    if (processed.current) return
+    processed.current = true
+
+    const params = new URLSearchParams(window.location.hash.slice(1))
+    const accessToken = params.get("access_token") ?? ""
+    const returnUrl = authService.consumeReturnUrl()
+
+    fetchGoogleUserInfo(accessToken).then((meta) => {
+      authService.saveFeatureCreds({
+        provider: params.get("provider") ?? "",
+        feature: params.get("feature") ?? "",
+        accessToken,
+        refreshToken: params.get("refresh_token") ?? "",
+        expiresIn: Number(params.get("expires_in")),
+        meta,
+      })
+      navigate(returnUrl, { replace: true })
     })
-    navigate(AuthService.consumeReturnUrl(), { replace: true })
-  }, [searchParams, navigate])
+  }, [navigate])
 
   return (
     <AuthTemplate>

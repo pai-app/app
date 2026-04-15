@@ -16,5 +16,5 @@ export type FeatureAccount = {
 }
 
 export const featureAccountDef = defineEntity<FeatureAccount>("feature-account", {
-  deriveId: (a) => `${a.provider}-${a.feature}-${a.meta.identifier}`,
+  deriveId: (a) => `${a.provider}-${a.feature}-${a.meta.identifier.replaceAll('.', '-')}`,
 })

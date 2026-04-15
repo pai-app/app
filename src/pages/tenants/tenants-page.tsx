@@ -1,9 +1,9 @@
 import { useState } from "react"
 import { useNavigate } from "react-router"
 import { useTenantList, useGoogleCreateForm } from "strata-adapters/react"
-import { DefaultTemplate } from "@/templates/DefaultTemplate"
+import { DefaultTemplate } from "@/templates/default-template"
 import { Button } from "@/ui/button"
-import { AuthService } from "@/services/core/AuthService"
+import { authService } from "@/services/core/auth-service"
 
 export function TenantsPage() {
   const { tenants, loading } = useTenantList()
@@ -18,7 +18,7 @@ export function TenantsPage() {
           <Button variant="outline" onClick={() => setShowCreate(true)}>
             New Workspace
           </Button>
-          <Button variant="ghost" onClick={() => AuthService.logout()}>
+          <Button variant="ghost" onClick={() => authService.logout()}>
             Logout
           </Button>
         </div>
