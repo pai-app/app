@@ -1,5 +1,6 @@
 import { BehaviorSubject, map } from "rxjs"
 import type { AuthAdapter } from "strata-adapters"
+import { SESSION_KEY, FEATURE_CREDS_KEY, RETURN_URL_KEY } from "@/lib/storage-keys"
 
 export type AuthState = {
   readonly status: "loading" | "authenticated" | "unauthenticated"
@@ -15,10 +16,6 @@ export type FeatureCreds = {
   readonly refreshToken: string
   readonly expiresIn: number
 }
-
-const SESSION_KEY = "fin_auth_session"
-const FEATURE_CREDS_KEY = "fin_feature_creds"
-const RETURN_URL_KEY = "fin_return_url"
 
 class AuthServiceImpl {
   private readonly authState$ = new BehaviorSubject<AuthState>({ status: "loading" })

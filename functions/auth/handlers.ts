@@ -1,5 +1,6 @@
 import { getProviderConfig, type OAuthProviderConfig, type OAuthTokenResponse } from "./providers"
 import { generateState, parseState, jsonResponse, errorResponse, setCookieHeader, clearCookieHeader, getCookie } from "./utils"
+import { REFRESH_COOKIE } from "../../src/lib/storage-keys"
 
 export async function handleLogin(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url)
@@ -47,7 +48,7 @@ export async function handleCallback(request: Request, env: Env): Promise<Respon
     status: 302,
     headers: {
       Location: appRedirectUrl.toString(),
-      "Set-Cookie": setCookieHeader("fin_refresh", cookieValue, maxAge),
+      "Set-Cookie": setCookieHeader(REFRESH_COOKIE, cookieValue, maxAge),
     },
   })
 }
@@ -64,7 +65,7 @@ export async function handleRefresh(request: Request, env: Env): Promise<Respons
   }
 
   if (!provider || !refreshToken) {
-    const cookie = getCookie(request, "fin_refresh")
+    const cookie = getCookie(request, REFRESH_COOKIE)
     if (!cookie) return errorResponse("No refresh token found", 401)
 
     const separatorIndex = cookie.indexOf(":")
@@ -86,7 +87,7 @@ export async function handleRefresh(request: Request, env: Env): Promise<Respons
 }
 
 export async function handleLogout(request: Request, env: Env): Promise<Response> {
-  const cookie = getCookie(request, "fin_refresh")
+  const cookie = getCookie(request, REFRESH_COOKIE)
   if (cookie) {
     const separatorIndex = cookie.indexOf(":")
     if (separatorIndex !== -1) {
@@ -98,7 +99,7 @@ export async function handleLogout(request: Request, env: Env): Promise<Response
   }
 
   return jsonResponse({ ok: true }, 200, {
-    "Set-Cookie": clearCookieHeader("fin_refresh"),
+    "Set-Cookie": clearCookieHeader(REFRESH_COOKIE),
   })
 }
 

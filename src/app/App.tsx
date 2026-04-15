@@ -1,6 +1,7 @@
 import { StrataProvider } from "strata-adapters/react"
 import { authService } from "@/services/core/auth-service"
 import { featureAccountDef } from "@/services/entities/feature-account"
+import { DEVICE_ID_KEY } from "@/lib/storage-keys"
 import { AppRouter } from "./router"
 
 authService.tryRestoreSession()
@@ -11,6 +12,7 @@ export function App() {
     <StrataProvider
       auth={authAdapter}
       appId="fin"
+      deviceIdKey={DEVICE_ID_KEY}
       entities={[featureAccountDef]}
       cloudProvider="google-drive"
     >
