@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react"
 import { useNavigate } from "react-router"
 import { AuthTemplate } from "@/templates/auth-template"
+import { Spinner } from "@/ui/spinner"
 import { authService } from "@/services/core/auth-service"
 import { fetchGoogleUserInfo } from "@/services/core/google-userinfo"
 
@@ -31,7 +32,10 @@ export function FeatureCallbackPage() {
 
   return (
     <AuthTemplate>
-      <p className="text-muted-foreground">Completing authorization...</p>
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Spinner />
+        <span>Completing authorization…</span>
+      </div>
     </AuthTemplate>
   )
 }

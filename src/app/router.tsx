@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useParams } from "react-router"
 import { RequireAuth, TenantProvider, useTenant } from "strata-adapters/react"
 import { authService } from "@/services/core/auth-service"
+import { FullPageSpinner } from "@/components/full-page-spinner"
 import { LoginPage } from "@/pages/login/login-page"
 import { HomePage } from "@/pages/home/home-page"
 import { TenantsPage } from "@/pages/tenants/tenants-page"
@@ -9,6 +10,7 @@ import { FeatureCallbackPage } from "@/pages/auth/feature-callback-page"
 function AuthGuard() {
   return (
     <RequireAuth
+      loading={<FullPageSpinner message="Signing in…" />}
       unauthenticated={<RedirectToLogin />}
     >
       <Outlet />
@@ -33,7 +35,7 @@ function TenantGuard() {
 function TenantGate() {
   const { tenant, loading, error } = useTenant()
 
-  if (loading || (!tenant && !error)) return null
+  if (loading || (!tenant && !error)) return <FullPageSpinner message="Opening workspace…" />
   if (!tenant) return <Navigate to="/tenants" replace />
 
   return <Outlet />

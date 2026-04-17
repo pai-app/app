@@ -1,35 +1,15 @@
-import { createOAuthHandlers, createGoogleProvider, errorResponse } from "strata-adapters"
-import { REFRESH_COOKIE } from "../../src/lib/storage-keys"
+import { initAuth, errorResponse } from "strata-adapters"
+import { createAuthConfig } from "../../src/lib/auth-config"
 
 function createHandlers(env: Env) {
-  const provider = createGoogleProvider({
-    clientId: env.GOOGLE_CLIENT_ID,
-    clientSecret: env.GOOGLE_CLIENT_SECRET,
-    callbackUrl: env.GOOGLE_CALLBACK_URL,
-    scopes: {
-      login: [
-        'openid', 'email', 'profile',
-        'https://www.googleapis.com/auth/drive',
-        'https://www.googleapis.com/auth/drive.readonly',
-        'https://www.googleapis.com/auth/drive.appdata',
-        'https://www.googleapis.com/auth/userinfo.profile',
-        'https://www.googleapis.com/auth/userinfo.email',
-      ],
-      'email-import': [
-        'https://www.googleapis.com/auth/gmail.readonly',
-        'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/userinfo.profile',
-      ],
-    },
-  })
-
-  return createOAuthHandlers({ cookieName: REFRESH_COOKIE, provider })
+  const { handlers } = initAuth(createAuthConfig(env))
+  return handlers!
 }
 
 type Route = {
   readonly method: string
   readonly path: string
-  readonly handler: keyof ReturnType<typeof createHandlers>
+  readonly handler: keyof NonNullable<ReturnType<typeof initAuth>['handlers']>
 }
 
 const routes: Route[] = [

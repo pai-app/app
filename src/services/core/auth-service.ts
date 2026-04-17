@@ -1,8 +1,9 @@
-import { AuthService } from "strata-adapters"
-import { SESSION_KEY, FEATURE_CREDS_KEY, RETURN_URL_KEY } from "@/lib/storage-keys"
+import { initAuth } from "strata-adapters"
+import { createAuthConfig } from "@/lib/auth-config"
 
-export const authService = new AuthService({
-  sessionKey: SESSION_KEY,
-  returnUrlKey: RETURN_URL_KEY,
-  featureCredsKey: FEATURE_CREDS_KEY,
-})
+const auth = initAuth(createAuthConfig({
+  GOOGLE_CLIENT_ID: '',
+}))
+
+export const authService = auth.service
+export const authProviders = auth.providers

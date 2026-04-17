@@ -3,6 +3,7 @@ import { useNavigate } from "react-router"
 import { useTenantList, useGoogleCreateForm } from "strata-adapters/react"
 import { DefaultTemplate } from "@/templates/default-template"
 import { Button } from "@/ui/button"
+import { Spinner } from "@/ui/spinner"
 import { authService } from "@/services/core/auth-service"
 
 export function TenantsPage() {
@@ -24,7 +25,12 @@ export function TenantsPage() {
         </div>
       </div>
 
-      {loading && <p className="mt-6 text-sm text-muted-foreground">Loading...</p>}
+      {loading && (
+        <div className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
+          <Spinner />
+          <span>Loading workspaces…</span>
+        </div>
+      )}
 
       {!loading && tenants.length === 0 && !showCreate && (
         <div className="mt-12 flex flex-col items-center gap-4 text-center">
