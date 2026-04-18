@@ -1,7 +1,12 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useNavigate } from "react-router"
-import { useTenantList, useAuth } from "strata-adapters/react"
-import { useGoogleCreateForm } from "strata-adapters/providers/google"
+import { useTenantList, useAuth, useStrata } from "strata-adapters/react"
+import {
+  useGoogleCreateForm,
+  GoogleDriveFileService,
+} from "strata-adapters/providers/google"
+import { GoogleDriveExplorer } from "strata-plugins-ui/google"
+import type { CloudFile, CloudSpace } from "strata-adapters/cloud"
 import { DefaultTemplate } from "@/templates/default-template"
 import { Button } from "@/ui/button"
 import { Spinner } from "@/ui/spinner"
@@ -9,6 +14,7 @@ import { Spinner } from "@/ui/spinner"
 export function TenantsPage() {
   const { tenants, loading } = useTenantList()
   const [showCreate, setShowCreate] = useState(false)
+  const [showExplorer, setShowExplorer] = useState(false)
   const navigate = useNavigate()
   const { logout } = useAuth()
 
@@ -17,6 +23,9 @@ export function TenantsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Workspaces</h1>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowExplorer(true)}>
+            Browse Drive (debug)
+          </Button>
           <Button variant="outline" onClick={() => setShowCreate(true)}>
             New Workspace
           </Button>
@@ -63,6 +72,8 @@ export function TenantsPage() {
       {showCreate && (
         <CreateTenantForm onClose={() => setShowCreate(false)} />
       )}
+
+      <DriveExplorerDebug open={showExplorer} onOpenChange={setShowExplorer} />
     </DefaultTemplate>
   )
 }
@@ -124,5 +135,48 @@ function CreateTenantForm({ onClose }: { onClose: () => void }) {
         </Button>
       </div>
     </form>
+  )
+}
+
+/** Temporary debug surface — exercises <CloudFileExplorer> against Google Drive. */
+function DriveExplorerDebug({
+  open,
+  onOpenChange,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
+  const { authService } = useStrata()
+  const [picked, setPicked] = useState<{ space: CloudSpace; file: CloudFile } | null>(null)
+
+  const service = useMemo(() => {
+    if (!authService) return null
+    return new GoogleDriveFileService({
+      getAccessToken: async () => {
+        const token = await authService.getAccessToken()
+        if (!token) throw new Error("Not signed in")
+        return token
+      },
+    })
+  }, [authService])
+
+  if (!service) return null
+
+  return (
+    <>
+      {picked && (
+        <p className="mt-6 text-sm text-muted-foreground">
+          Picked: <span className="font-medium">{picked.file.name}</span> in{" "}
+          <span className="font-medium">{picked.space.displayName}</span>
+        </p>
+      )}
+      <GoogleDriveExplorer
+        theme="dark"
+        open={open}
+        onOpenChange={onOpenChange}
+        service={service}
+        onSelect={(space, file) => setPicked({ space, file })}
+      />
+    </>
   )
 }
