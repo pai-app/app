@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react"
 import { useNavigate } from "react-router"
-import { useStrata } from "strata-adapters/react"
+import { useStrata } from "strata-plugins-ui/react"
 import { AuthTemplate } from "@/templates/auth-template"
 import { Spinner } from "@/ui/spinner"
 import { fetchGoogleUserInfo } from "@/services/core/google-userinfo"

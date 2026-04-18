@@ -1,7 +1,7 @@
 import { useEffect } from "react"
 import { DefaultTemplate } from "@/templates/default-template"
 import { Button } from "@/ui/button"
-import { useRepo, useQuery, useAuth, useFeature } from "strata-adapters/react"
+import { useRepo, useQuery, useAuth, useFeature } from "strata-plugins-ui/react"
 import { featureAccountDef } from "@/services/entities/feature-account"
 import type { AccountMeta } from "@/services/entities/feature-account"
 

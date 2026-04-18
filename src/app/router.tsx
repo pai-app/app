@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router"
-import { AuthGuard, TenantGuard } from "strata-adapters/react"
+import { AuthGuard, TenantGuard } from "strata-plugins-ui/react"
 import { strataConfig } from "@/lib/strata-config"
 import { FullPageSpinner } from "@/components/full-page-spinner"
 import { LoginPage } from "@/pages/login/login-page"

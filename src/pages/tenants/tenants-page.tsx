@@ -1,11 +1,13 @@
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router"
-import { useTenantList, useAuth, useStrata } from "strata-adapters/react"
+import { useTenantList, useAuth, useStrata } from "strata-plugins-ui/react"
 import {
   useGoogleCreateForm,
+  GoogleDriveExplorer,
+} from "strata-plugins-ui/google"
+import {
   GoogleDriveFileService,
 } from "strata-adapters/providers/google"
-import { GoogleDriveExplorer } from "strata-plugins-ui/google"
 import type { CloudFile, CloudSpace } from "strata-adapters/cloud"
 import { DefaultTemplate } from "@/templates/default-template"
 import { Button } from "@/ui/button"

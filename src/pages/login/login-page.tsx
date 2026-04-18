@@ -1,5 +1,5 @@
-import { GoogleLoginButton } from "strata-adapters/providers/google"
-import { useAuth } from "strata-adapters/react"
+import { GoogleLoginButton } from "strata-plugins-ui/google"
+import { useAuth } from "strata-plugins-ui/react"
 import { AuthTemplate } from "@/templates/auth-template"
 
 export function LoginPage() {
