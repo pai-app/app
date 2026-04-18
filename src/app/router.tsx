@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router"
 import { AuthGuard, TenantGuard } from "strata-adapters/react"
-import { RETURN_URL_KEY } from "@shared/storage-keys"
+import { strataConfig } from "@/lib/strata-config"
 import { FullPageSpinner } from "@/components/full-page-spinner"
 import { LoginPage } from "@/pages/login/login-page"
 import { HomePage } from "@/pages/home/home-page"
@@ -18,7 +18,7 @@ export function AppRouter() {
             <AuthGuard
               redirect="/login"
               loading={<FullPageSpinner message="Signing in…" />}
-              returnUrlKey={RETURN_URL_KEY}
+              returnUrlKey={strataConfig.storageKeys.returnUrl}
             />
           }
         >

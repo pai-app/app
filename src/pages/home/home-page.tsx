@@ -2,7 +2,6 @@ import { useEffect } from "react"
 import { DefaultTemplate } from "@/templates/default-template"
 import { Button } from "@/ui/button"
 import { useRepo, useQuery, useAuth, useFeature } from "strata-adapters/react"
-import { GOOGLE_PROVIDER_NAME } from "@shared/google-oauth"
 import { featureAccountDef } from "@/services/entities/feature-account"
 import type { AccountMeta } from "@/services/entities/feature-account"
 
@@ -10,7 +9,7 @@ export function HomePage() {
   const repo = useRepo(featureAccountDef)
   const accounts = useQuery(featureAccountDef)
   const { logout } = useAuth()
-  const emailImport = useFeature(GOOGLE_PROVIDER_NAME, "email-import")
+  const emailImport = useFeature("google", "email-import")
 
   useEffect(() => {
     if (!repo) return

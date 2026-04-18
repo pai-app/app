@@ -1,10 +1,9 @@
 import { useLogin } from "strata-adapters/react"
 import { AuthTemplate } from "@/templates/auth-template"
 import { Button } from "@/ui/button"
-import { GOOGLE_PROVIDER_NAME } from "@shared/google-oauth"
 
 const PROVIDER_LABELS: Record<string, string> = {
-  [GOOGLE_PROVIDER_NAME]: "Continue with Google",
+  google: "Continue with Google",
 }
 
 export function LoginPage() {

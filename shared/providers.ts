@@ -1,39 +1,25 @@
-import type { FeatureMap } from "strata-adapters"
-import { GOOGLE_OAUTH } from "./google-oauth"
-
-/** Pure OAuth identity data — safe to import from server and client. */
-export type ProviderPublic = {
-  readonly name: string
-  readonly authUrl: string
-  readonly tokenUrl: string
-  readonly revokeUrl: string
-  readonly features: FeatureMap
-}
-
-/** Names of env vars that hold the server secrets for a provider. */
-export type ProviderEnvKeys = {
-  readonly clientId: string
-  readonly clientSecret: string
-  readonly callbackUrl: string
-}
-
-export type ProviderEntry = {
-  readonly public: ProviderPublic
-  readonly envKeys: ProviderEnvKeys
-}
+import { defineProvider } from "strata-adapters"
 
 /**
- * Single source of truth for OAuth providers.
- * Add a new provider by appending an entry here and wiring its
- * client-side factories in `src/lib/strata-config.ts`.
+ * Single source of truth for OAuth providers — used by both the client
+ * (`defineStrata`) and the server (`defineOAuthHandlers`).
+ *
+ * Add a new login provider by appending a `defineProvider(...)` entry.
+ * Server-side credentials (clientId / clientSecret / callbackUrl) are
+ * resolved at request time from env vars: `${NAME_UPPER}_CLIENT_ID`,
+ * `${NAME_UPPER}_CLIENT_SECRET`, `${NAME_UPPER}_CALLBACK_URL`.
  */
-export const PROVIDERS: readonly ProviderEntry[] = [
-  {
-    public: GOOGLE_OAUTH,
-    envKeys: {
-      clientId: "GOOGLE_CLIENT_ID",
-      clientSecret: "GOOGLE_CLIENT_SECRET",
-      callbackUrl: "GOOGLE_CALLBACK_URL",
-    },
-  },
-]
+export const PROVIDERS = [
+  defineProvider("google")
+    .google()
+    .feature("email-import", {
+      scopes: [
+        "https://www.googleapis.com/auth/gmail.readonly",
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/userinfo.profile",
+      ],
+    })
+    .label("Google")
+    .build(),
+] as const
+
