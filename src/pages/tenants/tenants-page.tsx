@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router"
-import { useTenantList, useGoogleCreateForm, useAuth } from "strata-adapters/react"
+import { useTenantList, useAuth } from "strata-adapters/react"
+import { useGoogleCreateForm } from "strata-adapters/providers/google"
 import { DefaultTemplate } from "@/templates/default-template"
 import { Button } from "@/ui/button"
 import { Spinner } from "@/ui/spinner"
