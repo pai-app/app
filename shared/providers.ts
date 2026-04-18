@@ -1,4 +1,4 @@
-import type { ScopeMap } from "strata-adapters"
+import type { FeatureMap } from "strata-adapters"
 import { GOOGLE_OAUTH } from "./google-oauth"
 
 /** Pure OAuth identity data — safe to import from server and client. */
@@ -7,7 +7,7 @@ export type ProviderPublic = {
   readonly authUrl: string
   readonly tokenUrl: string
   readonly revokeUrl: string
-  readonly scopes: ScopeMap
+  readonly features: FeatureMap
 }
 
 /** Names of env vars that hold the server secrets for a provider. */
