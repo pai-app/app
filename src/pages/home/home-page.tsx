@@ -1,8 +1,7 @@
 import { useEffect } from "react"
 import { DefaultTemplate } from "@/templates/default-template"
 import { Button } from "@/ui/button"
-import { useRepo, useQuery, useAuth } from "strata-adapters/react"
-import { googleAuthService } from "@/lib/strata-config"
+import { useRepo, useQuery, useAuth, useFeature } from "strata-adapters/react"
 import { GOOGLE_PROVIDER_NAME } from "@shared/google-oauth"
 import { featureAccountDef } from "@/services/entities/feature-account"
 import type { AccountMeta } from "@/services/entities/feature-account"
@@ -11,10 +10,11 @@ export function HomePage() {
   const repo = useRepo(featureAccountDef)
   const accounts = useQuery(featureAccountDef)
   const { logout } = useAuth()
+  const emailImport = useFeature(GOOGLE_PROVIDER_NAME, "email-import")
 
   useEffect(() => {
     if (!repo) return
-    const pending = googleAuthService.consumeFeatureCreds()
+    const pending = emailImport.consume()
     if (!pending) return
 
     const meta = (pending.meta ?? {}) as AccountMeta
@@ -26,10 +26,10 @@ export function HomePage() {
       expiresAt: Date.now() + pending.expiresIn * 1000,
       meta,
     })
-  }, [repo])
+  }, [repo, emailImport])
 
   function handleSetupEmail() {
-    googleAuthService.featureLogin(GOOGLE_PROVIDER_NAME, "email-import")
+    emailImport.start()
   }
 
   return (

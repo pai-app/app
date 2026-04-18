@@ -13,14 +13,14 @@ export function LoginPage() {
   return (
     <AuthTemplate>
       <div className="flex w-full flex-col gap-3">
-        {providers.map((name) => (
+        {providers.map((p) => (
           <Button
-            key={name}
+            key={p.name}
             variant="outline"
             className="w-full"
-            onClick={() => login(name)}
+            onClick={() => login(p.name)}
           >
-            {PROVIDER_LABELS[name] ?? `Continue with ${name}`}
+            {PROVIDER_LABELS[p.name] ?? `Continue with ${p.label}`}
           </Button>
         ))}
       </div>

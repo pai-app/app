@@ -1,14 +1,17 @@
 import {
-  createOAuthService,
   GoogleDriveAdapter,
   defineStrata,
   type AuthAdapter,
-  type ProviderRegistration,
-  type CloudFactory,
+  type ProviderModule,
 } from "strata-adapters"
 import { GOOGLE_PROVIDER_NAME } from "@shared/google-oauth"
 import { PROVIDERS } from "@shared/providers"
-import { DEVICE_ID_KEY, FEATURE_CREDS_KEY, RETURN_URL_KEY, SESSION_KEY } from "@shared/storage-keys"
+import {
+  DEVICE_ID_KEY,
+  FEATURE_CREDS_KEY,
+  RETURN_URL_KEY,
+  SESSION_KEY,
+} from "@shared/storage-keys"
 import { featureAccountDef } from "@/services/entities/feature-account"
 
 function tokenGetter(auth: AuthAdapter) {
@@ -20,45 +23,30 @@ function tokenGetter(auth: AuthAdapter) {
 }
 
 /**
- * Per-provider client wiring. Keys must match `name` in `shared/providers.ts`.
- * Adding a new provider:
- *   1. add an entry to `shared/providers.ts`
- *   2. add a cloud factory below (if the provider has cloud storage)
+ * Per-provider cloud wiring. Keys match `name` in `shared/providers.ts`.
+ * Adding a new login provider: add an entry below mapping its name to a
+ * `(auth) => StorageAdapter` factory.
  */
-const cloudFactories: Readonly<Record<string, CloudFactory>> = {
+const cloudFactories: Readonly<Record<string, ProviderModule["cloud"]>> = {
   [GOOGLE_PROVIDER_NAME]: (auth) => new GoogleDriveAdapter(tokenGetter(auth)),
 }
 
-function buildProviders(): {
-  readonly authServices: Readonly<Record<string, ReturnType<typeof createOAuthService>>>
-  readonly providers: Readonly<Record<string, ProviderRegistration>>
-} {
-  const authServices: Record<string, ReturnType<typeof createOAuthService>> = {}
-  const providers: Record<string, ProviderRegistration> = {}
-  for (const entry of PROVIDERS) {
-    const name = entry.public.name
-    const auth = createOAuthService({
-      providerName: name,
-      sessionKey: SESSION_KEY,
-      returnUrlKey: RETURN_URL_KEY,
-      featureCredsKey: FEATURE_CREDS_KEY,
-    })
-    auth.tryRestoreSession()
-    authServices[name] = auth
-    providers[name] = { auth: () => auth, cloud: cloudFactories[name] }
-  }
-  return { authServices, providers }
-}
-
-const built = buildProviders()
-
-/** Singleton AuthService for Google. Pages can import this for feature auth (saveFeatureCreds, etc). */
-export const googleAuthService = built.authServices[GOOGLE_PROVIDER_NAME]
+const providerModules: readonly ProviderModule[] = PROVIDERS.map((entry) => ({
+  name: entry.public.name,
+  label: entry.public.name,
+  features: entry.public.features,
+  cloud: cloudFactories[entry.public.name],
+}))
 
 export const strataConfig = defineStrata({
   appId: "fin",
-  deviceIdKey: DEVICE_ID_KEY,
+  storageKeys: {
+    deviceId: DEVICE_ID_KEY,
+    session: SESSION_KEY,
+    returnUrl: RETURN_URL_KEY,
+    featureCreds: FEATURE_CREDS_KEY,
+  },
   entities: [featureAccountDef],
-  providers: built.providers,
+  providers: providerModules,
 })
 
