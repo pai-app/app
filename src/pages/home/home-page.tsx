@@ -10,7 +10,6 @@ export function HomePage() {
   const accounts = useQuery(featureAccountDef)
   const { logout } = useAuth()
   const emailImport = useFeature("google", "email-import")
-
   useEffect(() => {
     if (!repo) return
     const pending = emailImport.consume()
