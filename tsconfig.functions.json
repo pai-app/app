@@ -20,5 +20,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["functions", "src/lib/storage-keys.ts", "src/lib/auth-config.ts"]
+  "include": ["functions", "shared"]
 }

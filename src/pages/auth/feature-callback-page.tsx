@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react"
 import { useNavigate } from "react-router"
 import { AuthTemplate } from "@/templates/auth-template"
 import { Spinner } from "@/ui/spinner"
-import { authService } from "@/services/core/auth-service"
+import { googleAuthService } from "@/lib/strata-config"
 import { fetchGoogleUserInfo } from "@/services/core/google-userinfo"
 
 export function FeatureCallbackPage() {
@@ -15,10 +15,10 @@ export function FeatureCallbackPage() {
 
     const params = new URLSearchParams(window.location.hash.slice(1))
     const accessToken = params.get("access_token") ?? ""
-    const returnUrl = authService.consumeReturnUrl()
+    const returnUrl = googleAuthService.consumeReturnUrl()
 
     fetchGoogleUserInfo(accessToken).then((meta) => {
-      authService.saveFeatureCreds({
+      googleAuthService.saveFeatureCreds({
         provider: params.get("provider") ?? "",
         feature: params.get("feature") ?? "",
         accessToken,

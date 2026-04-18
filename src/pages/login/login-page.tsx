@@ -1,19 +1,26 @@
+import { useLogin } from "strata-adapters/react"
 import { AuthTemplate } from "@/templates/auth-template"
 import { Button } from "@/ui/button"
-import { authService, authProviders } from "@/services/core/auth-service"
+import { GOOGLE_PROVIDER_NAME } from "@shared/google-oauth"
+
+const PROVIDER_LABELS: Record<string, string> = {
+  [GOOGLE_PROVIDER_NAME]: "Continue with Google",
+}
 
 export function LoginPage() {
+  const { providers, login } = useLogin()
+
   return (
     <AuthTemplate>
       <div className="flex w-full flex-col gap-3">
-        {authProviders.map((provider) => (
+        {providers.map((name) => (
           <Button
-            key={provider.name}
+            key={name}
             variant="outline"
             className="w-full"
-            onClick={() => authService.login(provider.name)}
+            onClick={() => login(name)}
           >
-            {provider.label}
+            {PROVIDER_LABELS[name] ?? `Continue with ${name}`}
           </Button>
         ))}
       </div>

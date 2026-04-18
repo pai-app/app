@@ -1,18 +1,20 @@
 import { useEffect } from "react"
 import { DefaultTemplate } from "@/templates/default-template"
 import { Button } from "@/ui/button"
-import { authService } from "@/services/core/auth-service"
-import { useRepo, useQuery } from "strata-adapters/react"
+import { useRepo, useQuery, useAuth } from "strata-adapters/react"
+import { googleAuthService } from "@/lib/strata-config"
+import { GOOGLE_PROVIDER_NAME } from "@shared/google-oauth"
 import { featureAccountDef } from "@/services/entities/feature-account"
 import type { AccountMeta } from "@/services/entities/feature-account"
 
 export function HomePage() {
   const repo = useRepo(featureAccountDef)
   const accounts = useQuery(featureAccountDef)
+  const { logout } = useAuth()
 
   useEffect(() => {
     if (!repo) return
-    const pending = authService.consumeFeatureCreds()
+    const pending = googleAuthService.consumeFeatureCreds()
     if (!pending) return
 
     const meta = (pending.meta ?? {}) as AccountMeta
@@ -27,7 +29,7 @@ export function HomePage() {
   }, [repo])
 
   function handleSetupEmail() {
-    authService.featureLogin("google", "email-import")
+    googleAuthService.featureLogin(GOOGLE_PROVIDER_NAME, "email-import")
   }
 
   return (
@@ -38,7 +40,7 @@ export function HomePage() {
           <Button variant="outline" onClick={handleSetupEmail}>
             Setup Email Import
           </Button>
-          <Button variant="outline" onClick={() => authService.logout()}>
+          <Button variant="outline" onClick={() => logout()}>
             Logout
           </Button>
         </div>
@@ -52,7 +54,7 @@ export function HomePage() {
               {a.meta.avatarUrl && (
                 <img src={a.meta.avatarUrl} alt="" className="h-8 w-8 rounded-full" />
               )}
-              <div>
+              <div className="flex-1">
                 <p className="font-medium">{a.meta.displayName}</p>
                 <p className="text-sm text-muted-foreground">
                   {a.provider} &middot; {a.feature} &middot; {a.meta.identifier}
@@ -61,6 +63,16 @@ export function HomePage() {
                   Created {a.createdAt.toLocaleString()} &middot; Updated {a.updatedAt.toLocaleString()}
                 </p>
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  if (!repo) return
+                  if (confirm(`Disconnect ${a.meta.displayName}?`)) repo.delete(a.id)
+                }}
+              >
+                Delete
+              </Button>
             </div>
           ))}
         </div>
