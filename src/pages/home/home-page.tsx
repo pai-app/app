@@ -1,13 +1,18 @@
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { DefaultTemplate } from "@/templates/default-template"
 import { Button } from "@/ui/button"
-import { useRepo, useQuery, useAuth, useFeature } from "strata-plugins-ui/react"
+import { useRepo, useObservable, useAuth, useFeature } from "strata-plugins-ui/react"
 import { featureAccountDef } from "@/services/entities/feature-account"
-import type { AccountMeta } from "@/services/entities/feature-account"
+import type { AccountMeta, FeatureAccount } from "@/services/entities/feature-account"
+import type { BaseEntity, Repository } from "strata-data-sync"
 
 export function HomePage() {
-  const repo = useRepo(featureAccountDef)
-  const accounts = useQuery(featureAccountDef)
+  const repo = useRepo(featureAccountDef) as Repository<FeatureAccount> | null
+  const accounts$ = useMemo(() => repo?.observeQuery(), [repo])
+  const accounts = useObservable<ReadonlyArray<FeatureAccount & BaseEntity>>(
+    accounts$,
+    repo?.query() ?? [],
+  )
   const { logout } = useAuth()
   const emailImport = useFeature("google", "email-import")
   useEffect(() => {
