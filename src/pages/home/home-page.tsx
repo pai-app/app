@@ -1,9 +1,76 @@
+import { useEffect, useState } from "react"
+import { useLocation } from "react-router"
 import { DefaultTemplate } from "@/templates/default-template"
 import { Button } from "@/ui/button"
-import { useAuth } from "strata-plugins-ui/react"
+import { useAuth, useStrata } from "strata-plugins-ui/react"
+import { FEATURE_CREDS_KEY, GOOGLE_AUTH_NAME } from "@shared/providers"
+import { authAccountEntity, type AuthAccount } from "@/services/entities"
+import type { BaseEntity } from "strata-data-sync"
+import { clientAuth } from "@/lib/strata-config"
 
 export function HomePage() {
   const { logout } = useAuth()
+  const strata = useStrata()
+  const location = useLocation()
+  const [accounts, setAccounts] = useState<ReadonlyArray<AuthAccount & BaseEntity>>([])
+
+  // Check for feature creds returned from the auth callback page
+  useEffect(() => {
+    if (!strata) return
+    const raw = sessionStorage.getItem(FEATURE_CREDS_KEY)
+    if (!raw) return
+    sessionStorage.removeItem(FEATURE_CREDS_KEY)
+
+    let creds: { provider: string; feature: string; accessToken: string; refreshToken: string }
+    try {
+      creds = JSON.parse(raw)
+    } catch {
+      return
+    }
+
+    const repo = strata.repo(authAccountEntity)
+    void (async () => {
+      let email = ""
+      let name = ""
+      let picture = ""
+      try {
+        const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+          headers: { Authorization: `Bearer ${creds.accessToken}` },
+        })
+        if (res.ok) {
+          const info = (await res.json()) as { email?: string; name?: string; picture?: string }
+          email = info.email ?? ""
+          name = info.name ?? ""
+          picture = info.picture ?? ""
+        }
+      } catch {
+        // best-effort
+      }
+      repo.save({
+        provider: creds.provider,
+        feature: creds.feature,
+        email,
+        name,
+        picture,
+        refreshToken: creds.refreshToken,
+        connectedAt: new Date().toISOString(),
+      })
+    })()
+  }, [strata, location])
+
+  // Load and observe auth accounts
+  useEffect(() => {
+    if (!strata) return
+    const repo = strata.repo(authAccountEntity)
+    const sub = repo.observeQuery().subscribe(setAccounts)
+    return () => sub.unsubscribe()
+  }, [strata])
+
+  const handleAddEmail = () => {
+    void clientAuth.supportedAuths()
+      .find((a) => a.name === GOOGLE_AUTH_NAME)
+      ?.login("email")
+  }
 
   return (
     <DefaultTemplate>
@@ -14,6 +81,56 @@ export function HomePage() {
             Logout
           </Button>
         </div>
+      </div>
+
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">Connected Accounts</h2>
+          <Button onClick={handleAddEmail}>Add Email Account</Button>
+        </div>
+        {accounts.length === 0 ? (
+          <p className="text-muted-foreground">No accounts connected yet.</p>
+        ) : (
+          <ul className="space-y-2">
+            {accounts.map((a) => (
+              <li key={a.id} className="rounded-lg border p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {a.picture && (
+                      <img src={a.picture} alt="" className="h-8 w-8 rounded-full" referrerPolicy="no-referrer" />
+                    )}
+                    <div>
+                      <span className="font-medium">{a.name || a.provider}</span>
+                      {a.email && <span className="ml-2 text-sm text-muted-foreground">{a.email}</span>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">{a.feature}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (!strata) return
+                        strata.repo(authAccountEntity).delete(a.id)
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  <dt>ID</dt><dd className="font-mono truncate">{a.id}</dd>
+                  <dt>Connected</dt><dd>{a.connectedAt}</dd>
+                  <dt>Created</dt><dd>{a.createdAt.toLocaleString()}</dd>
+                  <dt>Updated</dt><dd>{a.updatedAt.toLocaleString()}</dd>
+                  <dt>Version</dt><dd>{a.version}</dd>
+                  <dt>Device</dt><dd className="font-mono truncate">{a.device}</dd>
+                  <dt>Refresh Token</dt><dd className="font-mono truncate">{a.refreshToken.slice(0, 20)}…</dd>
+                </dl>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </DefaultTemplate>
   )

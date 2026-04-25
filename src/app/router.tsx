@@ -1,17 +1,39 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useParams } from "react-router"
-import { AuthGuard, TenantGuard, TenantProvider } from "strata-plugins-ui/react"
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useParams, useNavigate, useLocation } from "react-router"
+import { AuthGuard, TenantGuard } from "strata-plugins-ui/react"
 import { RETURN_URL_KEY } from "@shared/providers"
 import { FullPageSpinner } from "@/components/full-page-spinner"
-import { LoginPage } from "@/pages/login/login-page"
 import { HomePage } from "@/pages/home/home-page"
 import { TenantsPage } from "@/pages/tenants/tenants-page"
+import { LoginPage } from "@/pages/login/login-page"
+import { AuthCallbackPage } from "@/pages/auth/auth-callback-page"
 
-function TenantRoute() {
-  const { tenantId } = useParams()
+function AuthGuardRoute() {
+  const navigate = useNavigate()
+  const location = useLocation()
   return (
-    <TenantProvider tenantId={tenantId}>
+    <AuthGuard
+      onUnauthenticated={() => {
+        sessionStorage.setItem(RETURN_URL_KEY, location.pathname + location.search)
+        navigate("/login", { replace: true })
+      }}
+      loading={<FullPageSpinner message="Signing in…" />}
+    >
       <Outlet />
-    </TenantProvider>
+    </AuthGuard>
+  )
+}
+
+function TenantGuardRoute() {
+  const { tenantId } = useParams()
+  const navigate = useNavigate()
+  return (
+    <TenantGuard
+      tenantId={tenantId}
+      onUnauthenticated={() => navigate("/tenants", { replace: true })}
+      loading={<FullPageSpinner message="Opening workspace…" />}
+    >
+      <Outlet />
+    </TenantGuard>
   )
 }
 
@@ -20,27 +42,11 @@ export function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route
-          element={
-            <AuthGuard
-              redirect="/login"
-              loading={<FullPageSpinner message="Signing in…" />}
-              returnUrlKey={RETURN_URL_KEY}
-            />
-          }
-        >
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
+        <Route element={<AuthGuardRoute />}>
           <Route path="/tenants" element={<TenantsPage />} />
-          <Route path="/t/:tenantId" element={<TenantRoute />}>
-            <Route
-              element={
-                <TenantGuard
-                  redirect="/tenants"
-                  loading={<FullPageSpinner message="Opening workspace…" />}
-                />
-              }
-            >
-              <Route index element={<HomePage />} />
-            </Route>
+          <Route path="/t/:tenantId" element={<TenantGuardRoute />}>
+            <Route index element={<HomePage />} />
           </Route>
           <Route index element={<Navigate to="/tenants" replace />} />
         </Route>

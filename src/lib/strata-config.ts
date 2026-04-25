@@ -25,7 +25,7 @@ export const clientAuth = new ClientAuthService(
   ],
 )
 
-export const googleProvider = new GoogleDriveProvider({ getAccessToken: clientAuth.getAccessToken })
+export const googleProvider = new GoogleDriveProvider({ getAccessToken: () => clientAuth.getAccessToken() })
 
 export const cloud = new CloudService([googleProvider], clientAuth)
 export const providers = new CloudProviderService([googleProvider], cloud)

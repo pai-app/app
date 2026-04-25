@@ -15,7 +15,10 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
         clientSecret: env.GOOGLE_CLIENT_SECRET,
         callbackUrl: env.GOOGLE_CALLBACK_URL,
         endpoints: GOOGLE_OAUTH_ENDPOINTS,
-        scopes: { login: [...GOOGLE_DRIVE_SCOPES] },
+        scopes: {
+          login: [...GOOGLE_DRIVE_SCOPES],
+          email: ['https://www.googleapis.com/auth/gmail.readonly', 'email', 'profile'],
+        },
       }),
     ],
     {
@@ -23,6 +26,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       refreshCookieName: REFRESH_COOKIE,
       csrfCookieName: CSRF_COOKIE,
       loginRedirectPath: '/',
+      featureRedirectPath: '/auth/callback',
       errorRedirectPath: '/login?error=auth_failed',
     },
   )

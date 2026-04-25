@@ -1,17 +1,22 @@
+import { useEffect } from "react"
 import { useNavigate } from "react-router"
-import { LoginPage as PluginLoginPage } from "strata-plugins-ui"
-import { GOOGLE_AUTH_NAME } from "@shared/providers"
+import { LoginButtons } from "strata-plugins-ui"
+import { useAuth } from "strata-plugins-ui/react"
 import { AuthTemplate } from "@/templates/auth-template"
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const { status, name } = useAuth()
+
+  useEffect(() => {
+    if (status === "signed-in" && name) {
+      navigate("/tenants")
+    }
+  }, [status, name, navigate])
+
   return (
     <AuthTemplate>
-      <PluginLoginPage
-        onAuthenticated={(name) => {
-          if (name === GOOGLE_AUTH_NAME) navigate("/tenants")
-        }}
-      />
+      <LoginButtons />
     </AuthTemplate>
   )
 }
