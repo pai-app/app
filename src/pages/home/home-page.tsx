@@ -30,6 +30,7 @@ export function HomePage() {
 
     const repo = strata.repo(authAccountEntity)
     void (async () => {
+      let userId = ""
       let email = ""
       let name = ""
       let picture = ""
@@ -38,7 +39,8 @@ export function HomePage() {
           headers: { Authorization: `Bearer ${creds.accessToken}` },
         })
         if (res.ok) {
-          const info = (await res.json()) as { email?: string; name?: string; picture?: string }
+          const info = (await res.json()) as { sub?: string; email?: string; name?: string; picture?: string }
+          userId = info.sub ?? ""
           email = info.email ?? ""
           name = info.name ?? ""
           picture = info.picture ?? ""
@@ -46,9 +48,11 @@ export function HomePage() {
       } catch {
         // best-effort
       }
+      if (!userId) return
       repo.save({
         provider: creds.provider,
         feature: creds.feature,
+        userId,
         email,
         name,
         picture,

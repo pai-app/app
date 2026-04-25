@@ -9,6 +9,7 @@ import { CloudProviderService } from "strata-plugins-ui"
 import {
   GOOGLE_AUTH_NAME,
   AUTH_BASE_PREFIX,
+  SESSION_KEY,
 } from "@shared/providers"
 import { ENTITIES } from "@/services/entities"
 
@@ -36,4 +37,5 @@ export const strataConfig = createStrataConfig({
   cloud,
   providers,
   auth: clientAuth,
+  credentialCacheKey: SESSION_KEY,
 })

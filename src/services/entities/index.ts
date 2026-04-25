@@ -21,6 +21,7 @@ export const appPrefsEntity = defineEntity<AppPrefs>("app-prefs", {
 export type AuthAccount = {
   readonly provider: string
   readonly feature: string
+  readonly userId: string
   readonly email: string
   readonly name: string
   readonly picture: string
@@ -30,7 +31,7 @@ export type AuthAccount = {
 
 export const authAccountEntity = defineEntity<AuthAccount>("auth-account", {
   keyStrategy: "global",
-  deriveId: (a) => `${a.provider}:${a.feature}:${a.email}`,
+  deriveId: (a) => `${a.provider}:${a.feature}:${a.userId}`,
 })
 
 export const ENTITIES = [appPrefsEntity, authAccountEntity] as const
