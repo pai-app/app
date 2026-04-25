@@ -1,12 +1,17 @@
-import { GoogleLoginButton } from "strata-plugins-ui/google"
-import { useAuth } from "strata-plugins-ui/react"
+import { useNavigate } from "react-router"
+import { LoginPage as PluginLoginPage } from "strata-plugins-ui"
+import { GOOGLE_AUTH_NAME } from "@shared/providers"
 import { AuthTemplate } from "@/templates/auth-template"
 
 export function LoginPage() {
-  const { login } = useAuth()
+  const navigate = useNavigate()
   return (
     <AuthTemplate>
-      <GoogleLoginButton onClick={() => login("google")} theme="dark" variant="pill" />
+      <PluginLoginPage
+        onAuthenticated={(name) => {
+          if (name === GOOGLE_AUTH_NAME) navigate("/tenants")
+        }}
+      />
     </AuthTemplate>
   )
 }

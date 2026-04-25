@@ -1,35 +1,52 @@
-import { useMemo, useState } from "react"
-import { useNavigate } from "react-router"
-import { useTenantList, useAuth, useStrata } from "strata-plugins-ui/react"
-import {
-  useGoogleCreateForm,
-  GoogleDriveExplorer,
-} from "strata-plugins-ui/google"
-import {
-  GoogleDriveFileService,
-} from "strata-adapters/providers/google"
-import type { CloudFile, CloudSpace } from "strata-adapters/cloud"
+import { useState } from "react"
+import { useOpRunner } from "strata-plugins-ui"
+import { GoogleDriveExplorer } from "strata-plugins-ui/google"
+import { useAuth, useStrata } from "strata-plugins-ui/react"
 import { DefaultTemplate } from "@/templates/default-template"
 import { Button } from "@/ui/button"
-import { Spinner } from "@/ui/spinner"
+import { googleProvider, strataConfig } from "@/lib/strata-config"
 
 export function TenantsPage() {
-  const { tenants, loading } = useTenantList()
-  const [showCreate, setShowCreate] = useState(false)
-  const [showExplorer, setShowExplorer] = useState(false)
-  const navigate = useNavigate()
   const { logout } = useAuth()
+  const [explorerOpen, setExplorerOpen] = useState(false)
+  const strata = useStrata()
+  const providers = strataConfig.cloud.providers
+
+  const runner = useOpRunner({
+    strata: strata!,
+    authService: strataConfig.auth!,
+    commonSteps: strataConfig.commonSteps!,
+    encryption: strataConfig.encryption ?? undefined,
+    wizardClassNames: {
+      overlay: 'fixed inset-0 z-50 bg-black/50',
+      content: 'fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 rounded-lg border bg-background p-6 shadow-lg w-full max-w-md',
+      header: 'flex items-center justify-between mb-4',
+      title: 'text-lg font-semibold',
+      body: '',
+      cancel: 'text-sm text-muted-foreground hover:underline',
+      counter: 'text-sm text-muted-foreground',
+    },
+  })
 
   return (
     <DefaultTemplate>
-      <div className="flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Workspaces</h1>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowExplorer(true)}>
-            Browse Drive (debug)
-          </Button>
-          <Button variant="outline" onClick={() => setShowCreate(true)}>
-            New Workspace
+          {providers.flatMap((p) =>
+            p.ops
+              .filter((o) => o.placement === 'page-action')
+              .map((o) => (
+                <Button
+                  key={`${p.name}:${o.name}`}
+                  onClick={() => { void runner.runOp(p, o) }}
+                >
+                  {o.label}
+                </Button>
+              )),
+          )}
+          <Button variant="outline" onClick={() => setExplorerOpen(true)}>
+            Browse Drive
           </Button>
           <Button variant="ghost" onClick={() => logout()}>
             Logout
@@ -37,148 +54,17 @@ export function TenantsPage() {
         </div>
       </div>
 
-      {loading && (
-        <div className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
-          <Spinner />
-          <span>Loading workspaces…</span>
-        </div>
-      )}
+      {runner.wizardElement}
 
-      {!loading && tenants.length === 0 && !showCreate && (
-        <div className="mt-12 flex flex-col items-center gap-4 text-center">
-          <p className="text-muted-foreground">No workspaces yet.</p>
-          <Button onClick={() => setShowCreate(true)}>Create your first workspace</Button>
-        </div>
-      )}
-
-      {!loading && tenants.length > 0 && (
-        <ul className="mt-6 space-y-2">
-          {tenants.map((t) => (
-            <li key={t.id}>
-              <button
-                className="flex w-full items-center justify-between rounded-lg border border-border bg-background px-4 py-3 text-left transition-colors hover:bg-muted"
-                onClick={() => navigate(`/t/${t.id}`)}
-              >
-                <div>
-                  <p className="font-medium">{t.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Created {t.createdAt.toLocaleDateString()}
-                  </p>
-                </div>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {showCreate && (
-        <CreateTenantForm onClose={() => setShowCreate(false)} />
-      )}
-
-      <DriveExplorerDebug open={showExplorer} onOpenChange={setShowExplorer} />
-    </DefaultTemplate>
-  )
-}
-
-function CreateTenantForm({ onClose }: { onClose: () => void }) {
-  const form = useGoogleCreateForm()
-  const navigate = useNavigate()
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    const tenant = await form.submit()
-    if (tenant) {
-      navigate(`/t/${tenant.id}`)
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="mt-6 space-y-4 rounded-lg border border-border p-4">
-      <h2 className="text-lg font-medium">New Workspace</h2>
-
-      <div className="space-y-1">
-        <label htmlFor="tenant-name" className="text-sm font-medium">
-          Name
-        </label>
-        <input
-          id="tenant-name"
-          type="text"
-          value={form.state.name}
-          onChange={(e) => form.setName(e.target.value)}
-          placeholder="My Workspace"
-          className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          required
-        />
-      </div>
-
-      <div className="flex items-center gap-2">
-        <input
-          id="shareable"
-          type="checkbox"
-          checked={form.state.shareable}
-          onChange={(e) => form.setShareable(e.target.checked)}
-          className="size-4 rounded border-border"
-        />
-        <label htmlFor="shareable" className="text-sm">
-          Shareable (store in Google Drive instead of app data)
-        </label>
-      </div>
-
-      {form.state.error && (
-        <p className="text-sm text-destructive">{form.state.error.message}</p>
-      )}
-
-      <div className="flex gap-2">
-        <Button type="submit" disabled={form.state.submitting || !form.state.name.trim()}>
-          {form.state.submitting ? "Creating..." : "Create"}
-        </Button>
-        <Button type="button" variant="ghost" onClick={onClose}>
-          Cancel
-        </Button>
-      </div>
-    </form>
-  )
-}
-
-/** Temporary debug surface — exercises <CloudFileExplorer> against Google Drive. */
-function DriveExplorerDebug({
-  open,
-  onOpenChange,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}) {
-  const { authService } = useStrata()
-  const [picked, setPicked] = useState<{ space: CloudSpace; file: CloudFile } | null>(null)
-
-  const service = useMemo(() => {
-    if (!authService) return null
-    return new GoogleDriveFileService({
-      getAccessToken: async () => {
-        const token = await authService.getAccessToken()
-        if (!token) throw new Error("Not signed in")
-        return token
-      },
-    })
-  }, [authService])
-
-  if (!service) return null
-
-  return (
-    <>
-      {picked && (
-        <p className="mt-6 text-sm text-muted-foreground">
-          Picked: <span className="font-medium">{picked.file.name}</span> in{" "}
-          <span className="font-medium">{picked.space.displayName}</span>
-        </p>
-      )}
       <GoogleDriveExplorer
-        theme="dark"
-        open={open}
-        onOpenChange={onOpenChange}
-        service={service}
-        onSelect={(space, file) => setPicked({ space, file })}
+        open={explorerOpen}
+        onOpenChange={setExplorerOpen}
+        service={googleProvider}
+        onSelect={(space, file) => {
+          console.log('Selected:', space, file)
+          setExplorerOpen(false)
+        }}
       />
-    </>
+    </DefaultTemplate>
   )
 }
