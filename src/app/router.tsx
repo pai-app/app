@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useParams, useNavigate, useLocation } from "react-router"
 import { AuthGuard, TenantGuard } from "strata-plugins-ui/react"
 import { RETURN_URL_KEY } from "@shared/providers"
+import { useTheme } from "@/providers/theme-provider"
 import { FullPageSpinner } from "@/components/full-page-spinner"
 import { HomePage } from "@/pages/home/home-page"
 import { TenantsPage } from "@/pages/tenants/tenants-page"
@@ -26,10 +27,12 @@ function AuthGuardRoute() {
 function TenantGuardRoute() {
   const { tenantId } = useParams()
   const navigate = useNavigate()
+  const { resolvedTheme } = useTheme()
   return (
     <TenantGuard
       tenantId={tenantId}
       onUnauthenticated={() => navigate("/tenants", { replace: true })}
+      mode={resolvedTheme}
       loading={<FullPageSpinner message="Opening workspace…" />}
     >
       <Outlet />

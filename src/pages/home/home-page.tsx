@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useLocation } from "react-router"
+import { useLocation, useNavigate } from "react-router"
 import { DefaultTemplate } from "@/templates/default-template"
 import { Button } from "@/ui/button"
 import { ThemeSwitcher } from "@/components/theme-switcher"
@@ -11,6 +11,7 @@ import { clientAuth } from "@/lib/strata-config"
 
 export function HomePage() {
   const { logout } = useAuth()
+  const navigate = useNavigate()
   const strata = useStrata()
   const location = useLocation()
   const [accounts, setAccounts] = useState<ReadonlyArray<AuthAccount & BaseEntity>>([])
@@ -82,6 +83,9 @@ export function HomePage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Welcome to Fin</h1>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate("/tenants")}>
+            Workspaces
+          </Button>
           <ThemeSwitcher />
           <Button variant="outline" onClick={() => logout()}>
             Logout
