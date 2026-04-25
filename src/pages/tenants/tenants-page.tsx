@@ -4,13 +4,13 @@ import { GoogleDriveExplorer } from "strata-plugins-ui/google"
 import { useAuth, useStrata } from "strata-plugins-ui/react"
 import { DefaultTemplate } from "@/templates/default-template"
 import { Button } from "@/ui/button"
-import { googleProvider, strataConfig } from "@/lib/strata-config"
+import { googleProvider, strataConfig, providers as providerService } from "@/lib/strata-config"
 
 export function TenantsPage() {
   const { logout } = useAuth()
   const [explorerOpen, setExplorerOpen] = useState(false)
   const strata = useStrata()
-  const providers = strataConfig.cloud.providers
+  const allProviders = providerService.all
 
   const runner = useOpRunner({
     strata: strata!,
@@ -33,7 +33,7 @@ export function TenantsPage() {
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Workspaces</h1>
         <div className="flex gap-2">
-          {providers.flatMap((p) =>
+          {allProviders.flatMap((p) =>
             p.ops
               .filter((o) => o.placement === 'page-action')
               .map((o) => (

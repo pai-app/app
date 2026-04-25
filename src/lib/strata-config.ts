@@ -1,9 +1,11 @@
 import {
   BffClientAdapter,
   ClientAuthService,
+  CloudService,
 } from "strata-adapters"
 import { GoogleDriveProvider } from "strata-plugins-ui/google"
-import { createStrataConfig, CloudFactory } from "strata-plugins-ui/react"
+import { createStrataConfig } from "strata-plugins-ui/react"
+import { CloudProviderService } from "strata-plugins-ui"
 import {
   GOOGLE_AUTH_NAME,
   AUTH_BASE_PREFIX,
@@ -29,9 +31,13 @@ export const googleProvider = new GoogleDriveProvider({
   getAccessToken: () => clientAuth.getAccessToken(),
 })
 
+export const cloud = new CloudService([googleProvider], clientAuth)
+export const providers = new CloudProviderService([googleProvider], cloud)
+
 export const strataConfig = createStrataConfig({
   appId: APP_ID,
   entities: ENTITIES,
-  cloud: new CloudFactory().register(GOOGLE_AUTH_NAME, googleProvider),
+  cloud,
+  providers,
   auth: clientAuth,
 })
