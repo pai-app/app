@@ -17,3 +17,4 @@ export const CSRF_COOKIE = "fin_csrf"
 
 // localStorage (via strata-adapters)
 export const DEVICE_ID_KEY = "fin_device_id"
+export const THEME_KEY = "fin_ui_theme"

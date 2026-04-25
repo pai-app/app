@@ -5,21 +5,24 @@ import { GoogleDriveExplorer } from "strata-plugins-ui/google"
 import { useAuth } from "strata-plugins-ui/react"
 import { DefaultTemplate } from "@/templates/default-template"
 import { Button } from "@/ui/button"
+import { ThemeSwitcher } from "@/components/theme-switcher"
+import { useTheme } from "@/providers/theme-provider"
 import { googleProvider } from "@/lib/strata-config"
 
 const wizardClassNames = {
   overlay: 'fixed inset-0 z-50 bg-black/50',
-  content: 'fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 rounded-lg border bg-background p-6 shadow-lg w-full max-w-md',
-  header: 'flex items-center justify-between mb-4',
-  title: 'text-lg font-semibold',
+  content: 'fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 [height:fit-content] [max-height:calc(100vh-32px)]',
+  header: 'hidden',
+  title: '',
   body: '',
-  cancel: 'text-sm text-muted-foreground hover:underline',
-  counter: 'text-sm text-muted-foreground',
+  cancel: '',
+  counter: '',
 }
 
 export function TenantsPage() {
   const navigate = useNavigate()
   const { logout } = useAuth()
+  const { resolvedTheme } = useTheme()
   const [explorerOpen, setExplorerOpen] = useState(false)
 
   return (
@@ -31,6 +34,7 @@ export function TenantsPage() {
           <Button variant="outline" onClick={() => setExplorerOpen(true)}>
             Browse Drive
           </Button>
+          <ThemeSwitcher />
           <Button variant="ghost" onClick={() => logout()}>
             Logout
           </Button>
@@ -46,6 +50,7 @@ export function TenantsPage() {
         open={explorerOpen}
         onOpenChange={setExplorerOpen}
         service={googleProvider}
+        mode={resolvedTheme}
         onSelect={(space, file) => {
           console.log('Selected:', space, file)
           setExplorerOpen(false)

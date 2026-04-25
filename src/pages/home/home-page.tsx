@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useLocation } from "react-router"
 import { DefaultTemplate } from "@/templates/default-template"
 import { Button } from "@/ui/button"
+import { ThemeSwitcher } from "@/components/theme-switcher"
 import { useAuth, useStrata } from "strata-plugins-ui/react"
 import { FEATURE_CREDS_KEY, GOOGLE_AUTH_NAME } from "@shared/providers"
 import { authAccountEntity, type AuthAccount } from "@/services/entities"
@@ -81,6 +82,7 @@ export function HomePage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Welcome to Fin</h1>
         <div className="flex gap-2">
+          <ThemeSwitcher />
           <Button variant="outline" onClick={() => logout()}>
             Logout
           </Button>
