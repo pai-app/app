@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useParams } from "react-router"
 import { AuthGuard, TenantGuard, TenantProvider } from "strata-plugins-ui/react"
-import { RETURN_URL_KEY } from "@/lib/strata-config"
+import { RETURN_URL_KEY } from "@shared/providers"
 import { FullPageSpinner } from "@/components/full-page-spinner"
 import { LoginPage } from "@/pages/login/login-page"
 import { HomePage } from "@/pages/home/home-page"

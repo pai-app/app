@@ -15,7 +15,6 @@ import { ENTITIES } from "@/services/entities"
 export { ENTITIES } from "@/services/entities"
 
 export const APP_ID = "fin"
-export const RETURN_URL_KEY = `${APP_ID}_return_url`
 
 export const clientAuth = new ClientAuthService(
   [
@@ -24,12 +23,9 @@ export const clientAuth = new ClientAuthService(
       prefix: AUTH_BASE_PREFIX,
     }),
   ],
-  { activeAuthKey: `${APP_ID}_active_auth` },
 )
 
-export const googleProvider = new GoogleDriveProvider({
-  getAccessToken: () => clientAuth.getAccessToken(),
-})
+export const googleProvider = new GoogleDriveProvider({ getAccessToken: clientAuth.getAccessToken })
 
 export const cloud = new CloudService([googleProvider], clientAuth)
 export const providers = new CloudProviderService([googleProvider], cloud)
