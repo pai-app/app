@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"npm:dev:app\" \"npm:dev:worker\"",
     "dev:app": "vite",
-    "dev:worker": "wrangler pages dev dist --port 8788",
+    "dev:worker": "wrangler pages dev dist --port 8788 --inspector-port 9229",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "wrangler pages dev dist"
