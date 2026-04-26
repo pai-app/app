@@ -30,10 +30,21 @@ export function ThemeProvider({
     () => (localStorage.getItem(THEME_KEY) as Theme) || defaultTheme,
   )
 
-  const resolvedTheme: 'light' | 'dark' =
-    theme === "system"
-      ? (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
-      : theme
+  const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>(() =>
+    typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light",
+  )
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const mql = window.matchMedia("(prefers-color-scheme: dark)")
+    const handler = (e: MediaQueryListEvent) => setSystemTheme(e.matches ? "dark" : "light")
+    mql.addEventListener("change", handler)
+    return () => mql.removeEventListener("change", handler)
+  }, [])
+
+  const resolvedTheme: 'light' | 'dark' = theme === "system" ? systemTheme : theme
 
   useEffect(() => {
     const root = window.document.documentElement

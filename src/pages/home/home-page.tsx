@@ -84,7 +84,7 @@ export function HomePage() {
         <h1 className="text-2xl font-bold">Welcome to Fin</h1>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => navigate("/tenants")}>
-            Workspaces
+            Households
           </Button>
           <ThemeSwitcher />
           <Button variant="outline" onClick={() => logout()}>

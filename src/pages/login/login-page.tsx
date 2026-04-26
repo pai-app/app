@@ -2,8 +2,7 @@ import { useEffect } from "react"
 import { useNavigate } from "react-router"
 import { LoginButtons } from "strata-plugins-ui"
 import { useAuth } from "strata-plugins-ui/react"
-import { AuthTemplate } from "@/templates/auth-template"
-import { ThemeSwitcher } from "@/components/theme-switcher"
+import { LobbyTemplate } from "@/templates/lobby-template"
 import { useTheme } from "@/providers/theme-provider"
 
 export function LoginPage() {
@@ -18,11 +17,8 @@ export function LoginPage() {
   }, [status, name, navigate])
 
   return (
-    <AuthTemplate>
-      <div className="absolute top-4 right-4">
-        <ThemeSwitcher />
-      </div>
+    <LobbyTemplate>
       <LoginButtons mode={resolvedTheme} variant="pill" />
-    </AuthTemplate>
+    </LobbyTemplate>
   )
 }

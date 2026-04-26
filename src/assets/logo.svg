@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="41" height="18" viewBox="0 0 41 18">
+	<style>
+		:root { color: #000; }
+		@media (prefers-color-scheme: dark) {
+			:root { color: #fff; }
+		}
+	</style>
+	<path
+		d="M26.651 17.787h-4.19V4.607h3.78l.1 3.98h-.51q.2-1.63.82-2.55.609-.92 1.53-1.33a4.7 4.7 0 0 1 1.94-.41q1.43 0 2.45.61a3.84 3.84 0 0 1 1.54 1.74q.51 1.12.51 2.66v8.48h-4.19v-7.05a13 13 0 0 0-.1-1.74q-.21-.72-.62-1.02-.3-.41-1.02-.41-1.02 0-1.53.82-.51.81-.51 2.35z"
+		fill="currentColor" />
+	<path d="M4.371 17.887V1.437l-2.35 2.55h10.42V.517H.081v17.37z" fill="currentColor" />
+	<path d="m4.371 9.407-2.35-1.74h10.01v3.48H2.021z" fill="currentColor" />
+	<rect x="15.201" y=".117" width="4.4" height="3.06" fill="currentColor" />
+	<rect x="15.301" y="4.697" width="4.19" height="13.19" fill="currentColor" />
+	<rect x="36.051" y="13.317" width="4.8" height="4.47" fill="#3a81f6" />
+</svg>

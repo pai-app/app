@@ -45,7 +45,7 @@ export function AuthCallbackPage() {
     // Clear the hash to avoid leaking tokens in browser history
     window.history.replaceState(null, "", window.location.pathname)
 
-    // Navigate to tenants — the user re-opens their workspace from there.
+    // Navigate to tenants — the user re-opens their household from there.
     // The home page will pick up the feature creds from sessionStorage.
     navigate("/tenants", { replace: true })
   }, [navigate])

@@ -33,7 +33,7 @@ function TenantGuardRoute() {
       tenantId={tenantId}
       onUnauthenticated={() => navigate("/tenants", { replace: true })}
       mode={resolvedTheme}
-      loading={<FullPageSpinner message="Opening workspace…" />}
+      loading={<FullPageSpinner message="Opening household…" />}
     >
       <Outlet />
     </TenantGuard>
