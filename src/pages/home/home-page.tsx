@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react"
 import { useLocation, useNavigate } from "react-router"
-import { DefaultTemplate } from "@/templates/default-template"
 import { Button } from "@/ui/button"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { useAuth, useStrata } from "strata-plugins-ui/react"
@@ -79,7 +78,7 @@ export function HomePage() {
   }
 
   return (
-    <DefaultTemplate>
+    <>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Welcome to Fin</h1>
         <div className="flex gap-2">
@@ -142,6 +141,21 @@ export function HomePage() {
           </ul>
         )}
       </div>
-    </DefaultTemplate>
+
+      <div className="mt-12 space-y-4">
+        <h2 className="text-lg font-semibold">Scroll Placeholder</h2>
+        {Array.from({ length: 30 }).map((_, i) => (
+          <div key={i} className="rounded-lg border p-6">
+            <h3 className="font-medium">Section {i + 1}</h3>
+            <p className="text-sm text-muted-foreground mt-2">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
+              incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+              exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure
+              dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+            </p>
+          </div>
+        ))}
+      </div>
+    </>
   )
 }

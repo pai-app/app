@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet, useParams, useNavigate 
 import { AuthGuard, TenantGuard } from "strata-plugins-ui/react"
 import { useTheme } from "@/providers/theme-provider"
 import { FullPageSpinner } from "@/components/full-page-spinner"
+import { DefaultTemplate } from "@/templates/default-template"
 import { HomePage } from "@/pages/home/home-page"
 import { TenantsPage } from "@/pages/tenants/tenants-page"
 import { LoginPage } from "@/pages/login/login-page"
@@ -37,6 +38,14 @@ function TenantGuardRoute() {
   )
 }
 
+function DefaultLayoutRoute() {
+  return (
+    <DefaultTemplate>
+      <Outlet />
+    </DefaultTemplate>
+  )
+}
+
 export function AppRouter() {
   return (
     <BrowserRouter>
@@ -46,7 +55,9 @@ export function AppRouter() {
         <Route element={<AuthGuardRoute />}>
           <Route path="/tenants" element={<TenantsPage />} />
           <Route path="/t/:tenantId" element={<TenantGuardRoute />}>
-            <Route index element={<HomePage />} />
+            <Route element={<DefaultLayoutRoute />}>
+              <Route index element={<HomePage />} />
+            </Route>
           </Route>
           <Route index element={<Navigate to="/tenants" replace />} />
         </Route>
