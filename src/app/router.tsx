@@ -1,6 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useParams, useNavigate, useLocation } from "react-router"
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useParams, useNavigate } from "react-router"
 import { AuthGuard, TenantGuard } from "strata-plugins-ui/react"
-import { RETURN_URL_KEY } from "@shared/providers"
 import { useTheme } from "@/providers/theme-provider"
 import { FullPageSpinner } from "@/components/full-page-spinner"
 import { HomePage } from "@/pages/home/home-page"
@@ -10,11 +9,9 @@ import { AuthCallbackPage } from "@/pages/auth/auth-callback-page"
 
 function AuthGuardRoute() {
   const navigate = useNavigate()
-  const location = useLocation()
   return (
     <AuthGuard
       onUnauthenticated={() => {
-        sessionStorage.setItem(RETURN_URL_KEY, location.pathname + location.search)
         navigate("/login", { replace: true })
       }}
       loading={<FullPageSpinner message="Signing in…" />}

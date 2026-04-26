@@ -8,6 +8,7 @@ export function ThemeSwitcher() {
   return (
     <ToggleGroup
       type="single"
+      variant="outline"
       value={theme}
       onValueChange={(value) => {
         if (value) setTheme(value as Theme)
