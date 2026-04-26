@@ -51,12 +51,6 @@ export function HomePage() {
         // best-effort
       }
       if (!userId) return
-      const derivedId = `${creds.provider}:${creds.feature}:${userId}`
-      console.log('[auth-account] repo.get START', derivedId, Date.now())
-      const existing = repo.get(derivedId)
-      console.log('[auth-account] repo.get END', derivedId, Date.now())
-      console.log('[auth-account] existing:', existing ? { id: existing.id, createdAt: existing.createdAt, updatedAt: existing.updatedAt } : null)
-      console.log('[auth-account] saving:', { userId, email, refreshToken: creds.refreshToken.slice(0, 10) + '...' })
       repo.save({
         provider: creds.provider,
         feature: creds.feature,
