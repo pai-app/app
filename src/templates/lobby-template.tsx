@@ -9,7 +9,7 @@ export function LobbyTemplate({ children }: { readonly children: ReactNode }) {
   const { status, logout } = useAuth()
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
+    <div className="flex min-h-screen items-center justify-center">
       <div className="absolute top-4 right-4 flex items-center gap-2">
         <ThemeSwitcher />
         {status === "signed-in" && (

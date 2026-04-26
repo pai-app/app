@@ -8,7 +8,9 @@ export function App() {
     <ThemeProvider defaultTheme="system">
       <StrataProvider config={strataConfig}>
         <TenantProvider>
-          <AppRouter />
+          <div className="grainy min-h-screen bg-[radial-gradient(ellipse_at_top_left,oklch(0.96_0.025_260),var(--background)_60%)] dark:bg-linear-to-br dark:from-background dark:to-muted/40">
+            <AppRouter />
+          </div>
         </TenantProvider>
       </StrataProvider>
     </ThemeProvider>

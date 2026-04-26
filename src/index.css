@@ -49,7 +49,7 @@
 }
 
 :root {
-    --background: oklch(1 0 0);
+    --background: oklch(0.985 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.145 0 0);
@@ -81,6 +81,12 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
+
+    /* Glass surface tokens — light */
+    --glass-bg: var(--secondary);
+    --glass-opacity: 0.55;
+    --glass-blur: 12px;
+    --glass-border: oklch(from var(--foreground) l c h / 0.08);
 }
 
 .dark {
@@ -115,6 +121,12 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
+
+    /* Glass surface tokens — dark */
+    --glass-bg: var(--card);
+    --glass-opacity: 0.5;
+    --glass-blur: 14px;
+    --glass-border: oklch(from var(--foreground) l c h / 0.12);
 }
 
 @layer base {
@@ -128,6 +140,47 @@
 
     html {
         @apply font-sans;
+    }
+}
+
+/* ─── Grainy surface ─────────────────────────────────── */
+
+@utility grainy {
+    position: relative;
+
+    &::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -10;
+        pointer-events: none;
+        border-radius: inherit;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600'%3E%3Cfilter id='a'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23a)'/%3E%3C/svg%3E");
+        background-repeat: repeat;
+        background-size: 182px;
+        opacity: 0.22;
+        filter: blur(0.2px);
+    }
+}
+
+/* ─── Glass surface ──────────────────────────────────── */
+
+@utility glass {
+    background-color: color-mix(in oklab, var(--glass-bg) calc(var(--glass-opacity) * 100%), transparent);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+
+    /* Fallback for browsers without backdrop-filter — bump opacity for legibility */
+    @supports not (backdrop-filter: blur(1px)) {
+        background-color: var(--glass-bg);
+    }
+
+    /* Respect user preference for reduced transparency (accessibility) */
+    @media (prefers-reduced-transparency: reduce) {
+        background-color: var(--glass-bg);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
     }
 }
 
