@@ -10,8 +10,6 @@
   },
 
   // Environment variables (secrets set via `wrangler secret put`)
-  "vars": {
-    "GOOGLE_CLIENT_ID": "8125620125-sqefru4kf3s3b3idlkr2l27be0ili1fk.apps.googleusercontent.com",
-    "GOOGLE_CALLBACK_URL": "http://localhost:5173/api/auth/callback"
-  }
+  // Dev vars (GOOGLE_CLIENT_ID, GOOGLE_CALLBACK_URL) are in .dev.vars
+  "vars": {}
 }

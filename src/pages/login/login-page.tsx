@@ -12,7 +12,7 @@ export function LoginPage() {
 
   useEffect(() => {
     if (status === "signed-in" && name) {
-      navigate("/tenants")
+      navigate("/tenants", { replace: true })
     }
   }, [status, name, navigate])
 
