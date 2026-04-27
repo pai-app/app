@@ -26,7 +26,6 @@ export type AuthAccount = {
   readonly name: string
   readonly picture: string
   readonly refreshToken: string
-  readonly connectedAt: string
 }
 
 export const authAccountEntity = defineEntity<AuthAccount>("auth-account", {

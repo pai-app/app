@@ -2,18 +2,23 @@ import { useEffect, useState } from "react"
 import { useLocation, useNavigate } from "react-router"
 import { Button } from "@/ui/button"
 import { ThemeSwitcher } from "@/components/theme-switcher"
+import { GoogleDriveExplorer } from "strata-plugins-ui/google"
 import { useAuth, useStrata } from "strata-plugins-ui/react"
+import { useTheme } from "@/providers/theme-provider"
 import { FEATURE_CREDS_KEY, GOOGLE_AUTH_NAME } from "@shared/providers"
 import { authAccountEntity, type AuthAccount } from "@/services/entities"
 import type { BaseEntity } from "strata-data-sync"
-import { clientAuth } from "@/lib/strata-config"
+import { clientAuth, googleProvider } from "@/lib/strata-config"
 
 export function HomePage() {
   const { logout } = useAuth()
   const navigate = useNavigate()
   const strata = useStrata()
   const location = useLocation()
-  const [accounts, setAccounts] = useState<ReadonlyArray<AuthAccount & BaseEntity>>([])
+  const { resolvedTheme } = useTheme()
+  const [accounts, setAccounts] = useState<ReadonlyArray<AuthAccount & BaseEntity>>([]
+  )
+  const [driveOpen, setDriveOpen] = useState(false)
 
   // Check for feature creds returned from the auth callback page
   useEffect(() => {
@@ -58,7 +63,6 @@ export function HomePage() {
         name,
         picture,
         refreshToken: creds.refreshToken,
-        connectedAt: new Date().toISOString(),
       })
     })()
   }, [strata, location])
@@ -129,7 +133,6 @@ export function HomePage() {
                 </div>
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
                   <dt>ID</dt><dd className="font-mono truncate">{a.id}</dd>
-                  <dt>Connected</dt><dd>{a.connectedAt}</dd>
                   <dt>Created</dt><dd>{a.createdAt.toLocaleString()}</dd>
                   <dt>Updated</dt><dd>{a.updatedAt.toLocaleString()}</dd>
                   <dt>Version</dt><dd>{a.version}</dd>
@@ -140,6 +143,20 @@ export function HomePage() {
             ))}
           </ul>
         )}
+      </div>
+
+      <div className="mt-12">
+        <Button onClick={() => setDriveOpen(true)}>Browse Google Drive</Button>
+        <GoogleDriveExplorer
+          open={driveOpen}
+          onOpenChange={setDriveOpen}
+          service={googleProvider}
+          mode={resolvedTheme === "dark" ? "dark" : "light"}
+          onSelect={(space, file) => {
+            console.log("Selected:", space, file)
+            setDriveOpen(false)
+          }}
+        />
       </div>
 
       <div className="mt-12 space-y-4">
