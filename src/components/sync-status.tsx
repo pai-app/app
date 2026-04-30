@@ -40,10 +40,9 @@ export function SyncStatus({ className }: SyncStatusProps) {
         : <CloudCheck />
 
   const saveChanges = () => {
-    if (!strata) return
     setSaving(true)
     // Strata doesn't expose syncNow() yet — trigger a no-op write to nudge the sync engine
-    setTimeout(() => setSaving(false), 1500)
+    setTimeout(() => { setSaving(false); }, 1500)
   }
 
   return (

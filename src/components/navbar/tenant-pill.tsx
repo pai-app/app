@@ -25,7 +25,7 @@ export function TenantPill({ className, variant = "default" }: TenantPillProps) 
 
   const switchTenant = (id: string) => {
     if (!id || id === tenantId) return
-    navigate(`/t/${id}`)
+    void navigate(`/t/${id}`)
   }
 
   return (
@@ -53,13 +53,13 @@ export function TenantPill({ className, variant = "default" }: TenantPillProps) 
           <DropdownMenuCheckboxItem
             key={t.id}
             checked={current?.id === t.id}
-            onClick={() => switchTenant(t.id)}
+            onClick={() => { switchTenant(t.id); }}
           >
             {t.name}
           </DropdownMenuCheckboxItem>
         ))}
         {all.length > 0 && <DropdownMenuSeparator />}
-        <DropdownMenuItem onClick={() => navigate("/tenants")}>
+        <DropdownMenuItem onClick={() => void navigate("/tenants")}>
           <Bolt className="size-4" />
           Manage
         </DropdownMenuItem>

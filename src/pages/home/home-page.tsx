@@ -10,6 +10,13 @@ import { authAccountEntity, type AuthAccount } from "@/services/entities"
 import type { BaseEntity } from "strata-data-sync"
 import { clientAuth, googleProvider } from "@/lib/strata-config"
 
+type FeatureCreds = {
+  readonly provider: string
+  readonly feature: string
+  readonly accessToken: string
+  readonly refreshToken: string
+}
+
 export function HomePage() {
   const { logout } = useAuth()
   const navigate = useNavigate()
@@ -27,9 +34,9 @@ export function HomePage() {
     if (!raw) return
     sessionStorage.removeItem(FEATURE_CREDS_KEY)
 
-    let creds: { provider: string; feature: string; accessToken: string; refreshToken: string }
+    let creds: FeatureCreds
     try {
-      creds = JSON.parse(raw)
+      creds = JSON.parse(raw) as FeatureCreds
     } catch {
       return
     }
@@ -72,7 +79,7 @@ export function HomePage() {
     if (!strata) return
     const repo = strata.repo(authAccountEntity)
     const sub = repo.observeQuery().subscribe(setAccounts)
-    return () => sub.unsubscribe()
+    return () => { sub.unsubscribe(); }
   }, [strata])
 
   const handleAddEmail = () => {
@@ -86,11 +93,11 @@ export function HomePage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Welcome to Fin</h1>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate("/tenants")}>
+          <Button variant="outline" onClick={() => void navigate("/tenants")}>
             Households
           </Button>
           <ThemeSwitcher />
-          <Button variant="outline" onClick={() => logout()}>
+          <Button variant="outline" onClick={() => void logout()}>
             Logout
           </Button>
         </div>
@@ -146,14 +153,13 @@ export function HomePage() {
       </div>
 
       <div className="mt-12">
-        <Button onClick={() => setDriveOpen(true)}>Browse Google Drive</Button>
+        <Button onClick={() => { setDriveOpen(true); }}>Browse Google Drive</Button>
         <GoogleDriveExplorer
           open={driveOpen}
           onOpenChange={setDriveOpen}
           service={googleProvider}
           mode={resolvedTheme === "dark" ? "dark" : "light"}
-          onSelect={(space, file) => {
-            console.log("Selected:", space, file)
+          onSelect={(_space, _file) => {
             setDriveOpen(false)
           }}
         />

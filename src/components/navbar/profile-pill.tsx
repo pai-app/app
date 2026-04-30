@@ -40,7 +40,7 @@ export function ProfilePill({ className }: ProfilePillProps) {
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => navigate("/tenants")}>
+          <DropdownMenuItem onClick={() => void navigate("/tenants")}>
             <ArrowLeftRight className="size-4" />
             Switch household
           </DropdownMenuItem>

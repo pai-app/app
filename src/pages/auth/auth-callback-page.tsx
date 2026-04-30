@@ -11,7 +11,7 @@ export function AuthCallbackPage() {
     processed.current = true
 
     const { returnUrl } = clientAuth.handleCallback("/tenants")
-    navigate(returnUrl, { replace: true })
+    void navigate(returnUrl, { replace: true })
   }, [navigate])
 
   return null

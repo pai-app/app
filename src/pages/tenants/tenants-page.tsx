@@ -87,7 +87,7 @@ export function TenantsPage() {
                     key={t.id}
                     size="sm"
                     className="group relative w-44 cursor-pointer items-center p-5 transition-all hover:bg-accent/50"
-                    onClick={() => navigate(`/t/${t.id}`)}
+                    onClick={() => void navigate(`/t/${t.id}`)}
                   >
                     <Avatar size="lg">
                       <AvatarFallback className={`${color.bg} ${color.text} ${color.darkText}`}>
@@ -99,7 +99,7 @@ export function TenantsPage() {
                     </Text>
                     <div
                       className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => { e.stopPropagation(); }}
                     >
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -118,7 +118,7 @@ export function TenantsPage() {
                             </DropdownMenuItem>
                           ))}
                           <DropdownMenuItem
-                            onClick={() => { void ops.remove(t.id).then(() => refreshList()) }}
+                            onClick={() => { void ops.remove(t.id).then(() => { refreshList(); }) }}
                           >
                             <Trash2 className="h-4 w-4" />
                             Delete

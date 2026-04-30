@@ -18,7 +18,7 @@ export function LobbyTemplate({ children }: { readonly children: ReactNode }) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => logout()}
+              onClick={() => void logout()}
               aria-label="Logout"
             >
               <LogOut className="h-4 w-4" />

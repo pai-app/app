@@ -27,21 +27,21 @@ export function ThemeProvider({
   defaultTheme = "system",
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     () => (localStorage.getItem(THEME_KEY) as Theme) || defaultTheme,
   )
 
   const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>(() =>
-    typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
+    window.matchMedia("(prefers-color-scheme: dark)").matches
       ? "dark"
       : "light",
   )
 
   useEffect(() => {
-    if (typeof window === "undefined") return
     const mql = window.matchMedia("(prefers-color-scheme: dark)")
-    const handler = (e: MediaQueryListEvent) => setSystemTheme(e.matches ? "dark" : "light")
+    const handler = (e: MediaQueryListEvent) => { setSystemTheme(e.matches ? "dark" : "light"); }
     mql.addEventListener("change", handler)
-    return () => mql.removeEventListener("change", handler)
+    return () => { mql.removeEventListener("change", handler); }
   }, [])
 
   const resolvedTheme: 'light' | 'dark' = theme === "system" ? systemTheme : theme
@@ -69,9 +69,5 @@ export function ThemeProvider({
 }
 
 export function useTheme() {
-  const context = useContext(ThemeProviderContext)
-  if (context === undefined) {
-    throw new Error("useTheme must be used within a ThemeProvider")
-  }
-  return context
+  return useContext(ThemeProviderContext)
 }

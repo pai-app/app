@@ -13,7 +13,7 @@ function AuthGuardRoute() {
   return (
     <AuthGuard
       onUnauthenticated={() => {
-        navigate("/login", { replace: true })
+        void navigate("/login", { replace: true })
       }}
       loading={<FullPageSpinner message="Signing in…" />}
     >
@@ -29,7 +29,7 @@ function TenantGuardRoute() {
   return (
     <TenantGuard
       tenantId={tenantId}
-      onUnauthenticated={() => navigate("/tenants", { replace: true })}
+      onUnauthenticated={() => void navigate("/tenants", { replace: true })}
       mode={resolvedTheme}
       loading={<FullPageSpinner message="Opening household…" />}
     >
