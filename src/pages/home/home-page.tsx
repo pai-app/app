@@ -8,6 +8,7 @@ import { FEATURE_CREDS_KEY, GOOGLE_AUTH_NAME } from "@shared/providers"
 import { authAccountEntity, type AuthAccount } from "@/services/entities"
 import type { BaseEntity } from "@strata/core"
 import { clientAuth, googleProvider } from "@/lib/strata-config"
+import { log } from "@/log"
 
 type FeatureCreds = {
   readonly provider: string
@@ -61,6 +62,7 @@ export function HomePage() {
         // best-effort
       }
       if (!userId) return
+      log.home('saving auth account for %s (%s)', email, creds.provider)
       repo.save({
         provider: creds.provider,
         feature: creds.feature,

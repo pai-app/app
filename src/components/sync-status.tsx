@@ -4,6 +4,7 @@ import { useStrata } from "@strata/plugins-ui"
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover"
 import { Button } from "@/ui/button"
 import { cn } from "@/lib/utils"
+import { log } from "@/log"
 
 type SyncStatusProps = {
   readonly className?: string
@@ -20,8 +21,13 @@ export function SyncStatus({ className }: SyncStatusProps) {
     if (!strata) return
     const dirtySub = strata.observe("dirty").subscribe(setDirty)
     const syncSub = strata.observe("sync").subscribe((evt) => {
-      if (evt.type === "sync-started") setSyncing(true)
-      else setSyncing(false)
+      if (evt.type === "sync-started") {
+        log.sync('sync started')
+        setSyncing(true)
+      } else {
+        log.sync('sync %s', evt.type)
+        setSyncing(false)
+      }
     })
     return () => {
       dirtySub.unsubscribe()

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react"
 import { useNavigate } from "react-router"
 import { clientAuth } from "@/lib/strata-config"
+import { log } from "@/log"
 
 export function AuthCallbackPage() {
   const navigate = useNavigate()
@@ -11,6 +12,7 @@ export function AuthCallbackPage() {
     processed.current = true
 
     const { returnUrl } = clientAuth.handleCallback("/tenants")
+    log.router('auth callback → %s', returnUrl)
     void navigate(returnUrl, { replace: true })
   }, [navigate])
 
