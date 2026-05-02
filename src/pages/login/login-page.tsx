@@ -1,7 +1,6 @@
 import { useEffect } from "react"
 import { useNavigate } from "react-router"
-import { LoginButtons } from "strata-plugins-ui"
-import { useAuth } from "strata-plugins-ui/react"
+import { LoginButtons, useAuth } from "@strata/plugins-ui"
 import { LobbyTemplate } from "@/templates/lobby-template"
 import { useTheme } from "@/providers/theme-provider"
 

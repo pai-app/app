@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useParams, useNavigate } from "react-router"
-import { AuthGuard, TenantGuard } from "strata-plugins-ui/react"
+import { AuthGuard, TenantGuard } from "@strata/plugins-ui"
 import { useTheme } from "@/providers/theme-provider"
 import { FullPageSpinner } from "@/components/full-page-spinner"
 import { DefaultTemplate } from "@/templates/default-template"

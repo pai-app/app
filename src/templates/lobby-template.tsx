@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import { LogOut } from "lucide-react"
-import { useAuth } from "strata-plugins-ui/react"
+import { useAuth } from "@strata/plugins-ui"
 import { Logo } from "@/components/logo"
 import { Button } from "@/ui/button"
 import { ThemeSwitcher } from "@/components/theme-switcher"

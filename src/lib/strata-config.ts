@@ -2,10 +2,8 @@ import {
   BffClientAdapter,
   ClientAuthService,
   CloudService,
-} from "strata-adapters"
-import { GoogleDriveProvider } from "strata-plugins-ui/google"
-import { createStrataConfig } from "strata-plugins-ui/react"
-import { CloudProviderService } from "strata-plugins-ui"
+} from "@strata/plugins"
+import { GoogleDriveProvider, createStrataConfig, CloudProviderService } from "@strata/plugins-ui"
 import {
   GOOGLE_AUTH_NAME,
   AUTH_BASE_PREFIX,

@@ -1,4 +1,4 @@
-import { defineEntity } from "strata-data-sync"
+import { defineEntity } from "@strata/core"
 
 /**
  * Per-app preferences (theme, default currency, etc.). Singleton — exactly

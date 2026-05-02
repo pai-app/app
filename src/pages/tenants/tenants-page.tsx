@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router"
 import { EllipsisVertical, Trash2 } from "lucide-react"
-import { useOpRunner } from "strata-plugins-ui"
-import { useTenant } from "strata-plugins-ui/react"
+import { useOpRunner, useTenant } from "@strata/plugins-ui"
 import { LobbyTemplate } from "@/templates/lobby-template"
 import { Avatar, AvatarFallback } from "@/ui/avatar"
 import { Button } from "@/ui/button"

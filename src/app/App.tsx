@@ -1,5 +1,5 @@
 import { useRef } from "react"
-import { StrataProvider, TenantProvider } from "strata-plugins-ui/react"
+import { StrataProvider, TenantProvider } from "@strata/plugins-ui"
 import { strataConfig } from "@/lib/strata-config"
 import { AppProvider } from "@/providers/app-provider"
 import { ThemeProvider } from "@/providers/theme-provider"

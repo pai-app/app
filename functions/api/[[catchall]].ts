@@ -3,7 +3,7 @@ import {
   BffServerAdapter,
   GOOGLE_OAUTH_ENDPOINTS,
   GOOGLE_DRIVE_SCOPES,
-} from "strata-adapters"
+} from "@strata/plugins"
 import { GOOGLE_AUTH_NAME, AUTH_BASE_PREFIX, REFRESH_COOKIE, CSRF_COOKIE } from "../../shared/providers"
 
 let cachedAuth: ServerAuthService | null = null

@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router"
 import { ArrowLeftRight, LogOut, User } from "lucide-react"
-import { useAuth } from "strata-plugins-ui/react"
+import { useAuth } from "@strata/plugins-ui"
 import {
   DropdownMenu,
   DropdownMenuContent,

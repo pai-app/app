@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "react-router"
 import { ChevronDown, Bolt, Home } from "lucide-react"
-import { useTenant } from "strata-plugins-ui/react"
+import { useTenant } from "@strata/plugins-ui"
 import {
   DropdownMenu,
   DropdownMenuContent,

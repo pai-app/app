@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { CircleDashed, CloudCheck, RefreshCw } from "lucide-react"
-import { useStrata } from "strata-plugins-ui/react"
+import { useStrata } from "@strata/plugins-ui"
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover"
 import { Button } from "@/ui/button"
 import { cn } from "@/lib/utils"
