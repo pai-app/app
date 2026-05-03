@@ -4,6 +4,7 @@ import { BrandPill } from "./brand-pill"
 import { TenantPill } from "./tenant-pill"
 import { MenuPill } from "./menu-pill"
 import { ProfilePill } from "./profile-pill"
+import { YearPill } from "./year-pill"
 
 type NavbarProps = {
   readonly className?: string
@@ -19,6 +20,7 @@ export function Navbar({ className, isMobile: isMobileProp }: NavbarProps) {
     <div className={cn("flex flex-row items-center gap-2 z-20", className)}>
       <BrandPill isMobile={isMobile} />
       <div className="grow" />
+      <YearPill variant={variant} />
       <TenantPill variant={variant} />
       <MenuPill variant={variant} />
       <ProfilePill />

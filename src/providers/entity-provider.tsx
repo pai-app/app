@@ -7,12 +7,21 @@ import { log } from '@/log'
 type EntityContextValue = {
   readonly settings: UserSettings
   readonly setSettings: (patch: Partial<UserSettings>) => void
+  readonly year: number
+  readonly setYear: (y: number) => void
 }
 
 const EntityContext = createContext<EntityContextValue | undefined>(undefined)
 
 type EntityProviderProps = {
   readonly children: ReactNode
+}
+
+/** Fiscal year that today's date falls into, given a starting month (1..12). */
+function currentFiscalYear(firstMonth: number): number {
+  const today = new Date()
+  const month = today.getMonth() + 1 // 1..12
+  return month >= firstMonth ? today.getFullYear() : today.getFullYear() - 1
 }
 
 /**
@@ -26,6 +35,7 @@ type EntityProviderProps = {
 export function EntityProvider({ children }: EntityProviderProps) {
   const strata = useStrata()
   const [settings, setSettingsState] = useState<UserSettings>(USER_SETTINGS_DEFAULTS)
+  const [year, setYear] = useState<number>(() => currentFiscalYear(USER_SETTINGS_DEFAULTS.firstMonth))
 
   useEffect(() => {
     if (!strata) return
@@ -48,8 +58,8 @@ export function EntityProvider({ children }: EntityProviderProps) {
   }, [strata])
 
   const value = useMemo<EntityContextValue>(
-    () => ({ settings, setSettings }),
-    [settings, setSettings],
+    () => ({ settings, setSettings, year, setYear }),
+    [settings, setSettings, year],
   )
 
   return (
