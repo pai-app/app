@@ -265,33 +265,3 @@
 [data-slot="wizard-header"] {
     @apply hidden;
 }
-
-/* ─── Icon Picker ────────────────────────────────────── */
-
-[data-slot="icon-picker"] {
-    @apply flex flex-col gap-3;
-}
-
-[data-slot="icon-picker-loading"] {
-    @apply text-sm text-muted-foreground;
-}
-
-[data-slot="icon-picker-search"] {
-    @apply w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring;
-}
-
-[data-slot="icon-picker-grid"] {
-    @apply grid grid-cols-[repeat(auto-fill,minmax(2.5rem,1fr))] gap-1;
-}
-
-[data-slot="icon-picker-item"] {
-    @apply flex aspect-square items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground;
-}
-
-[data-slot="icon-picker-item"][data-selected] {
-    @apply border-primary bg-accent text-accent-foreground;
-}
-
-[data-slot="icon-picker-item"] svg {
-    @apply h-5 w-5;
-}

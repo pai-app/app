@@ -1,4 +1,5 @@
-import type { ReactNode } from "react"
+import { useState, type ReactNode } from "react"
+import { Button } from "@/ui/button"
 import { Currency } from "@/ui/currency"
 import { Icon } from "@/ui/icon"
 import { Money } from "@/ui/money"
@@ -8,8 +9,9 @@ import { ThemeSwitcher } from "@/components/theme-switcher"
 import { FullPageSpinner } from "@/components/full-page-spinner"
 import { Logo } from "@/components/logo"
 import { SyncStatus } from "@/components/sync-status"
-import { IconPicker } from "@/components/icon-picker"
 import { Navbar } from "@/components/navbar/navbar"
+import { TagPicker } from "@/components/tag-picker"
+import type { TagRow } from "@/providers/entity-provider"
 
 function Section({ title, children }: { readonly title: string; readonly children: ReactNode }) {
   return (
@@ -74,10 +76,8 @@ export function ShowcasePage() {
           </div>
         </Section>
 
-        <Section title="Icon picker">
-          <div className="w-full max-w-md">
-            <IconPicker pack="tag-icons" value="wallet" onChange={() => undefined} />
-          </div>
+        <Section title="Tag picker">
+          <TagPickerDemo />
         </Section>
 
         <Section title="Icon (lazy-loaded by name)">
@@ -146,6 +146,36 @@ export function ShowcasePage() {
         </Section>
 
       </main>
+    </div>
+  )
+}
+
+function TagPickerDemo() {
+  const [open, setOpen] = useState(false)
+  const [selected, setSelected] = useState<TagRow | null>(null)
+
+  return (
+    <div className="flex flex-col items-start gap-3">
+      <TagPicker
+        open={open}
+        onOpenChange={setOpen}
+        selectedTagId={selected?.id ?? null}
+        onSelect={setSelected}
+      >
+        <Button variant="outline">
+          {selected ? (
+            <>
+              <Icon name={selected.icon} className="size-4" />
+              {selected.name}
+            </>
+          ) : (
+            "Pick a tag…"
+          )}
+        </Button>
+      </TagPicker>
+      <Text variant="caption">
+        {selected ? `Selected id: ${selected.id}` : "No tag selected"}
+      </Text>
     </div>
   )
 }
