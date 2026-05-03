@@ -8,6 +8,8 @@ import { FEATURE_CREDS_KEY, GOOGLE_AUTH_NAME } from "@shared/providers"
 import { authAccountEntity, type AuthAccount } from "@/services/entities"
 import type { BaseEntity } from "@strata/core"
 import { clientAuth, googleProvider } from "@/lib/strata-config"
+import { Icon } from "@/ui/icon"
+import { IconPicker } from "@/components/icon-picker"
 import { log } from "@/log"
 
 type FeatureCreds = {
@@ -26,6 +28,18 @@ export function HomePage() {
   const [accounts, setAccounts] = useState<ReadonlyArray<AuthAccount & BaseEntity>>([]
   )
   const [driveOpen, setDriveOpen] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [selectedIcons, setSelectedIcons] = useState<readonly string[]>([
+    'wallet', 'coffee', 'pizza',           // lucide
+    'auto', 'goldbar', 'tiffin',            // tsx (custom lucide-style)
+    'netflix', 'spotify',                   // simple-icons (brand)
+    'blinkit', 'zomato', 'fastag',          // svg (custom brand)
+  ])
+  const [iconSize, setIconSize] = useState(32)
+  const [iconColor, setIconColor] = useState('#3b82f6')
+  const [iconStrokeWidth, setIconStrokeWidth] = useState(2)
+  const [iconOpacity, setIconOpacity] = useState(1)
+  const [iconRotation, setIconRotation] = useState(0)
 
   // Check for feature creds returned from the auth callback page
   useEffect(() => {
@@ -150,6 +164,108 @@ export function HomePage() {
               </li>
             ))}
           </ul>
+        )}
+      </div>
+
+      <div className="mt-12 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Icons</h2>
+          <Button onClick={() => { setPickerOpen((o) => !o); }}>
+            {pickerOpen ? 'Close picker' : 'Open icon picker'}
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 rounded-lg border p-4 sm:grid-cols-5">
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="text-muted-foreground">Size: {iconSize}px</span>
+            <input
+              type="range"
+              min={12}
+              max={96}
+              value={iconSize}
+              onChange={(e) => { setIconSize(Number(e.target.value)) }}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="text-muted-foreground">Color</span>
+            <input
+              type="color"
+              value={iconColor}
+              onChange={(e) => { setIconColor(e.target.value) }}
+              className="h-8 w-full rounded border"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="text-muted-foreground">Stroke: {iconStrokeWidth}</span>
+            <input
+              type="range"
+              min={0.5}
+              max={4}
+              step={0.5}
+              value={iconStrokeWidth}
+              onChange={(e) => { setIconStrokeWidth(Number(e.target.value)) }}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="text-muted-foreground">Opacity: {iconOpacity.toFixed(2)}</span>
+            <input
+              type="range"
+              min={0.1}
+              max={1}
+              step={0.05}
+              value={iconOpacity}
+              onChange={(e) => { setIconOpacity(Number(e.target.value)) }}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="text-muted-foreground">Rotate: {iconRotation}°</span>
+            <input
+              type="range"
+              min={0}
+              max={360}
+              step={15}
+              value={iconRotation}
+              onChange={(e) => { setIconRotation(Number(e.target.value)) }}
+            />
+          </label>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          {selectedIcons.map((name, i) => (
+            <div
+              key={`${name}-${i}`}
+              className="flex items-center justify-center rounded-lg border bg-muted/30"
+              style={{
+                width: iconSize + 24,
+                height: iconSize + 24,
+                color: iconColor,
+              }}
+              title={name}
+            >
+              <Icon
+                name={name}
+                width={iconSize}
+                height={iconSize}
+                strokeWidth={iconStrokeWidth}
+                style={{
+                  opacity: iconOpacity,
+                  transform: `rotate(${iconRotation.toString()}deg)`,
+                }}
+              />
+            </div>
+          ))}
+        </div>
+        {pickerOpen && (
+          <div className="rounded-lg border p-4">
+            <IconPicker
+              pack="tag-icons"
+              onChange={(key) => {
+                setSelectedIcons((prev) => [key, ...prev.filter((k) => k !== key)].slice(0, 20))
+                setPickerOpen(false)
+              }}
+              className="max-h-96 overflow-y-auto"
+            />
+          </div>
         )}
       </div>
 

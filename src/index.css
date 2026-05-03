@@ -229,22 +229,26 @@
 
 /* ─── Glass surface ──────────────────────────────────── */
 
-@utility glass {
-    background-color: color-mix(in oklab, var(--glass-bg) calc(var(--glass-opacity) * 100%), transparent);
-    backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
-    border: 1px solid var(--glass-border);
-
-    /* Fallback for browsers without backdrop-filter — bump opacity for legibility */
-    @supports not (backdrop-filter: blur(1px)) {
-        background-color: var(--glass-bg);
+@layer components {
+    .glass {
+        @apply backdrop-blur-(--glass-blur);
+        background-color: color-mix(in oklab, var(--glass-bg) calc(var(--glass-opacity) * 100%), transparent);
+        border: 1px solid var(--glass-border);
     }
 
-    /* Respect user preference for reduced transparency (accessibility) */
+    /* Fallback when backdrop-filter is unsupported — drop transparency for legibility */
+    @supports not (backdrop-filter: blur(1px)) {
+        .glass {
+            background-color: var(--glass-bg);
+        }
+    }
+
+    /* Accessibility — honour reduced-transparency preference */
     @media (prefers-reduced-transparency: reduce) {
-        background-color: var(--glass-bg);
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
+        .glass {
+            background-color: var(--glass-bg);
+            --tw-backdrop-blur: initial;
+        }
     }
 }
 
@@ -260,4 +264,34 @@
 
 [data-slot="wizard-header"] {
     @apply hidden;
+}
+
+/* ─── Icon Picker ────────────────────────────────────── */
+
+[data-slot="icon-picker"] {
+    @apply flex flex-col gap-3;
+}
+
+[data-slot="icon-picker-loading"] {
+    @apply text-sm text-muted-foreground;
+}
+
+[data-slot="icon-picker-search"] {
+    @apply w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring;
+}
+
+[data-slot="icon-picker-grid"] {
+    @apply grid grid-cols-[repeat(auto-fill,minmax(2.5rem,1fr))] gap-1;
+}
+
+[data-slot="icon-picker-item"] {
+    @apply flex aspect-square items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground;
+}
+
+[data-slot="icon-picker-item"][data-selected] {
+    @apply border-primary bg-accent text-accent-foreground;
+}
+
+[data-slot="icon-picker-item"] svg {
+    @apply h-5 w-5;
 }

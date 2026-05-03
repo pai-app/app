@@ -16,4 +16,5 @@ export const log = {
   home: createLogger('home'),
   tenants: createLogger('tenants'),
   sync: createLogger('sync'),
+  icons: createLogger('icons'),
 }
