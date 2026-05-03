@@ -55,6 +55,7 @@
     "wrangler": "^4.81.0"
   },
   "dependencies": {
+    "@tanstack/react-virtual": "^3.13.24",
     "debug": "^4.4.3"
   }
 }
