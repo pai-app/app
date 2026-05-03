@@ -78,6 +78,10 @@ export function OverflowBar({
   }, [updateScrollState])
 
   // ── Auto-scroll active item into view ─────────────────────
+  // Scroll the inner container's `scrollLeft` directly rather than calling
+  // `child.scrollIntoView()`. The latter walks up the DOM and scrolls every
+  // ancestor (including the page) to bring the active child into view, which
+  // pulls the whole page down on mount when the bar is below the fold.
 
   useLayoutEffect(() => {
     const el = scrollRef.current
@@ -86,7 +90,17 @@ export function OverflowBar({
     if (activeIdx < 0) return
     const child = el.children[activeIdx] as HTMLElement | undefined
     if (!child) return
-    child.scrollIntoView({ inline: "nearest", behavior: "smooth", block: "nearest" })
+
+    const childLeft = child.offsetLeft
+    const childRight = childLeft + child.offsetWidth
+    const viewLeft = el.scrollLeft
+    const viewRight = viewLeft + el.clientWidth
+
+    if (childLeft < viewLeft) {
+      el.scrollTo({ left: childLeft, behavior: "smooth" })
+    } else if (childRight > viewRight) {
+      el.scrollTo({ left: childRight - el.clientWidth, behavior: "smooth" })
+    }
   }, [items])
 
   // ── Render ────────────────────────────────────────────────
