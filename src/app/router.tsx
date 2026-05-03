@@ -7,6 +7,7 @@ import { HomePage } from "@/pages/home/home-page"
 import { TenantsPage } from "@/pages/tenants/tenants-page"
 import { LoginPage } from "@/pages/login/login-page"
 import { AuthCallbackPage } from "@/pages/auth/auth-callback-page"
+import { ShowcasePage } from "@/pages/showcase/showcase-page"
 
 function AuthGuardRoute() {
   const navigate = useNavigate()
@@ -52,6 +53,7 @@ export function AppRouter() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
+        <Route path="/showcase" element={<ShowcasePage />} />
         <Route element={<AuthGuardRoute />}>
           <Route path="/tenants" element={<TenantsPage />} />
           <Route path="/t/:tenantId" element={<TenantGuardRoute />}>

@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
-import { StrataConfigError } from '@strata/core'
+import { StrataConfigError, type BaseEntity } from '@strata/core'
 import { useStrata } from '@strata/plugins-ui'
 import {
   SYSTEM_TAGS,
@@ -11,12 +11,16 @@ import {
 } from '@/services/entities'
 import { log } from '@/log'
 
+/** A tag with an `id` — either a stable system-tag id or a repo-generated id. */
+export type TagRow = Tag & { readonly id: string }
+
 type EntityContextValue = {
   readonly settings: UserSettings
   readonly setSettings: (patch: Partial<UserSettings>) => void
   readonly year: number
   readonly setYear: (y: number) => void
-  readonly tags: readonly Tag[]
+  /** System tags first (configured order), then user tags (alphabetical by name). */
+  readonly tags: readonly TagRow[]
 }
 
 const EntityContext = createContext<EntityContextValue | undefined>(undefined)
@@ -33,18 +37,19 @@ function currentFiscalYear(firstMonth: number): number {
 }
 
 /**
- * Subscribes to per-tenant entities (UserSettings, …) and exposes them via
- * `useSettings()`-style hooks.
+ * Subscribes to per-tenant entities (UserSettings, user-defined Tags, …) and
+ * exposes them via `useSettings()`.
  *
- * Mounted at the app root. When no Strata instance / tenant is active (e.g.
- * on `/login`, `/tenants`), it serves defaults; pages behind `TenantGuard`
- * see live entity data because by then `useStrata()` is non-null.
+ * System tags (defined in `services/entities/system-tags.ts`) are baked into
+ * the app and never written to the store — they're read-only and merged with
+ * user tags at read time. This keeps the cloud blob lean and avoids sync
+ * conflicts on shipped data.
  */
 export function EntityProvider({ children }: EntityProviderProps) {
   const strata = useStrata()
   const [settings, setSettingsState] = useState<UserSettings>(USER_SETTINGS_DEFAULTS)
   const [year, setYear] = useState<number>(() => currentFiscalYear(USER_SETTINGS_DEFAULTS.firstMonth))
-  const [tags, setTags] = useState<readonly Tag[]>([])
+  const [userTags, setUserTags] = useState<readonly (Tag & BaseEntity)[]>([])
 
   useEffect(() => {
     if (!strata) return
@@ -55,23 +60,19 @@ export function EntityProvider({ children }: EntityProviderProps) {
     return () => { sub.unsubscribe(); }
   }, [strata])
 
-  // Seed system tags on first load (idempotent — only inserts rows missing
-  // by id) then subscribe to the live list.
   useEffect(() => {
     if (!strata) return
     const repo = strata.repo(tagEntity)
-
-    const missing = SYSTEM_TAGS.filter((t) => !repo.get(t.id))
-    if (missing.length > 0) {
-      log.app('seeding %d system tags', missing.length)
-      repo.saveMany(missing)
-    }
-
     const sub = repo.observeQuery().subscribe((rows) => {
-      setTags(rows)
+      setUserTags(rows)
     })
     return () => { sub.unsubscribe(); }
   }, [strata])
+
+  const tags = useMemo<readonly TagRow[]>(() => {
+    const sortedUserTags = [...userTags].sort((a, b) => a.name.localeCompare(b.name))
+    return [...SYSTEM_TAGS, ...sortedUserTags]
+  }, [userTags])
 
   const setSettings = useCallback((patch: Partial<UserSettings>) => {
     if (!strata) {

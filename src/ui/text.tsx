@@ -7,16 +7,15 @@ import { cn } from "@/lib/utils"
 const textVariants = cva("", {
   variants: {
     variant: {
-      default: "text-foreground",
-      muted: "text-muted-foreground",
+      default: "text-sm text-foreground",
+      muted: "text-sm text-muted-foreground",
       label: "text-xs font-medium uppercase tracking-wider text-muted-foreground",
       caption: "text-xs text-muted-foreground",
       heading: "text-lg font-semibold tracking-tight text-foreground",
       title: "text-2xl font-bold tracking-tight text-foreground",
-      destructive: "text-destructive",
+      destructive: "text-sm text-destructive",
     },
     size: {
-      default: "text-sm",
       xs: "text-xs",
       sm: "text-sm",
       base: "text-base",
@@ -24,7 +23,6 @@ const textVariants = cva("", {
       xl: "text-xl",
     },
     weight: {
-      default: "",
       normal: "font-normal",
       medium: "font-medium",
       semibold: "font-semibold",
@@ -33,8 +31,6 @@ const textVariants = cva("", {
   },
   defaultVariants: {
     variant: "default",
-    size: "default",
-    weight: "default",
   },
 })
 
