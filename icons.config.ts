@@ -206,5 +206,20 @@ export const manifest: Manifest = {
         { key: 'zap', kind: 'lucide', name: 'ZapIcon' },
       ],
     },
+    'currency-icons': {
+      icons: [
+        { key: 'indian-rupee', kind: 'lucide', name: 'IndianRupeeIcon' },
+        { key: 'dollar-sign', kind: 'lucide', name: 'DollarSignIcon' },
+        { key: 'euro', kind: 'lucide', name: 'EuroIcon' },
+        { key: 'pound-sterling', kind: 'lucide', name: 'PoundSterlingIcon' },
+        { key: 'japanese-yen', kind: 'lucide', name: 'JapaneseYenIcon' },
+        { key: 'georgian-lari', kind: 'lucide', name: 'GeorgianLariIcon' },
+        { key: 'philippine-peso', kind: 'lucide', name: 'PhilippinePesoIcon' },
+        { key: 'russian-ruble', kind: 'lucide', name: 'RussianRubleIcon' },
+        { key: 'saudi-riyal', kind: 'lucide', name: 'SaudiRiyalIcon' },
+        { key: 'swiss-franc', kind: 'lucide', name: 'SwissFrancIcon' },
+        { key: 'turkish-lira', kind: 'lucide', name: 'TurkishLiraIcon' },
+      ],
+    },
   },
 };

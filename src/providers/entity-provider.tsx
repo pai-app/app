@@ -1,7 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
 import { StrataConfigError } from '@strata/core'
 import { useStrata } from '@strata/plugins-ui'
-import { USER_SETTINGS_DEFAULTS, userSettingsEntity, type UserSettings } from '@/services/entities'
+import {
+  SYSTEM_TAGS,
+  USER_SETTINGS_DEFAULTS,
+  tagEntity,
+  userSettingsEntity,
+  type Tag,
+  type UserSettings,
+} from '@/services/entities'
 import { log } from '@/log'
 
 type EntityContextValue = {
@@ -9,6 +16,7 @@ type EntityContextValue = {
   readonly setSettings: (patch: Partial<UserSettings>) => void
   readonly year: number
   readonly setYear: (y: number) => void
+  readonly tags: readonly Tag[]
 }
 
 const EntityContext = createContext<EntityContextValue | undefined>(undefined)
@@ -36,12 +44,31 @@ export function EntityProvider({ children }: EntityProviderProps) {
   const strata = useStrata()
   const [settings, setSettingsState] = useState<UserSettings>(USER_SETTINGS_DEFAULTS)
   const [year, setYear] = useState<number>(() => currentFiscalYear(USER_SETTINGS_DEFAULTS.firstMonth))
+  const [tags, setTags] = useState<readonly Tag[]>([])
 
   useEffect(() => {
     if (!strata) return
     const repo = strata.repo(userSettingsEntity)
     const sub = repo.observe().subscribe((row) => {
       setSettingsState({ ...USER_SETTINGS_DEFAULTS, ...row })
+    })
+    return () => { sub.unsubscribe(); }
+  }, [strata])
+
+  // Seed system tags on first load (idempotent — only inserts rows missing
+  // by id) then subscribe to the live list.
+  useEffect(() => {
+    if (!strata) return
+    const repo = strata.repo(tagEntity)
+
+    const missing = SYSTEM_TAGS.filter((t) => !repo.get(t.id))
+    if (missing.length > 0) {
+      log.app('seeding %d system tags', missing.length)
+      repo.saveMany(missing)
+    }
+
+    const sub = repo.observeQuery().subscribe((rows) => {
+      setTags(rows)
     })
     return () => { sub.unsubscribe(); }
   }, [strata])
@@ -58,8 +85,8 @@ export function EntityProvider({ children }: EntityProviderProps) {
   }, [strata])
 
   const value = useMemo<EntityContextValue>(
-    () => ({ settings, setSettings, year, setYear }),
-    [settings, setSettings, year],
+    () => ({ settings, setSettings, year, setYear, tags }),
+    [settings, setSettings, year, tags],
   )
 
   return (
