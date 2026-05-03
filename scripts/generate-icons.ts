@@ -240,7 +240,7 @@ function configFile(m: Manifest): string {
 
   // Reverse lookup: icon key → pack name. First registration wins on collisions.
   // Indexing with an arbitrary string may yield undefined (unknown name).
-  lines.push(`export const ICON_TO_PACK: Readonly<Partial<Record<string, PackName>>> = {`);
+  lines.push(`export const ICON_TO_PACK: { readonly [key: string]: PackName | undefined } = {`);
   const seen = new Set<string>();
   for (const [packName, pack] of Object.entries(m.packs)) {
     for (const icon of pack.icons) {

@@ -15,7 +15,7 @@ export async function loadIcon(name: string): Promise<IconComponent> {
   const inflight = inflightIcons.get(name);
   if (inflight) return inflight;
 
-  const loader = (ICONS_CONFIG[pack].icons as Partial<Record<string, () => Promise<{ default: IconComponent }>>>)[name];
+  const loader = (ICONS_CONFIG[pack].icons as { [key: string]: (() => Promise<{ default: IconComponent }>) | undefined })[name];
   if (!loader) throw new Error(`Icon "${name}" not found in pack "${pack}"`);
 
   const promise = loader().then((m) => {
