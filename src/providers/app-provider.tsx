@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode, type RefObject } from "react"
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react"
 import { StrataConfigError } from '@strata/core'
 
 const MOBILE_BREAKPOINT = 768
@@ -31,8 +31,13 @@ export function AppProvider({ children, scrollElementRef: externalRef }: AppProv
     return () => { mql.removeEventListener("change", handler); }
   }, [])
 
+  const value = useMemo<AppContextValue>(
+    () => ({ isMobile, scrollElementRef }),
+    [isMobile, scrollElementRef],
+  )
+
   return (
-    <AppContext.Provider value={{ isMobile, scrollElementRef }}>{children}</AppContext.Provider>
+    <AppContext.Provider value={value}>{children}</AppContext.Provider>
   )
 }
 

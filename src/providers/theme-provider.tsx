@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useMemo, useState } from "react"
 import { THEME_KEY } from "@shared/providers"
 
 export type Theme = "dark" | "light" | "system"
@@ -52,14 +52,14 @@ export function ThemeProvider({
     root.classList.add(resolvedTheme)
   }, [resolvedTheme])
 
-  const value: ThemeProviderState = {
+  const value = useMemo<ThemeProviderState>(() => ({
     theme,
     resolvedTheme,
     setTheme: (t: Theme) => {
       localStorage.setItem(THEME_KEY, t)
       setTheme(t)
     },
-  }
+  }), [theme, resolvedTheme])
 
   return (
     <ThemeProviderContext.Provider value={value}>

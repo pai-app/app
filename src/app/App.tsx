@@ -2,6 +2,7 @@ import { useRef } from "react"
 import { StrataProvider, TenantProvider } from "@strata/plugins-ui"
 import { strataConfig } from "@/lib/strata-config"
 import { AppProvider } from "@/providers/app-provider"
+import { EntityProvider } from "@/providers/entity-provider"
 import { ThemeProvider } from "@/providers/theme-provider"
 import { AppRouter } from "./router"
 
@@ -15,7 +16,9 @@ export function App() {
           <StrataProvider config={strataConfig}>
             <TenantProvider>
               <AppProvider scrollElementRef={scrollElementRef}>
-                <AppRouter />
+                <EntityProvider>
+                  <AppRouter />
+                </EntityProvider>
               </AppProvider>
             </TenantProvider>
           </StrataProvider>
