@@ -19,6 +19,14 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8788',
         changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on('error', (_err, _req, res) => {
+            if ('headersSent' in res && !res.headersSent) {
+              (res as import('http').ServerResponse).writeHead(503)
+              res.end()
+            }
+          })
+        },
       },
     },
   },

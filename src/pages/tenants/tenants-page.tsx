@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router"
+import { useState } from "react"
 import { EllipsisVertical, Trash2 } from "lucide-react"
 import { useOpRunner, useTenant } from "@strata/plugins-ui"
+import type { CloudProvider, ProviderOp } from "@strata/plugins-ui"
 import { LobbyTemplate } from "@/templates/lobby-template"
 import { Avatar, AvatarFallback } from "@/ui/avatar"
 import { Button } from "@/ui/button"
@@ -26,19 +28,40 @@ const wizardClassNames = {
 
 export function TenantsPage() {
   const navigate = useNavigate()
-  const { all: tenants, ops, refreshList } = useTenant()
+  const { all: tenants, ops } = useTenant()
   const { resolvedTheme } = useTheme()
+  const [error, setError] = useState<string | null>(null)
+
+  const handleError = (err: Error, _op: ProviderOp, _provider: CloudProvider) => {
+    setError(err.message)
+    setTimeout(() => { setError(null) }, 5000)
+  }
 
   const runner = useOpRunner({
     mode: resolvedTheme,
     wizardClassNames,
+    onError: handleError,
   })
+
+  const handleRemove = async (id: string) => {
+    try {
+      await ops.remove(id)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove')
+      setTimeout(() => { setError(null) }, 5000)
+    }
+  }
 
   const pageActions = providers.pageActions()
 
   return (
     <LobbyTemplate>
       <div className="flex w-full max-w-2xl flex-col items-center gap-5">
+        {error && (
+          <div className="w-full rounded-md bg-destructive/10 px-4 py-2 text-sm text-destructive">
+            {error}
+          </div>
+        )}
         {tenants.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-8 text-center">
             <Text variant="muted">
@@ -117,7 +140,7 @@ export function TenantsPage() {
                             </DropdownMenuItem>
                           ))}
                           <DropdownMenuItem
-                            onClick={() => { void ops.remove(t.id).then(() => { refreshList(); }) }}
+                            onClick={() => { void handleRemove(t.id) }}
                           >
                             <Trash2 className="h-4 w-4" />
                             Delete

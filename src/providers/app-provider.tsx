@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode, type RefObject } from "react"
+import { StrataConfigError } from '@strata/core'
 
 const MOBILE_BREAKPOINT = 768
 
@@ -37,6 +38,6 @@ export function AppProvider({ children, scrollElementRef: externalRef }: AppProv
 
 export function useApp(): AppContextValue {
   const ctx = useContext(AppContext)
-  if (!ctx) throw new Error("useApp must be used within an AppProvider")
+  if (!ctx) throw new StrataConfigError("useApp must be used within an AppProvider")
   return ctx
 }
