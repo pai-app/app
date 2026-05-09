@@ -7,7 +7,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/ui/dropdown-menu"
-import { useSettings } from "@/providers/entity-provider"
+import { useEntity } from "@/providers/entity-provider"
 import { cn } from "@/lib/utils"
 
 const MONTH_SHORT = [
@@ -86,7 +86,7 @@ type YearPillProps = {
 }
 
 export function YearPill({ className, variant = "default" }: YearPillProps) {
-  const { year, setYear, settings } = useSettings()
+  const { settings, year, setYear } = useEntity()
   const { firstMonth } = settings
   const compact = variant === "compact"
 

@@ -221,6 +221,17 @@ export const manifest: Manifest = {
         { key: 'turkish-lira', kind: 'lucide', name: 'TurkishLiraIcon' },
       ],
     },
+    // Bank brand marks. Keys are prefixed `bank-<id>` so they don't clash
+    // with simple-icons brand entries (e.g. `paytm` already exists in
+    // `tag-icons`, but `bank-paytm` is the bank's account-list mark).
+    'bank-icons': {
+      icons: [
+        { key: 'bank-federal', kind: 'svg', path: 'banks/federal.svg' },
+        { key: 'bank-hdfc', kind: 'svg', path: 'banks/hdfc.svg' },
+        { key: 'bank-jupiter', kind: 'svg', path: 'banks/jupiter.svg' },
+        { key: 'bank-paytm', kind: 'svg', path: 'banks/paytm.svg' },
+      ],
+    },
     // Shared chrome — navbar pills, theme switcher, sync status, tenants
     // page actions, and cross-component affordances. Loaded eagerly.
     common: {

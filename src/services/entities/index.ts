@@ -1,6 +1,7 @@
 import { authAccountEntity } from "./auth-account"
 import { moneyAccountEntity } from "./money-account"
 import { tagEntity } from "./tag"
+import { transactionEntity } from "./transaction"
 import { userSettingsEntity } from "./user-settings"
 
 export type { AuthAccount } from "./auth-account"
@@ -14,6 +15,14 @@ export { MONEY_ACCOUNT_KINDS, moneyAccountEntity } from "./money-account"
 export type { Tag } from "./tag"
 export { tagEntity } from "./tag"
 
+export type {
+  Transaction,
+  TransactionEmailSource,
+  TransactionFileSource,
+  TransactionSource,
+} from "./transaction"
+export { transactionEntity } from "./transaction"
+
 export type { UserSettings } from "./user-settings"
 export { USER_SETTINGS_DEFAULTS, userSettingsEntity } from "./user-settings"
 
@@ -24,4 +33,5 @@ export const ENTITIES = [
   authAccountEntity,
   tagEntity,
   moneyAccountEntity,
+  transactionEntity,
 ] as const

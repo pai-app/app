@@ -4,20 +4,16 @@ import { Icon } from "@/ui/icon"
 import { Input } from "@/ui/input"
 import { Button } from "@/ui/button"
 import { SheetClose } from "@/ui/sheet"
-import type { IconComponent } from "@/lib/icons"
-import type { TagRow } from "@/providers/entity-provider"
+import type { DisplayTag } from "@/providers/entity-provider"
 import { TagItem } from "./tag-item"
 import type { TagWithChildren } from "./types"
-
-type IconMap = Readonly<Record<string, IconComponent>>
 
 export type TagListProps = {
   readonly rows: readonly TagWithChildren[]
   readonly query: string
   readonly onQueryChange: (e: ChangeEvent<HTMLInputElement>) => void
-  readonly onSelect: (tag: TagRow) => void
+  readonly onSelect: (tag: DisplayTag) => void
   readonly selectedTagId: string | null
-  readonly icons: IconMap | null
   /** When true, shows a `<SheetClose>` button next to the search input. */
   readonly showCloseButton: boolean
 }
@@ -33,7 +29,6 @@ export function TagList({
   onQueryChange,
   onSelect,
   selectedTagId,
-  icons,
   showCloseButton,
 }: TagListProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -79,7 +74,6 @@ export function TagList({
                 tag={rows[item.index]}
                 onSelect={onSelect}
                 selectedTagId={selectedTagId}
-                icons={icons}
               />
             </div>
           ))}

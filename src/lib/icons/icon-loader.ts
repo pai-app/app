@@ -5,18 +5,26 @@ const inflightIcons = new Map<string, Promise<IconComponent>>();
 const packCache = new Map<PackName, Readonly<Record<string, IconComponent>>>();
 const inflightPacks = new Map<PackName, Promise<Readonly<Record<string, IconComponent>>>>();
 
-/** Load a single icon by name. Cached after first load. */
-export async function loadIcon(name: string): Promise<IconComponent> {
-  const pack = ICON_TO_PACK[name];
-  if (!pack) throw new Error(`Icon "${name}" not found in any pack`);
-
+/**
+ * Load a single icon by name. Returns the component synchronously when
+ * already cached, otherwise a `Promise` that resolves once the chunk loads.
+ *
+ * The sync-or-promise return lets callers (e.g. `<Icon>`) skip the
+ * useEffect → setState round-trip on the very first render whenever the
+ * icon's pack has been loaded already.
+ */
+export function loadIcon(name: string): IconComponent | Promise<IconComponent> {
   const cached = iconCache.get(name);
   if (cached) return cached;
+
   const inflight = inflightIcons.get(name);
   if (inflight) return inflight;
 
+  const pack = ICON_TO_PACK[name];
+  if (!pack) return Promise.reject(new Error(`Icon "${name}" not found in any pack`));
+
   const loader = (ICONS_CONFIG[pack].icons as { [key: string]: (() => Promise<{ default: IconComponent }>) | undefined })[name];
-  if (!loader) throw new Error(`Icon "${name}" not found in pack "${pack}"`);
+  if (!loader) return Promise.reject(new Error(`Icon "${name}" not found in pack "${pack}"`));
 
   const promise = loader().then((m) => {
     iconCache.set(name, m.default);

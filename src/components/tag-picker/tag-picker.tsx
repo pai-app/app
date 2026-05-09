@@ -1,21 +1,18 @@
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, type ReactNode } from "react"
 import { ResponsiveDialog } from "@/components/responsive-dialog"
 import { useApp } from "@/providers/app-provider"
-import { type TagRow } from "@/providers/entity-provider"
+import { type DisplayTag } from "@/providers/entity-provider"
 import { loadPack } from "@/lib/icons/icon-loader"
-import type { IconComponent } from "@/lib/icons"
 import { log } from "@/log"
 import { TagList } from "./tag-list"
 import { useTagTree } from "./use-tag-tree"
 import { REMOVE_TAG_ID } from "./types"
 
-type IconMap = Readonly<Record<string, IconComponent>>
-
 export type TagPickerProps = {
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
   readonly selectedTagId?: string | null
-  readonly onSelect: (tag: TagRow | null) => void
+  readonly onSelect: (tag: DisplayTag | null) => void
   /** Trigger element. Wrapped via `asChild`, so it must accept ref + props. */
   readonly children: ReactNode
 }
@@ -26,32 +23,28 @@ export type TagPickerProps = {
  * - **Desktop** — Popover anchored at the trigger
  * - **Mobile** — Bottom sheet
  *
- * Tags are sourced from `useSettings().tags` (system + user, merged). Search
+ * Tags are sourced from `useTags()` (system + user, merged). Search
  * is debounced (300ms) and matches name + description as prefix tokens. When
  * `selectedTagId` is set, a "Remove tag" entry is prepended so the caller can
  * clear the selection.
  */
 export function TagPicker({ open, onOpenChange, selectedTagId, onSelect, children }: TagPickerProps) {
   const { isMobile } = useApp()
-  const [icons, setIcons] = useState<IconMap | null>(null)
   const { rows, query, onQueryChange } = useTagTree({
     selectedTagId,
     resetSignal: open,
   })
 
-  // Preload the tag-icons pack so all rows render synchronously from a map
-  // instead of each `<Icon>` triggering its own dynamic import.
+  // Warm the tag-icons pack so the loader's cache is populated in a single
+  // chunk. Each `<TagIcon>` then renders synchronously instead of triggering
+  // its own dynamic import.
   useEffect(() => {
-    let cancelled = false
-    loadPack("tag-icons").then((m) => {
-      if (!cancelled) setIcons(m)
-    }).catch((err: unknown) => {
+    loadPack("tag-icons").catch((err: unknown) => {
       log.icons.warn("failed to load tag-icons pack: %o", err)
     })
-    return () => { cancelled = true }
   }, [])
 
-  const handleSelect = (tag: TagRow) => {
+  const handleSelect = (tag: DisplayTag) => {
     onSelect(tag.id === REMOVE_TAG_ID ? null : tag)
     onOpenChange(false)
   }
@@ -63,7 +56,6 @@ export function TagPicker({ open, onOpenChange, selectedTagId, onSelect, childre
       onQueryChange={onQueryChange}
       onSelect={handleSelect}
       selectedTagId={selectedTagId ?? null}
-      icons={icons}
       showCloseButton={isMobile}
     />
   )

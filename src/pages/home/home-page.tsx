@@ -5,12 +5,14 @@ import { ThemeSwitcher } from "@/components/theme-switcher"
 import { GoogleDriveExplorer, useAuth, useStrata } from "@strata/plugins-ui"
 import { useTheme } from "@/providers/theme-provider"
 import { FEATURE_CREDS_KEY, GOOGLE_AUTH_NAME } from "@shared/providers"
-import { authAccountEntity, type AuthAccount } from "@/services/entities"
+import { authAccountEntity, moneyAccountEntity, MONEY_ACCOUNT_KINDS, type AuthAccount, type MoneyAccount, type MoneyAccountKind } from "@/services/entities"
 import type { BaseEntity } from "@strata/core"
 import { clientAuth, googleProvider } from "@/lib/strata-config"
 import { TagPicker } from "@/components/tag-picker"
-import type { TagRow } from "@/providers/entity-provider"
-import { Icon } from "@/ui/icon"
+import { useEntity, type DisplayTag } from "@/providers/entity-provider"
+import { Money } from "@/ui/money"
+import { MoneyAccountIcon } from "@/ui/money-account-icon"
+import { TagIcon } from "@/ui/tag-icon"
 import { log } from "@/log"
 
 type FeatureCreds = {
@@ -26,11 +28,12 @@ export function HomePage() {
   const strata = useStrata()
   const location = useLocation()
   const { resolvedTheme } = useTheme()
+  const { accounts: moneyAccounts } = useEntity()
   const [accounts, setAccounts] = useState<ReadonlyArray<AuthAccount & BaseEntity>>([]
   )
   const [driveOpen, setDriveOpen] = useState(false)
   const [tagPickerOpen, setTagPickerOpen] = useState(false)
-  const [selectedTag, setSelectedTag] = useState<TagRow | null>(null)
+  const [selectedTag, setSelectedTag] = useState<DisplayTag | null>(null)
 
   // Check for feature creds returned from the auth callback page
   useEffect(() => {
@@ -92,6 +95,11 @@ export function HomePage() {
     void clientAuth.supportedAuths()
       .find((a) => a.name === GOOGLE_AUTH_NAME)
       ?.login("email")
+  }
+
+  const handleAddRandomAccount = () => {
+    if (!strata) return
+    strata.repo(moneyAccountEntity).save(randomAccount())
   }
 
   return (
@@ -160,6 +168,52 @@ export function HomePage() {
 
       <div className="mt-12 space-y-4">
         <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Money accounts</h2>
+          <Button onClick={handleAddRandomAccount}>Add random account</Button>
+        </div>
+        {moneyAccounts.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No money accounts yet.</p>
+        ) : (
+          <ul className="space-y-2">
+            {moneyAccounts.map((a) => (
+              <li
+                key={a.id}
+                className="flex items-center justify-between rounded-lg border p-4"
+              >
+                <div className="flex items-center gap-3">
+                  <MoneyAccountIcon account={a} className="size-5 text-muted-foreground" />
+                  <div>
+                    <div className="font-medium">
+                      {a.name}
+                      {a.archived && <span className="ml-2 text-xs text-muted-foreground">(archived)</span>}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {a.kind} · {a.currency}
+                      {a.bankId && ` · ${a.bankId}`}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Money amount={a.initialBalance / 100} currency={a.currency} />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (!strata) return
+                      strata.repo(moneyAccountEntity).delete(a.id)
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="mt-12 space-y-4">
+        <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Tag picker</h2>
           <TagPicker
             open={tagPickerOpen}
@@ -170,7 +224,7 @@ export function HomePage() {
             <Button variant="outline">
               {selectedTag ? (
                 <>
-                  <Icon name={selectedTag.icon} className="size-4" />
+                  <TagIcon tag={selectedTag} className="size-4" />
                   {selectedTag.name}
                 </>
               ) : (
@@ -215,4 +269,52 @@ export function HomePage() {
       </div>
     </>
   )
+}
+
+// ─── Sample data ─────────────────────────────────────────
+
+// Bank ids that resolve to a brand icon via `<MoneyAccountIcon>`. Names are
+// purely for the demo; the real bank registry will live in fin-parsers (A1).
+const SAMPLE_BANKS: readonly { readonly id: string; readonly name: string }[] = [
+  { id: "hdfc", name: "HDFC Bank" },
+  { id: "federal", name: "Federal Bank" },
+  { id: "paytm", name: "Paytm Payments Bank" },
+  { id: "jupiter", name: "Jupiter" },
+]
+
+const SAMPLE_CURRENCIES = ["INR", "USD", "EUR", "GBP"] as const
+
+const KIND_LABEL: Record<MoneyAccountKind, string> = {
+  bank: "Savings",
+  "credit-card": "Credit Card",
+  cash: "Cash",
+  wallet: "Wallet",
+  loan: "Loan",
+  investment: "Investments",
+}
+
+function pick<T>(items: readonly T[]): T {
+  return items[Math.floor(Math.random() * items.length)]
+}
+
+function randomAccount(): MoneyAccount {
+  const kind = pick(MONEY_ACCOUNT_KINDS)
+  const useBank = kind === "bank" || kind === "credit-card"
+  const bank = useBank ? pick(SAMPLE_BANKS) : undefined
+  const accountNumber = String(1_000_000_000 + Math.floor(Math.random() * 9_000_000_000))
+
+  // Initial balance in minor units. Credit cards usually start at zero,
+  // others at a random positive amount up to 1,000,000.00 (in major units).
+  const initialBalance = kind === "credit-card"
+    ? 0
+    : Math.floor(Math.random() * 100_000_000)
+
+  return {
+    kind,
+    name: bank ? `${bank.name} ${KIND_LABEL[kind]}` : KIND_LABEL[kind],
+    currency: pick(SAMPLE_CURRENCIES),
+    initialBalance,
+    bankId: bank?.id,
+    metadata: useBank ? { accountNumber: [accountNumber] } : undefined,
+  }
 }

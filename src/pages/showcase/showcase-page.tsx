@@ -4,6 +4,7 @@ import { Currency } from "@/ui/currency"
 import { Icon } from "@/ui/icon"
 import { Money } from "@/ui/money"
 import { OverflowBar } from "@/ui/overflow-bar"
+import { TagIcon } from "@/ui/tag-icon"
 import { Text } from "@/ui/text"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { FullPageSpinner } from "@/components/full-page-spinner"
@@ -11,7 +12,7 @@ import { Logo } from "@/components/logo"
 import { SyncStatus } from "@/components/sync-status"
 import { Navbar } from "@/components/navbar/navbar"
 import { TagPicker } from "@/components/tag-picker"
-import type { TagRow } from "@/providers/entity-provider"
+import type { DisplayTag } from "@/providers/entity-provider"
 
 function Section({ title, children }: { readonly title: string; readonly children: ReactNode }) {
   return (
@@ -152,7 +153,7 @@ export function ShowcasePage() {
 
 function TagPickerDemo() {
   const [open, setOpen] = useState(false)
-  const [selected, setSelected] = useState<TagRow | null>(null)
+  const [selected, setSelected] = useState<DisplayTag | null>(null)
 
   return (
     <div className="flex flex-col items-start gap-3">
@@ -165,7 +166,7 @@ function TagPickerDemo() {
         <Button variant="outline">
           {selected ? (
             <>
-              <Icon name={selected.icon} className="size-4" />
+              <TagIcon tag={selected} className="size-4" />
               {selected.name}
             </>
           ) : (
