@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router"
 import { useState } from "react"
-import { EllipsisVertical, Trash2 } from "lucide-react"
+import { Icon } from "@/ui/icon"
 import { useOpRunner, useTenant } from "@strata/plugins-ui"
 import type { CloudProvider, ProviderOp } from "@strata/plugins-ui"
 import { LobbyTemplate } from "@/templates/lobby-template"
@@ -126,7 +126,7 @@ export function TenantsPage() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon-xs">
-                            <EllipsisVertical className="h-3.5 w-3.5" />
+                            <Icon name="ellipsis-vertical" className="h-3.5 w-3.5" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -142,7 +142,7 @@ export function TenantsPage() {
                           <DropdownMenuItem
                             onClick={() => { void handleRemove(t.id) }}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Icon name="trash-2" className="h-4 w-4" />
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>

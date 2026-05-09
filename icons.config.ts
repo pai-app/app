@@ -221,5 +221,27 @@ export const manifest: Manifest = {
         { key: 'turkish-lira', kind: 'lucide', name: 'TurkishLiraIcon' },
       ],
     },
+    // Shared chrome — navbar pills, theme switcher, sync status, tenants
+    // page actions, and cross-component affordances. Loaded eagerly.
+    common: {
+      icons: [
+        { key: 'arrow-left-right', kind: 'lucide', name: 'ArrowLeftRightIcon' },
+        { key: 'bolt', kind: 'lucide', name: 'BoltIcon' },
+        { key: 'calendar', kind: 'lucide', name: 'CalendarIcon' },
+        { key: 'chevron-down', kind: 'lucide', name: 'ChevronDownIcon' },
+        { key: 'circle-dashed', kind: 'lucide', name: 'CircleDashedIcon' },
+        { key: 'cloud-check', kind: 'lucide', name: 'CloudCheckIcon' },
+        { key: 'ellipsis-vertical', kind: 'lucide', name: 'EllipsisVerticalIcon' },
+        { key: 'home', kind: 'lucide', name: 'HouseIcon' },
+        { key: 'log-out', kind: 'lucide', name: 'LogOutIcon' },
+        { key: 'monitor', kind: 'lucide', name: 'MonitorIcon' },
+        { key: 'moon', kind: 'lucide', name: 'MoonIcon' },
+        { key: 'refresh-cw', kind: 'lucide', name: 'RefreshCwIcon' },
+        { key: 'sun', kind: 'lucide', name: 'SunIcon' },
+        { key: 'trash-2', kind: 'lucide', name: 'Trash2Icon' },
+        { key: 'user', kind: 'lucide', name: 'UserIcon' },
+        { key: 'x', kind: 'lucide', name: 'XIcon' },
+      ],
+    },
   },
 };

@@ -1,6 +1,5 @@
-import type { ComponentType } from "react"
 import { NavLink, useParams, useLocation } from "react-router"
-import { Home } from "lucide-react"
+import { Icon } from "@/ui/icon"
 import { cn } from "@/lib/utils"
 import { OverflowBar } from "@/ui/overflow-bar"
 
@@ -8,11 +7,11 @@ type MenuItem = {
   readonly key: string
   readonly label: string
   readonly path: string
-  readonly icon: ComponentType<{ className?: string }>
+  readonly iconName: string
 }
 
 const MENU: readonly MenuItem[] = [
-  { key: "home", label: "Home", path: "", icon: Home },
+  { key: "home", label: "Home", path: "", iconName: "home" },
 ]
 
 type MenuPillProps = {
@@ -32,7 +31,6 @@ export function MenuPill({ className, variant = "default" }: MenuPillProps) {
     const isActive = item.path
       ? location.pathname.startsWith(`${basePath}/${item.path}`)
       : location.pathname === basePath
-    const Icon = item.icon
 
     return {
       key: item.key,
@@ -40,7 +38,7 @@ export function MenuPill({ className, variant = "default" }: MenuPillProps) {
       element: (
         <NavLink to={to} end={!item.path}>
           {variant === "compact" ? (
-            <Icon className="size-4" />
+            <Icon name={item.iconName} className="size-4" />
           ) : (
             <span className="relative z-10">{item.label}</span>
           )}

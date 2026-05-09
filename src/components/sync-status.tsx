@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { CircleDashed, CloudCheck, RefreshCw } from "lucide-react"
+import { Icon } from "@/ui/icon"
 import { useStrata } from "@strata/plugins-ui"
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover"
 import { Button } from "@/ui/button"
@@ -38,12 +38,12 @@ export function SyncStatus({ className }: SyncStatusProps) {
   if (!strata) return null
 
   const icon = saving
-    ? <RefreshCw className="animate-spin" />
+    ? <Icon name="refresh-cw" className="animate-spin" />
     : syncing
-      ? <RefreshCw className="animate-spin" />
+      ? <Icon name="refresh-cw" className="animate-spin" />
       : dirty
-        ? <CircleDashed />
-        : <CloudCheck />
+        ? <Icon name="circle-dashed" />
+        : <Icon name="cloud-check" />
 
   const saveChanges = () => {
     setSaving(true)

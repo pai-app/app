@@ -1,6 +1,6 @@
 import { useRef, type ChangeEvent } from "react"
 import { useVirtualizer } from "@tanstack/react-virtual"
-import { X } from "lucide-react"
+import { Icon } from "@/ui/icon"
 import { Input } from "@/ui/input"
 import { Button } from "@/ui/button"
 import { SheetClose } from "@/ui/sheet"
@@ -59,7 +59,7 @@ export function TagList({
         {showCloseButton && (
           <SheetClose asChild>
             <Button variant="ghost" size="icon-sm" aria-label="Close">
-              <X />
+              <Icon name="x" />
             </Button>
           </SheetClose>
         )}

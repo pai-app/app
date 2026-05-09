@@ -1,4 +1,4 @@
-import { Monitor, Moon, Sun } from "lucide-react"
+import { Icon } from "@/ui/icon"
 import { ToggleGroup, ToggleGroupItem } from "@/ui/toggle-group"
 import { useTheme, type Theme } from "@/providers/theme-provider"
 
@@ -16,13 +16,13 @@ export function ThemeSwitcher() {
       size="sm"
     >
       <ToggleGroupItem value="light" aria-label="Light theme">
-        <Sun className="h-4 w-4" />
+        <Icon name="sun" className="h-4 w-4" />
       </ToggleGroupItem>
       <ToggleGroupItem value="dark" aria-label="Dark theme">
-        <Moon className="h-4 w-4" />
+        <Icon name="moon" className="h-4 w-4" />
       </ToggleGroupItem>
       <ToggleGroupItem value="system" aria-label="System theme">
-        <Monitor className="h-4 w-4" />
+        <Icon name="monitor" className="h-4 w-4" />
       </ToggleGroupItem>
     </ToggleGroup>
   )

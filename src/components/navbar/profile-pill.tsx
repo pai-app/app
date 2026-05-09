@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router"
-import { ArrowLeftRight, LogOut, User } from "lucide-react"
+import { Icon } from "@/ui/icon"
 import { useAuth } from "@strata/plugins-ui"
 import {
   DropdownMenu,
@@ -31,7 +31,7 @@ export function ProfilePill({ className }: ProfilePillProps) {
             className,
           )}
         >
-          <User className="size-4 text-muted-foreground" />
+          <Icon name="user" className="size-4 text-muted-foreground" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={10} className="min-w-48">
@@ -41,7 +41,7 @@ export function ProfilePill({ className }: ProfilePillProps) {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={() => void navigate("/tenants")}>
-            <ArrowLeftRight className="size-4" />
+            <Icon name="arrow-left-right" className="size-4" />
             Switch household
           </DropdownMenuItem>
         </DropdownMenuGroup>
@@ -52,7 +52,7 @@ export function ProfilePill({ className }: ProfilePillProps) {
             void logout()
           }}
         >
-          <LogOut className="size-4" />
+          <Icon name="log-out" className="size-4" />
           Log out
         </DropdownMenuItem>
       </DropdownMenuContent>

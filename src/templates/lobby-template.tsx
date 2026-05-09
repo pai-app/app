@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { LogOut } from "lucide-react"
+import { Icon } from "@/ui/icon"
 import { useAuth } from "@strata/plugins-ui"
 import { Logo } from "@/components/logo"
 import { Button } from "@/ui/button"
@@ -21,7 +21,7 @@ export function LobbyTemplate({ children }: { readonly children: ReactNode }) {
               onClick={() => void logout()}
               aria-label="Logout"
             >
-              <LogOut className="h-4 w-4" />
+              <Icon name="log-out" className="h-4 w-4" />
             </Button>
           </>
         )}

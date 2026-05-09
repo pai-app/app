@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from "react"
-import { ChevronDown } from "lucide-react"
+import { Icon } from "@/ui/icon"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,8 +25,24 @@ function MonthLabel({ children }: { readonly children: ReactNode }) {
   return <span className="text-[0.7em] font-medium text-muted-foreground">{children}</span>
 }
 
-/** Build the visible label for a fiscal year given the starting month. */
-function formatYear(year: number, firstMonth: number, compact: boolean): ReactNode {
+/**
+ * Vertical month/year stack: small uppercase month on top, year below.
+ * Both share the surrounding text color (no muted variant).
+ */
+function MonthYearStack({ month, year }: { readonly month: string; readonly year: number }) {
+  return (
+    <span className="inline-flex flex-col items-center leading-none">
+      <span className="text-[0.6em] font-semibold uppercase tracking-wider">{month}</span>
+      <span className="mt-0.5">{shortYear(year)}</span>
+    </span>
+  )
+}
+
+/**
+ * Trigger label — uses the vertical month/year stack for fiscal-year ranges
+ * so the pill stays compact while still surfacing the start/end months.
+ */
+function formatYearTrigger(year: number, firstMonth: number, compact: boolean): ReactNode {
   if (firstMonth === 1) return shortYear(year)
   if (compact) {
     return (
@@ -38,9 +54,24 @@ function formatYear(year: number, firstMonth: number, compact: boolean): ReactNo
   }
   return (
     <>
+      <MonthYearStack month={MONTH_SHORT[firstMonth]} year={year} />
+      <span className="text-muted-foreground">-</span>
+      <MonthYearStack month={MONTH_SHORT[firstMonth - 1]} year={year + 1} />
+    </>
+  )
+}
+
+/**
+ * Dropdown item label — horizontal layout with muted month labels. Items have
+ * room to breathe here, so the stack treatment isn't needed.
+ */
+function formatYearMenuItem(year: number, firstMonth: number): ReactNode {
+  if (firstMonth === 1) return shortYear(year)
+  return (
+    <>
       <MonthLabel>{MONTH_SHORT[firstMonth]}</MonthLabel>
       <span>{shortYear(year)}</span>
-      <span className="text-muted-foreground">–</span>
+      <span className="text-muted-foreground">-</span>
       <MonthLabel>{MONTH_SHORT[firstMonth - 1]}</MonthLabel>
       <span>{shortYear(year + 1)}</span>
     </>
@@ -78,23 +109,23 @@ export function YearPill({ className, variant = "default" }: YearPillProps) {
           type="button"
           aria-label="Select year"
           className={cn(
-            "glass flex h-11 cursor-pointer items-center gap-1 rounded-full text-sm font-medium",
-            compact ? "px-2.5" : "px-3",
+            "glass flex h-11 cursor-pointer items-center gap-2 rounded-full px-3 text-sm font-medium",
             className,
           )}
         >
-          <span className="flex items-baseline gap-1">{formatYear(year, firstMonth, compact)}</span>
-          <ChevronDown className="ml-0.5 size-4 text-muted-foreground" />
+          {!compact && <Icon name="calendar" className="size-4 text-muted-foreground" />}
+          <span className="flex items-center gap-1">{formatYearTrigger(year, firstMonth, compact)}</span>
+          <Icon name="chevron-down" className="size-4 text-muted-foreground" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={10} className="min-w-32">
+      <DropdownMenuContent align="end" sideOffset={10} className="min-w-36">
         <DropdownMenuRadioGroup
           value={String(year)}
           onValueChange={(v) => { setYear(Number(v)); }}
         >
           {years.map((y) => (
             <DropdownMenuRadioItem key={y} value={String(y)}>
-              <span className="flex items-baseline gap-1">{formatYear(y, firstMonth, false)}</span>
+              <span className="flex items-baseline gap-1">{formatYearMenuItem(y, firstMonth)}</span>
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>

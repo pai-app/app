@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "react-router"
-import { ChevronDown, Bolt, Home } from "lucide-react"
+import { Icon } from "@/ui/icon"
 import { useTenant } from "@strata/plugins-ui"
 import {
   DropdownMenu,
@@ -39,13 +39,13 @@ export function TenantPill({ className, variant = "default" }: TenantPillProps) 
             className,
           )}
         >
-          <Home className="size-4" />
+          <Icon name="home" className="size-4" />
           {variant === "default" && (
             <span className="max-w-[10rem] truncate">
               {current?.name ?? "No household"}
             </span>
           )}
-          <ChevronDown className="size-4 opacity-60" />
+          <Icon name="chevron-down" className="size-4 opacity-60" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" sideOffset={10}>
@@ -60,7 +60,7 @@ export function TenantPill({ className, variant = "default" }: TenantPillProps) 
         ))}
         {all.length > 0 && <DropdownMenuSeparator />}
         <DropdownMenuItem onClick={() => void navigate("/tenants")}>
-          <Bolt className="size-4" />
+          <Icon name="bolt" className="size-4" />
           Manage
         </DropdownMenuItem>
       </DropdownMenuContent>
