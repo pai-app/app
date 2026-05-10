@@ -60,4 +60,8 @@ function monthKey(t: Transaction): string {
 
 export const transactionEntity = defineEntity<Transaction>("transaction", {
   keyStrategy: partitioned<Transaction>(monthKey),
+  // Use the hash as the entity id so importing the same statement twice
+  // upserts the same row instead of creating duplicates. Manual entries
+  // are responsible for supplying their own hash (e.g. uuid).
+  deriveId: (t) => t.hash,
 })
