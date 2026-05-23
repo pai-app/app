@@ -28,7 +28,7 @@ const wizardClassNames = {
 
 export function TenantsPage() {
   const navigate = useNavigate()
-  const { all: tenants, ops } = useTenant()
+  const { all: tenants, ops, pageActions } = useTenant()
   const { resolvedTheme } = useTheme()
   const [error, setError] = useState<string | null>(null)
 
@@ -51,8 +51,6 @@ export function TenantsPage() {
       setTimeout(() => { setError(null) }, 5000)
     }
   }
-
-  const pageActions = providers.pageActions()
 
   return (
     <LobbyTemplate>

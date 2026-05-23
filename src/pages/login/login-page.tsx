@@ -17,7 +17,7 @@ export function LoginPage() {
 
   return (
     <LobbyTemplate>
-      <LoginButtons mode={resolvedTheme} variant="pill" />
+      <LoginButtons mode={resolvedTheme} variant="pill" className="flex flex-col items-stretch gap-3 w-64" buttonClassName="[&>button]:!w-full" />
     </LobbyTemplate>
   )
 }

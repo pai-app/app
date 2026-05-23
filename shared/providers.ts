@@ -4,6 +4,7 @@
  * package; here we only declare app-level identifiers.
  */
 export const GOOGLE_AUTH_NAME = "google"
+export const MICROSOFT_AUTH_NAME = "microsoft"
 export const AUTH_BASE_PREFIX = "/api/auth"
 
 // sessionStorage
