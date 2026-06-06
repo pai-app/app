@@ -1,11 +1,16 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react"
 import { StrataConfigError } from '@strata/core'
+import { registerMagicWord } from "@/lib/magic-word"
 
 const MOBILE_BREAKPOINT = 768
+const DEV_MODE_WORD = "FINDEVMODE"
 
 type AppContextValue = {
   readonly isMobile: boolean
   readonly scrollElementRef: RefObject<HTMLDivElement | null>
+  /** Whether developer tools are enabled. Toggled by typing `FINDEVMODE`. */
+  readonly devMode: boolean
+  readonly setDevMode: (on: boolean) => void
 }
 
 const AppContext = createContext<AppContextValue | undefined>(undefined)
@@ -23,6 +28,10 @@ export function AppProvider({ children, scrollElementRef: externalRef }: AppProv
     () => typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT,
   )
 
+  // Default-on for `npm run dev`, off in production. Runtime-only — resets
+  // on reload. Typing `FINDEVMODE` toggles it on any page.
+  const [devMode, setDevMode] = useState<boolean>(import.meta.env.DEV)
+
   useEffect(() => {
     if (typeof window === "undefined") return
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
@@ -31,9 +40,13 @@ export function AppProvider({ children, scrollElementRef: externalRef }: AppProv
     return () => { mql.removeEventListener("change", handler); }
   }, [])
 
+  useEffect(() => {
+    return registerMagicWord(DEV_MODE_WORD, () => { setDevMode((on) => !on); })
+  }, [])
+
   const value = useMemo<AppContextValue>(
-    () => ({ isMobile, scrollElementRef }),
-    [isMobile, scrollElementRef],
+    () => ({ isMobile, scrollElementRef, devMode, setDevMode }),
+    [isMobile, scrollElementRef, devMode],
   )
 
   return (

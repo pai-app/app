@@ -6,7 +6,8 @@ import {
   MICROSOFT_OAUTH_ENDPOINTS,
   ONEDRIVE_SCOPES,
 } from "@strata/plugins"
-import { GOOGLE_AUTH_NAME, MICROSOFT_AUTH_NAME, AUTH_BASE_PREFIX, REFRESH_COOKIE, CSRF_COOKIE } from "../../shared/providers"
+import { GOOGLE_AUTH_NAME, MICROSOFT_AUTH_NAME, AUTH_BASE_PREFIX, REFRESH_COOKIE, CSRF_COOKIE, GOOGLE_EMAIL_SCOPES, MICROSOFT_EMAIL_SCOPES } from "../../shared/providers"
+import debug from "debug"
 
 let cachedAuth: ServerAuthService | null = null
 
@@ -22,7 +23,7 @@ function getAuthService(env: Env): ServerAuthService {
           endpoints: GOOGLE_OAUTH_ENDPOINTS,
           scopes: {
             login: [...GOOGLE_DRIVE_SCOPES],
-            email: ['https://www.googleapis.com/auth/gmail.readonly', 'email', 'profile'],
+            email: [...GOOGLE_EMAIL_SCOPES],
           },
         }),
         new BffServerAdapter({
@@ -33,6 +34,7 @@ function getAuthService(env: Env): ServerAuthService {
           endpoints: MICROSOFT_OAUTH_ENDPOINTS,
           scopes: {
             login: [...ONEDRIVE_SCOPES],
+            email: [...MICROSOFT_EMAIL_SCOPES],
           },
         }),
       ],
@@ -50,5 +52,6 @@ function getAuthService(env: Env): ServerAuthService {
 }
 
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
+  if (env.DEBUG) debug.enable(env.DEBUG)
   return getAuthService(env).fetch(request)
 }

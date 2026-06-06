@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from "react"
-import { ResponsiveDialog } from "@/components/responsive-dialog"
+import { AdaptiveSurface } from "@/components/adaptive-surface"
 import { useApp } from "@/providers/app-provider"
 import { type DisplayTag } from "@/providers/entity-provider"
 import { loadPack } from "@/lib/icons/icon-loader"
@@ -61,23 +61,30 @@ export function TagPicker({ open, onOpenChange, selectedTagId, onSelect, childre
   )
 
   return (
-    <ResponsiveDialog
+    <AdaptiveSurface
       open={open}
       onOpenChange={onOpenChange}
+      title="Select a tag"
+      srOnlyTitle
+      trigger={children}
       content={list}
-      popoverProps={{
-        align: "start",
-        side: "bottom",
-        sideOffset: 4,
-        className: "h-96 w-96 gap-0 overflow-hidden p-0",
+      desktop={{
+        type: "popover",
+        props: {
+          align: "start",
+          side: "bottom",
+          sideOffset: 4,
+          className: "h-96 w-96 gap-0 overflow-hidden p-0",
+        },
       }}
-      sheetProps={{
-        side: "bottom",
-        showCloseButton: false,
-        className: "h-[85vh] gap-0 p-0",
+      mobile={{
+        type: "sheet",
+        props: {
+          side: "bottom",
+          showCloseButton: false,
+          className: "h-[85vh] gap-0 p-0 data-[side=bottom]:h-[85vh]",
+        },
       }}
-    >
-      {children}
-    </ResponsiveDialog>
+    />
   )
 }

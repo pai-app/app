@@ -7,4 +7,5 @@ interface Env {
   MICROSOFT_CLIENT_ID: string
   MICROSOFT_CLIENT_SECRET: string
   MICROSOFT_CALLBACK_URL: string
+  DEBUG?: string
 }

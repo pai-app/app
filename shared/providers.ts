@@ -16,6 +16,19 @@ export const RETURN_URL_KEY = "fin_return_url"
 export const REFRESH_COOKIE = "fin_refresh"
 export const CSRF_COOKIE = "fin_csrf"
 
+// Feature scopes (email import)
+export const GOOGLE_EMAIL_SCOPES: readonly string[] = [
+  "https://www.googleapis.com/auth/gmail.readonly",
+  "email",
+  "profile",
+] as const
+
+export const MICROSOFT_EMAIL_SCOPES: readonly string[] = [
+  "offline_access",
+  "User.Read",
+  "Mail.Read",
+] as const
+
 // localStorage (via strata-adapters)
 export const DEVICE_ID_KEY = "fin_device_id"
 export const THEME_KEY = "fin_ui_theme"

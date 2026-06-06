@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="index, follow" />
+  <title>Privacy Policy — fin</title>
+  <style>
+    :root {
+      --bg: oklch(0.985 0 0);
+      --fg: oklch(0.145 0 0);
+      --muted: oklch(0.556 0 0);
+      --card: oklch(1 0 0);
+      --border: oklch(0.922 0 0);
+      --accent: oklch(0.62 0.19 260);
+      --radius: 0.75rem;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: oklch(0.145 0 0);
+        --fg: oklch(0.985 0 0);
+        --muted: oklch(0.708 0 0);
+        --card: oklch(0.205 0 0);
+        --border: oklch(1 0 0 / 12%);
+        --accent: oklch(0.7 0.16 260);
+      }
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.65;
+      font-size: 16px;
+    }
+    .wrap { max-width: 48rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+    header.top {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 1rem; margin-bottom: 2.5rem; flex-wrap: wrap;
+    }
+    .brand { font-weight: 700; font-size: 1.25rem; letter-spacing: -0.01em; text-decoration: none; color: var(--fg); }
+    .back { color: var(--accent); text-decoration: none; font-size: 0.875rem; font-weight: 500; }
+    .back:hover { text-decoration: underline; }
+    h1 { font-size: 2rem; line-height: 1.2; letter-spacing: -0.02em; margin: 0 0 0.25rem; }
+    .updated { color: var(--muted); font-size: 0.875rem; margin: 0 0 2rem; }
+    h2 { font-size: 1.25rem; letter-spacing: -0.01em; margin: 2.25rem 0 0.75rem; padding-top: 1.25rem; border-top: 1px solid var(--border); }
+    h3 { font-size: 1.02rem; margin: 1.5rem 0 0.5rem; }
+    p, li { color: var(--fg); }
+    p { margin: 0.6rem 0; }
+    ul { margin: 0.5rem 0; padding-left: 1.25rem; }
+    li { margin: 0.3rem 0; }
+    strong { font-weight: 600; }
+    a { color: var(--accent); }
+    code { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 0.1em 0.35em; font-size: 0.9em; }
+    .note {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1rem 1.25rem; margin-top: 2.5rem;
+      color: var(--muted); font-size: 0.875rem;
+    }
+    footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.8125rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <a class="brand" href="/">fin</a>
+      <a class="back" href="/">&larr; Back to home</a>
+    </header>
+
+    <h1>Privacy Policy</h1>
+    <p class="updated"><strong>Last Updated:</strong> June 6, 2026</p>
+
+    <h2>1. Introduction</h2>
+    <p>Fin ("Application," "we," "us," "our") respects your privacy and is committed to protecting your personal data. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our personal finance management application.</p>
+
+    <h2>2. Our Privacy Principles</h2>
+    <p>Fin is designed with privacy as a core principle:</p>
+    <ul>
+      <li><strong>Local-First by Default:</strong> All financial data remains on your device by default</li>
+      <li><strong>Minimal Data Collection:</strong> We collect only data necessary for core functionality</li>
+      <li><strong>User Control:</strong> You decide whether to enable cloud synchronization and authentication</li>
+      <li><strong>Transparency:</strong> This policy fully discloses what data we access</li>
+    </ul>
+
+    <h2>3. Information We Collect</h2>
+    <h3>3.1 Financial Data</h3>
+    <p><strong>Data You Provide:</strong></p>
+    <ul>
+      <li>Bank statements (imported via files or email)</li>
+      <li>Transaction histories (dates, amounts, merchants, descriptions)</li>
+      <li>Account information (account names, balances, types)</li>
+      <li>Custom tags, categories, and rules for transaction organization</li>
+      <li>Budget configurations and spending targets</li>
+    </ul>
+    <p><strong>How Long:</strong> Financial data is stored locally on your device indefinitely until you delete it. Cloud storage duration depends on your chosen storage provider.</p>
+
+    <h3>3.2 Usage and Technical Information</h3>
+    <p><strong>Automatically Collected (when enabled):</strong></p>
+    <ul>
+      <li>Application crashes and errors (for debugging)</li>
+      <li>Feature usage patterns (which features you use)</li>
+      <li>Device type and operating system</li>
+      <li>Browser and application version information</li>
+      <li>Import success/failure metrics (count, not content)</li>
+      <li>Sync frequency and duration (not synchronized content)</li>
+    </ul>
+    <p><strong>How Long:</strong> Technical logs are retained for up to 90 days for performance optimization.</p>
+
+    <h3>3.3 Authentication Data</h3>
+    <p><strong>If You Enable Google Sign-In:</strong></p>
+    <ul>
+      <li>Your Google account ID and email address</li>
+      <li>Google OAuth tokens (access and refresh tokens)</li>
+      <li>Authentication timestamps</li>
+    </ul>
+    <p><strong>How Long:</strong> Tokens are stored on your device and any enabled cloud provider for multi-device access.</p>
+
+    <h3>3.4 Email Account Information</h3>
+    <p><strong>If You Enable Email-Based Imports:</strong></p>
+    <ul>
+      <li>Email account credentials (typically OAuth tokens, not passwords)</li>
+      <li>Email sender/receiver information for matching to adapters</li>
+      <li>Email metadata (dates received, subject line for adapter matching only)</li>
+    </ul>
+    <p><strong>How Long:</strong> Email credentials are stored until you disconnect the account.</p>
+
+    <h2>4. How We Use Your Information</h2>
+    <h3>4.1 Core Functionality</h3>
+    <p>We use your data to:</p>
+    <ul>
+      <li>Process and display imported transactions</li>
+      <li>Apply tagging rules and auto-categorization</li>
+      <li>Generate budgets and spending dashboards</li>
+      <li>Enable multi-device synchronization (if enabled)</li>
+      <li>Sync data between local and cloud storage</li>
+      <li>Detect and prevent duplicate transactions</li>
+    </ul>
+
+    <h3>4.2 Service Improvement</h3>
+    <p>We use aggregated, anonymized data to:</p>
+    <ul>
+      <li>Identify and fix application bugs</li>
+      <li>Understand feature adoption and usage patterns</li>
+      <li>Improve transaction categorization algorithms</li>
+      <li>Optimize import adapters for common banks</li>
+      <li>Monitor application performance and stability</li>
+    </ul>
+    <p><strong>Important:</strong> Aggregated data is analyzed without your personal financial details.</p>
+
+    <h3>4.3 Security and Legal Compliance</h3>
+    <p>We use information to:</p>
+    <ul>
+      <li>Detect and prevent fraud and abuse</li>
+      <li>Enforce our Terms of Service</li>
+      <li>Comply with legal requirements (if required by law)</li>
+      <li>Protect the security and integrity of the Application</li>
+    </ul>
+
+    <h2>5. Data Sharing and Disclosure</h2>
+    <h3>5.1 We Do NOT Share Financial Data</h3>
+    <ul>
+      <li>We do not sell your financial information</li>
+      <li>We do not share transaction data with third parties for marketing</li>
+      <li>We do not share your data with banks or financial institutions</li>
+      <li>We do not use your data for targeted advertising</li>
+    </ul>
+    <h3>5.2 We May Disclose Information</h3>
+    <p><strong>With Your Consent:</strong></p>
+    <ul>
+      <li>When you authorize cloud storage synchronization with a specific provider</li>
+      <li>When you enable Google Sign-In</li>
+    </ul>
+    <p><strong>When Required by Law:</strong></p>
+    <ul>
+      <li>If compelled by legal process, government request, or court order</li>
+      <li>To protect our legal rights or the safety of others</li>
+      <li>To comply with applicable laws and regulations</li>
+    </ul>
+    <p><strong>Service Providers:</strong></p>
+    <ul>
+      <li>Cloud storage providers (only if you enable cloud sync)</li>
+      <li>Google (for authentication, if enabled)</li>
+      <li>Analytics providers (aggregated, anonymized data only)</li>
+    </ul>
+
+    <h2>6. Data Retention and Deletion</h2>
+    <h3>6.1 Financial Data</h3>
+    <ul>
+      <li><strong>Local Storage:</strong> Retained indefinitely until you delete it</li>
+      <li><strong>Cloud Storage:</strong> Retained according to your cloud provider's retention policy</li>
+      <li><strong>Sync Metadata:</strong> Hashes and timestamps retained for up to 30 days to detect changes</li>
+    </ul>
+    <h3>6.2 Technical Logs</h3>
+    <ul>
+      <li>Application logs: Retained for up to 90 days</li>
+      <li>Error reports: Retained for up to 30 days</li>
+    </ul>
+    <h3>6.3 Account Data</h3>
+    <ul>
+      <li>Google account information: Retained as long as you remain logged in</li>
+      <li>Email credentials: Retained until you disconnect the account</li>
+    </ul>
+    <h3>6.4 Data Deletion</h3>
+    <p>You can delete your information by:</p>
+    <ul>
+      <li>Removing specific transactions from the Application</li>
+      <li>Clearing imported financial data</li>
+      <li>Disconnecting your Google account</li>
+      <li>Disconnecting your email accounts</li>
+      <li>Uninstalling the Application (deletes all local data)</li>
+    </ul>
+    <p><strong>Cloud Data:</strong> Deleting local data does not automatically delete cloud data. Contact your cloud storage provider directly for cloud deletion.</p>
+
+    <h2>7. Data Security</h2>
+    <h3>7.1 Security Measures</h3>
+    <p>We implement:</p>
+    <ul>
+      <li>Local-first architecture (data stays on your device by default)</li>
+      <li>Encrypted transmission (HTTPS/TLS for cloud sync)</li>
+      <li>Secure OAuth token handling (stored securely, not in plaintext)</li>
+      <li>Regular security updates and patch management</li>
+    </ul>
+    <h3>7.2 Limitations</h3>
+    <ul>
+      <li>No security measure is 100% secure</li>
+      <li>We are not responsible for unauthorized access due to user negligence (e.g., unsecured device)</li>
+      <li>Cloud storage security depends on your chosen provider's security measures</li>
+      <li>Bank statement imports are processed client-side and not transmitted to us</li>
+    </ul>
+
+    <h2>8. Third-Party Services</h2>
+    <h3>8.1 Cloud Storage Providers</h3>
+    <p>If you enable cloud synchronization, your data may be stored with:</p>
+    <ul>
+      <li>Your chosen cloud storage provider (e.g., AWS, Google Cloud, custom providers)</li>
+      <li>Data is governed by that provider's Privacy Policy and Terms of Service</li>
+    </ul>
+    <p>We recommend reviewing their privacy policies.</p>
+    <h3>8.2 Google Sign-In</h3>
+    <ul>
+      <li>Governed by <a href="https://policies.google.com/privacy" rel="noopener noreferrer">Google's Privacy Policy</a></li>
+      <li>Google may collect additional data per their policies</li>
+      <li>We do not control Google's data handling practices</li>
+    </ul>
+    <h3>8.3 Email Providers</h3>
+    <ul>
+      <li>Email imports work with your email account (Gmail, Outlook, etc.)</li>
+      <li>Email provider privacy policies apply to your email data</li>
+      <li>We only read email metadata and attachments needed for import</li>
+    </ul>
+
+    <h2>9. Bank Data Sources</h2>
+    <ul>
+      <li>Bank statements and CSV files are processed entirely on your device</li>
+      <li>We do not store bank data on our servers</li>
+      <li>Bank statements imported via email are processed locally and not transmitted to us</li>
+      <li>We are not responsible for the accuracy or completeness of bank-provided data</li>
+    </ul>
+
+    <h2>10. Children's Privacy</h2>
+    <p>Fin is not intended for children under 13 years of age. We do not knowingly collect data from children. If we discover that a child has provided personal information, we will delete it immediately.</p>
+
+    <h2>11. Your Privacy Rights</h2>
+    <p>Depending on your jurisdiction, you may have the right to:</p>
+    <ul>
+      <li><strong>Access:</strong> Request a copy of your personal data</li>
+      <li><strong>Correction:</strong> Correct inaccurate data</li>
+      <li><strong>Deletion:</strong> Request deletion of your data ("right to be forgotten")</li>
+      <li><strong>Portability:</strong> Receive your data in a portable format</li>
+      <li><strong>Objection:</strong> Opt-out of certain data processing</li>
+    </ul>
+    <p><strong>To Exercise Your Rights:</strong> Contact the repository owner through GitHub or the Application's contact information.</p>
+
+    <h2>12. California Privacy Rights (CCPA/CPRA)</h2>
+    <p>If you are a California resident:</p>
+    <ul>
+      <li>You have the right to know what personal data is collected</li>
+      <li>You have the right to delete personal data we collect</li>
+      <li>You have the right to opt-out of data sales (we do not sell data)</li>
+      <li>You have the right to non-discrimination for exercising your rights</li>
+    </ul>
+
+    <h2>13. GDPR Compliance (EU Residents)</h2>
+    <p>If you are an EU resident:</p>
+    <ul>
+      <li>Your data is processed based on your consent (for cloud sync) and our legitimate interests</li>
+      <li>You have enhanced rights regarding your personal data</li>
+      <li>Data transfers outside the EU are protected by appropriate safeguards</li>
+      <li>We have a Data Processing Agreement available upon request</li>
+    </ul>
+
+    <h2>14. Policy Updates</h2>
+    <p>We may update this Privacy Policy to reflect changes in our practices or legal requirements. We will:</p>
+    <ul>
+      <li>Notify you of material changes</li>
+      <li>Update the "Last Updated" date</li>
+      <li>Request your consent if required by law</li>
+    </ul>
+    <p><strong>Your continued use of the Application constitutes acceptance of the updated policy.</strong></p>
+
+    <h2>15. Contact Us</h2>
+    <p>For privacy concerns or to exercise your rights:</p>
+    <ul>
+      <li><strong>GitHub Issues:</strong> Open an issue in the <a href="https://github.com/abhayjatindoshi/fin" rel="noopener noreferrer">fin repository</a></li>
+      <li><strong>Direct Contact:</strong> Reach out through the Application's contact information or the repository owner's contact details</li>
+    </ul>
+
+    <div class="note">
+      <strong>Version:</strong> 1.0 &middot; <strong>Status:</strong> Reference Document<br />
+      <strong>Jurisdiction Note:</strong> This policy is a template. Consult with a legal professional to ensure full compliance with your jurisdiction's laws.
+    </div>
+
+    <footer>
+      &copy; 2026 fin &middot; <a href="/terms.html">Terms of Service</a> &middot; <a href="/">Home</a>
+    </footer>
+  </div>
+</body>
+</html>
