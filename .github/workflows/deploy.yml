@@ -2,7 +2,6 @@ name: deploy
 
 on:
   push:
-    branches: ["main"]
   workflow_dispatch:
 
 permissions:
@@ -10,8 +9,10 @@ permissions:
   pages: write
   id-token: write
 
+# Serialise per-branch so a new push supersedes an in-flight deploy of the same
+# branch, but branches never cancel each other.
 concurrency:
-  group: deploy
+  group: deploy-${{ github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -34,8 +35,30 @@ jobs:
           npm ci
           npm run build
 
-      - name: deploy
+      # main → production (`wrangler deploy`).
+      - name: deploy (production)
+        if: github.ref_name == 'main'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
+
+      # Slugify the branch into a valid preview-alias: lowercase, [a-z0-9-] only,
+      # max 63 chars (e.g. `feat/Landing` → `feat-landing`).
+      - name: preview alias
+        if: github.ref_name != 'main'
+        id: alias
+        run: |
+          slug=$(echo "${{ github.ref_name }}" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9' '-' | sed 's/-\+/-/g; s/^-//; s/-$//' | cut -c1-63)
+          echo "name=$slug" >> "$GITHUB_OUTPUT"
+
+      # Any other branch → uploads a new version (not promoted to production) and
+      # exposes it at https://<alias>-fin.<subdomain>.workers.dev.
+      - name: deploy (preview)
+        if: github.ref_name != 'main'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: versions upload --preview-alias ${{ steps.alias.outputs.name }}
