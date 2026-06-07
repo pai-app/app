@@ -23,7 +23,11 @@ export abstract class GoogleHandler implements IAuthHandler {
     abstract scopes: string[];
 
     private clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    private redirectUri = import.meta.env.VITE_GOOGLE_CALLBACK_URL;
+    // Derive the OAuth redirect URI from the current origin so production and
+    // per-branch preview deployments each use their own callback domain. Must
+    // stay byte-for-byte identical to the Worker-side value and a registered
+    // redirect URI in the Google console.
+    private redirectUri = `${window.location.origin}/auth/callback`;
 
     async getLoginUrl(state: string): Promise<string> {
         const params = new URLSearchParams({

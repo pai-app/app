@@ -4,10 +4,8 @@ interface Env {
     ASSETS: Fetcher;
     VITE_GOOGLE_CLIENT_ID: string;
     VITE_GOOGLE_CLIENT_SECRET: string;
-    VITE_GOOGLE_CALLBACK_URL: string;
     VITE_MICROSOFT_CLIENT_ID: string;
     VITE_MICROSOFT_CLIENT_SECRET: string;
-    VITE_MICROSOFT_CALLBACK_URL: string;
 }
 
 const exported = {
@@ -30,22 +28,25 @@ async function handleApiRequests(path: string, request: Request, env: Env): Prom
 }
 
 async function handleTokenRequest(request: Request, env: Env): Promise<Response> {
-    const params = new URL(request.url).searchParams;
+    const url = new URL(request.url);
+    const params = url.searchParams;
+    // Same-origin as the SPA that initiated login, so this matches the
+    // client-side redirect_uri on both production and preview deployments.
+    const callbackUrl = `${url.origin}/auth/callback`;
     const code = params.get('code');
     const token = params.get('token');
     const handler = params.get('handler')?.includes('-') ? params.get('handler')?.split('-')[0] : params.get('handler');
 
     switch (handler) {
-        case 'google': return handleGoogleTokenRequest(code, token, env);
-        case 'microsoft': return handleMicrosoftTokenRequest(code, token, env);
+        case 'google': return handleGoogleTokenRequest(code, token, env, callbackUrl);
+        case 'microsoft': return handleMicrosoftTokenRequest(code, token, env, callbackUrl);
         default: return new Response('Not Found', { status: 404 })
     }
 }
 
-async function handleMicrosoftTokenRequest(code: string | null, token: string | null, env: Env): Promise<Response> {
+async function handleMicrosoftTokenRequest(code: string | null, token: string | null, env: Env, callbackUrl: string): Promise<Response> {
     const clientId = env.VITE_MICROSOFT_CLIENT_ID;
     const clientSecret = env.VITE_MICROSOFT_CLIENT_SECRET;
-    const callbackUrl = env.VITE_MICROSOFT_CALLBACK_URL;
     if (!clientId || !clientSecret || !callbackUrl) {
         return new Response('Bad Request', { status: 400 });
     }
@@ -83,10 +84,9 @@ async function handleMicrosoftTokenRequest(code: string | null, token: string | 
     });
 }
 
-async function handleGoogleTokenRequest(code: string | null, token: string | null, env: Env): Promise<Response> {
+async function handleGoogleTokenRequest(code: string | null, token: string | null, env: Env, callbackUrl: string): Promise<Response> {
     const clientId = env.VITE_GOOGLE_CLIENT_ID;
     const clientSecret = env.VITE_GOOGLE_CLIENT_SECRET;
-    const callbackUrl = env.VITE_GOOGLE_CALLBACK_URL;
     if (!clientId || !clientSecret || !callbackUrl) {
         return new Response('Bad Request', { status: 400 });
     }
