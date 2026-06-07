@@ -2,6 +2,7 @@ name: deploy
 
 on:
   push:
+    branches: ["main", "v1"]
   workflow_dispatch:
 
 permissions:
