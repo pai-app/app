@@ -7,6 +7,7 @@
 import { clientAuth } from "@/lib/strata-config"
 import type { AuthAccount } from "@/services/entities"
 import type { MailMessage, MailAttachment } from "@fin-app/adapters"
+import type { EmailPreview } from "@/services/email-types"
 
 const GMAIL_API = "https://gmail.googleapis.com/gmail/v1/users/me"
 
@@ -183,6 +184,42 @@ export async function fetchFullEmail(
     subject: getHeader("Subject"),
     body: parseBody(msg.payload),
     attachments: resolvedAttachments,
+  }
+}
+
+// ── Email preview (metadata only, no bytes) ─────────────
+
+export async function fetchGmailPreview(
+  account: AuthAccount,
+  messageId: string,
+): Promise<EmailPreview> {
+  const accessToken = await getAccessToken(account)
+
+  const res = await fetch(
+    `${GMAIL_API}/messages/${messageId}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  )
+  if (!res.ok) throw new Error(`Gmail preview failed: ${res.status}`)
+
+  const msg = (await res.json()) as MessageResponse
+  const getHeader = (name: string) =>
+    msg.payload.headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value ?? ""
+
+  const fromRaw = getHeader("From")
+  const from = fromRaw.match(/<(.+)>/)?.[1] ?? fromRaw
+
+  const attachments = collectAttachmentMeta(msg.payload).map((a) => ({
+    filename: a.filename,
+    mimeType: a.mimeType,
+    size: a.size,
+  }))
+
+  return {
+    from,
+    subject: getHeader("Subject"),
+    date: parseInt(msg.internalDate),
+    attachments,
+    webLink: `https://mail.google.com/mail/u/0/#all/${messageId}`,
   }
 }
 

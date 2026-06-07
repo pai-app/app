@@ -37,6 +37,12 @@ type OverflowBarProps = {
   readonly itemClassName?: string
   readonly activeItemClassName?: string
   readonly inactiveItemClassName?: string
+  /**
+   * When the item set is known to always fit (e.g. a small, fixed menu), size
+   * the bar to its content and disable the scroll/edge-fade behaviour. Avoids
+   * a phantom fade caused by the flex + scroll-container max-content quirk.
+   */
+  readonly fit?: boolean
 }
 
 // ─── Component ────────────────────────────────────────────
@@ -47,6 +53,7 @@ export function OverflowBar({
   itemClassName = defaultItemClassName,
   activeItemClassName = defaultActiveItemClassName,
   inactiveItemClassName = defaultInactiveItemClassName,
+  fit = false,
 }: OverflowBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
@@ -55,11 +62,18 @@ export function OverflowBar({
   // ── Check scroll overflow ────────────────────────────────
 
   const updateScrollState = useCallback(() => {
+    if (fit) return
     const el = scrollRef.current
     if (!el) return
+    // Measure content from the last item's box rather than `scrollWidth`.
+    // Active items carry a decorative `::after` glow that bleeds a few px past
+    // their box; since it's absolutely positioned it inflates `scrollWidth`
+    // without being real content, which would otherwise show a phantom fade.
+    const lastChild = el.children[el.children.length - 1] as HTMLElement | undefined
+    const contentRight = lastChild ? lastChild.offsetLeft + lastChild.offsetWidth : el.scrollWidth
     setCanScrollLeft(el.scrollLeft > 1)
-    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1)
-  }, [])
+    setCanScrollRight(el.scrollLeft + el.clientWidth < contentRight - 1)
+  }, [fit])
 
   useLayoutEffect(() => {
     updateScrollState()
@@ -110,7 +124,10 @@ export function OverflowBar({
       {/* Scrollable items */}
       <div
         ref={scrollRef}
-        className="flex h-full items-stretch gap-1 overflow-x-auto scrollbar-none"
+        className={cn(
+          "flex h-full items-stretch gap-1 overflow-x-auto scrollbar-none",
+          fit && "w-max shrink-0",
+        )}
       >
         {items.map((item) => (
           <div

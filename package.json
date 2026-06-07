@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"npm:dev:app\" \"npm:dev:worker\"",
     "dev:app": "vite",
-    "dev:worker": "wrangler pages dev dist --port 8788 --inspector-port 9229",
+    "dev:worker": "wrangler pages dev dist --port 8788 --inspector-port 9229 --binding DEBUG=*",
     "gen:icons": "tsx scripts/generate-icons.ts",
     "prebuild": "npm run gen:icons",
     "predev:app": "npm run gen:icons",
@@ -55,7 +55,10 @@
     "wrangler": "^4.81.0"
   },
   "dependencies": {
+    "@fin-app/adapters": "*",
     "@tanstack/react-virtual": "^3.13.24",
-    "debug": "^4.4.3"
+    "debug": "^4.4.3",
+    "sonner": "^2.0.7",
+    "vaul": "^1.1.2"
   }
 }

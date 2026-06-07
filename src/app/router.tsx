@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Outlet, useParams, useNavigate } from "react-router"
-import { AuthGuard, TenantGuard } from "@strata/plugins-ui"
+import { useEffect } from "react"
+import { AuthGuard, TenantGuard, useAuth } from "@strata/plugins-ui"
 import { useTheme } from "@/providers/theme-provider"
 import { FullPageSpinner } from "@/components/full-page-spinner"
 import { DefaultTemplate } from "@/templates/default-template"
@@ -55,11 +56,31 @@ function DefaultLayoutRoute() {
   )
 }
 
+/**
+ * Public marketing root. Signed-in visitors are bounced into the app
+ * (`/tenants`) — including after a login redirect, which lands on `/` — so the
+ * landing page only ever shows to signed-out users.
+ */
+function RootRoute() {
+  const { status } = useAuth()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (status === "signed-in") {
+      void navigate("/tenants", { replace: true })
+    }
+  }, [status, navigate])
+
+  if (status === "loading") return <FullPageSpinner message="Signing in…" />
+  if (status === "signed-in") return <FullPageSpinner message="Opening fin…" />
+  return <LandingPage />
+}
+
 export function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<RootRoute />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route path="/dev" element={<DevHubPage />}>
@@ -80,6 +101,7 @@ export function AppRouter() {
                 <Route path="logging" element={<LoggingSection />} />
                 <Route path="components" element={<ComponentsSection />} />
                 <Route path="data" element={<DataSection />} />
+                <Route path="data/:entityName" element={<DataSection />} />
               </Route>
             </Route>
           </Route>

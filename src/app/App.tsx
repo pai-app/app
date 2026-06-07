@@ -3,7 +3,11 @@ import { StrataProvider, TenantProvider } from "@strata/plugins-ui"
 import { strataConfig } from "@/lib/strata-config"
 import { AppProvider } from "@/providers/app-provider"
 import { EntityProvider } from "@/providers/entity-provider"
+import { ImportProvider } from "@/providers/import-provider"
+import { NotificationProvider } from "@/providers/notification-provider"
+import { BreadcrumbProvider } from "@/providers/breadcrumb-provider"
 import { ThemeProvider } from "@/providers/theme-provider"
+import { Toaster } from "@/ui/sonner"
 import { AppRouter } from "./router"
 
 export function App() {
@@ -17,13 +21,20 @@ export function App() {
             <TenantProvider>
               <AppProvider scrollElementRef={scrollElementRef}>
                 <EntityProvider>
-                  <AppRouter />
+                  <ImportProvider>
+                    <NotificationProvider>
+                      <BreadcrumbProvider>
+                        <AppRouter />
+                      </BreadcrumbProvider>
+                    </NotificationProvider>
+                  </ImportProvider>
                 </EntityProvider>
               </AppProvider>
             </TenantProvider>
           </StrataProvider>
         </div>
       </div>
+      <Toaster />
     </ThemeProvider>
   )
 }

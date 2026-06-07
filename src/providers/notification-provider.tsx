@@ -1,8 +1,15 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
+import { toast } from "sonner"
 import { useStrata } from "@strata/plugins-ui"
 import { StrataConfigError } from "@strata/core"
 import type { BaseEntity } from "@strata/core"
 import { notificationEntity, type Notification } from "@/services/entities/notification"
+import {
+  acknowledgeNotification,
+  registerChannelEmitter,
+  type NotificationPayload,
+} from "@/services/notifications"
+import { runNotificationAction } from "@/lib/notification-actions"
 
 // ── Context shape ───────────────────────────────────────
 
@@ -19,8 +26,10 @@ const NotificationCtx = createContext<NotificationContextValue | undefined>(unde
 type NotificationProviderProps = { readonly children: ReactNode }
 
 /**
- * Observes the `notification` entity and exposes unacknowledged count +
- * acknowledge action. Drives the red dot on the profile pill.
+ * Observes the `notification` entity (the inbox channel) and exposes
+ * unacknowledged count + acknowledge action, driving the red dot on the
+ * profile pill. Also registers the `toast` channel emitter so `notify()` can
+ * fan transient toasts out via sonner.
  */
 export function NotificationProvider({ children }: NotificationProviderProps) {
   const strata = useStrata()
@@ -33,6 +42,27 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
     return () => { sub.unsubscribe() }
   }, [strata])
 
+  // Register the toast channel. Clicking the toast's action runs the ref's
+  // registered handler and acknowledges the inbox row (when persisted).
+  useEffect(() => {
+    return registerChannelEmitter("toast", (payload: NotificationPayload) => {
+      const { notification: n, display } = payload
+      const run = () => {
+        runNotificationAction(n.ref)
+        if (strata) acknowledgeNotification(strata, payload.id)
+      }
+      const action = n.ref
+        ? { label: n.actionLabel ?? "View", onClick: run }
+        : undefined
+      const options = { description: n.body, action }
+      const variant = display.severity
+      if (variant === "error") toast.error(n.title, options)
+      else if (variant === "warning") toast.warning(n.title, options)
+      else if (variant === "success") toast.success(n.title, options)
+      else toast.info(n.title, options)
+    })
+  }, [strata])
+
   const unacknowledgedCount = useMemo(
     () => notifications.filter((n) => !n.acknowledgedAt).length,
     [notifications],
@@ -40,10 +70,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
 
   const acknowledge = useCallback((id: string) => {
     if (!strata) return
-    const repo = strata.repo(notificationEntity)
-    const existing = repo.get(id)
-    if (!existing || existing.acknowledgedAt) return
-    repo.save({ ...existing, acknowledgedAt: Date.now() })
+    acknowledgeNotification(strata, id)
   }, [strata])
 
   const value = useMemo<NotificationContextValue>(

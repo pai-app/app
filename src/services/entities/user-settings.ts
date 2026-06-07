@@ -11,6 +11,10 @@ export type UserSettings = {
   readonly currency: string       // ISO 4217, e.g. 'INR'
   readonly firstMonth: number     // 1..12 — fiscal year start month
   readonly firstDay: number       // 1..7 — ISO 8601 week start (1=Mon, 7=Sun)
+  /** Known passwords for encrypted PDF/Excel attachments. Tried
+   *  automatically by the importer; user prompted only when none succeed.
+   *  Covers both file imports and email attachments. */
+  readonly filePasswords: ReadonlyArray<string>
 }
 
 export const USER_SETTINGS_DEFAULTS: UserSettings = {
@@ -18,6 +22,7 @@ export const USER_SETTINGS_DEFAULTS: UserSettings = {
   currency: "INR",
   firstMonth: 4,    // April (Indian fiscal year)
   firstDay: 1,      // Monday (ISO)
+  filePasswords: [],
 }
 
 export const userSettingsEntity = defineEntity<UserSettings>("user-settings", {

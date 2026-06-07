@@ -22,10 +22,11 @@ export function SyncStatus({ className }: SyncStatusProps) {
     const dirtySub = strata.observe("dirty").subscribe(setDirty)
     const syncSub = strata.observe("sync").subscribe((evt) => {
       if (evt.type === "sync-started") {
-        log.sync('sync started')
+        log.sync('sync started: %s → %s', evt.source, evt.target)
         setSyncing(true)
       } else {
-        log.sync('sync %s', evt.type)
+        log.sync('sync %s: %s → %s%s', evt.type, evt.source, evt.target,
+          evt.result ? ` (${evt.result.entitiesUpdated} entities, ${evt.result.partitionsSynced} partitions)` : '')
         setSyncing(false)
       }
     })

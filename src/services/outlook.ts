@@ -8,6 +8,7 @@ import { clientAuth } from "@/lib/strata-config"
 import type { AuthAccount } from "@/services/entities"
 import type { MailMessage, MailAttachment } from "@fin-app/adapters"
 import type { EmailSummary } from "@/services/gmail"
+import type { EmailPreview } from "@/services/email-types"
 
 const GRAPH_API = "https://graph.microsoft.com/v1.0/me/messages"
 
@@ -27,6 +28,7 @@ type MessageResponse = {
   from: { emailAddress: { name: string; address: string } }
   toRecipients: Array<{ emailAddress: { name: string; address: string } }>
   attachments?: AttachmentResponse[]
+  webLink?: string
 }
 
 type AttachmentResponse = {
@@ -133,6 +135,38 @@ export async function fetchFullOutlookEmail(
     subject: msg.subject,
     body: msg.body.content,
     attachments: resolvedAttachments,
+  }
+}
+
+// ── Email preview (metadata only, no bytes) ─────────────
+
+export async function fetchOutlookPreview(
+  account: AuthAccount,
+  messageId: string,
+): Promise<EmailPreview> {
+  const accessToken = await getAccessToken(account)
+
+  const params = new URLSearchParams({
+    $select: "from,subject,receivedDateTime,webLink",
+    $expand: "attachments($select=name,contentType,size,isInline)",
+  })
+  const res = await fetch(`${GRAPH_API}/${messageId}?${params}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  if (!res.ok) throw new Error(`Outlook preview failed: ${res.status}`)
+
+  const msg = (await res.json()) as MessageResponse
+
+  const attachments = (msg.attachments ?? [])
+    .filter((a) => !a.isInline)
+    .map((a) => ({ filename: a.name, mimeType: a.contentType, size: a.size }))
+
+  return {
+    from: msg.from.emailAddress.address,
+    subject: msg.subject,
+    date: new Date(msg.receivedDateTime).getTime(),
+    attachments,
+    webLink: msg.webLink ?? "",
   }
 }
 

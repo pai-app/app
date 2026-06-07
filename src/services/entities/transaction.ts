@@ -3,31 +3,6 @@ import { partitioned } from "@strata/core"
 import type { Money } from "./money"
 
 /**
- * Source of an imported transaction. Discriminated union — keep additive:
- * new variants (e.g. `'sms'`, `'manual'`) can be added without breaking
- * existing data.
- */
-export type TransactionFileSource = {
-  readonly type: "file"
-  readonly fileName: string
-  readonly fileType?: string
-}
-
-export type TransactionEmailSource = {
-  readonly type: "email"
-  readonly authAccountId: string
-  readonly emailId: string
-  readonly date: number             // ms epoch
-  readonly from: string
-  readonly to: string
-  readonly subject: string
-}
-
-export type TransactionSource =
-  | TransactionFileSource
-  | TransactionEmailSource
-
-/**
  * A single financial event. Partitioned monthly by `transactionAt` so a
  * tenant's data shards into one blob per month — keeps cold months out of
  * memory and limits sync churn.
@@ -47,7 +22,9 @@ export type Transaction = {
   readonly transactionAt: number                 // ms epoch
   readonly amount: Money                         // sign = direction (signed minor units)
   readonly hash: string                          // dedup key
-  readonly source?: TransactionSource
+  /** Composite `importLog` id linking this transaction to its import run.
+   *  All source metadata lives on the ImportLog row — no duplication here. */
+  readonly activityLogId?: string
 }
 
 /** YYYY-MM partition key derived from the transaction date. */

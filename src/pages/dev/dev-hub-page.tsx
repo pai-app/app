@@ -1,5 +1,6 @@
 import { useParams } from "react-router"
 import { SectionShell, type NavSection } from "@/components/section-shell"
+import { useApp } from "@/providers/app-provider"
 
 /**
  * Developer tools hub. Reachable at `/dev` (non-tenant tools only) and
@@ -8,6 +9,7 @@ import { SectionShell, type NavSection } from "@/components/section-shell"
  */
 export function DevHubPage() {
   const { tenantId } = useParams()
+  const { isMobile } = useApp()
   const basePath = tenantId ? `/t/${tenantId}/dev` : "/dev"
 
   const sections: NavSection[] = [
@@ -21,5 +23,5 @@ export function DevHubPage() {
     )
   }
 
-  return <SectionShell title="Dev tools" sections={sections} />
+  return <SectionShell title="Dev tools" sections={sections} nav={isMobile ? "list" : "pill"} />
 }

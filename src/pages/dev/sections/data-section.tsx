@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from "react"
+import { useNavigate, useParams } from "react-router"
 import { useStrata } from "@strata/plugins-ui"
 import type { BaseEntity, EntityDefinition, Repository, SingletonRepository } from "@strata/core"
 import { Icon } from "@/ui/icon"
@@ -9,6 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/ui/sheet"
 import { cn } from "@/lib/utils"
 import { useApp } from "@/providers/app-provider"
 import { useEntity } from "@/providers/entity-provider"
+import { useRegisterCrumbs } from "@/providers/breadcrumb-provider"
 import { ENTITIES } from "@/services/entities"
 
 type Row = Record<string, unknown> & BaseEntity
@@ -33,34 +35,110 @@ function monthKeysForYear(year: number): string[] {
 }
 
 /**
- * Generic entity data browser. Lists all registered entities and adapts the
- * surface to each entity's key strategy:
+ * Generic entity data browser. The selected entity lives in the route
+ * (`/dev/data/:entityName`) so it deep-links and joins the breadcrumb trail.
+ * Lists all registered entities and adapts the surface to each entity's key
+ * strategy:
  *  - `singleton`  → renders the single row as JSON, no table.
  *  - `global`     → table over the one `_` partition (auto-loaded).
  *  - `partitioned`→ a year stepper drives which monthly partitions load.
- * Ported from the old app's dev store page. Reads `ENTITIES` so new entities
- * appear automatically.
+ * Reads `ENTITIES` so new entities appear automatically.
  */
 export function DataSection() {
-  const strata = useStrata()
   const { isMobile } = useApp()
+  const { tenantId, entityName } = useParams()
+  const navigate = useNavigate()
+
+  const dataBase = `/t/${tenantId ?? ""}/dev/data`
+  const entityNames = useMemo(() => ENTITIES.map((e) => e.name).sort(), [])
+  const selected = entityName ?? null
+
+  // On mobile (list nav) the selected entity extends the shared breadcrumb
+  // trail (`Dev tools › Data browser › <entity>`). On desktop the entity list
+  // is a persistent sidebar and the dev hub shows a segmented pill, so no
+  // breadcrumb is registered.
+  useRegisterCrumbs(
+    isMobile && selected
+      ? [
+          { label: "Data browser", to: dataBase },
+          { label: selected, to: `${dataBase}/${selected}` },
+        ]
+      : null,
+  )
+
+  const selectEntity = (name: string) => { void navigate(`${dataBase}/${name}`) }
+
+  // ── Entity list ──────────────────────────────────────
+
+  const entityList = (
+    <ul className="glass divide-y divide-border/60 overflow-hidden rounded-2xl">
+      {entityNames.map((name) => (
+        <li key={name}>
+          <button
+            type="button"
+            onClick={() => { selectEntity(name) }}
+            className={cn(
+              "flex w-full items-center gap-3 px-4 py-3.5 text-left active:bg-foreground/5",
+              selected === name && "bg-foreground/5",
+            )}
+          >
+            <Icon name="database" className="size-5 text-muted-foreground" />
+            <span className="flex-1 text-sm">{name}</span>
+            <Icon name="chevron-right" className="size-4 text-muted-foreground" />
+          </button>
+        </li>
+      ))}
+    </ul>
+  )
+
+  // ── Layout ───────────────────────────────────────────
+
+  if (isMobile) {
+    return (
+      <div className="flex flex-col gap-3">
+        {selected
+          ? <EntityDetail key={selected} entityName={selected} isMobile />
+          : entityList}
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex h-[calc(100vh-12rem)] gap-3">
+      <div className="w-48 shrink-0 overflow-auto">
+        {entityList}
+      </div>
+      {selected && <EntityDetail key={selected} entityName={selected} isMobile={false} />}
+    </div>
+  )
+}
+
+/**
+ * Per-entity view: subscribes to the entity's rows and renders the kind-aware
+ * surface. Mounted with `key={entityName}` so switching entities remounts it
+ * with fresh state (no stale rows / search / selection).
+ */
+function EntityDetail({ entityName, isMobile }: {
+  entityName: string
+  isMobile: boolean
+}) {
+  const strata = useStrata()
   const { settings } = useEntity()
-  const [selectedEntity, setSelectedEntity] = useState<string | null>(null)
+  const kind = entityKind(entityName)
+  const isPartitioned = kind === "partitioned"
+
   const [selectedRow, setSelectedRow] = useState<Row | null>(null)
   const [singletonRow, setSingletonRow] = useState<Row | null>(null)
   const [rows, setRows] = useState<ReadonlyArray<Row>>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [year, setYear] = useState(() => currentFiscalYear(settings.firstMonth))
 
-  const entityNames = useMemo(() => ENTITIES.map((e) => e.name).sort(), [])
-  const kind = selectedEntity ? entityKind(selectedEntity) : null
-
-  // Subscribe to the selected entity's rows. Partitioned entities load one
-  // calendar year of monthly partitions at a time (driven by `year`).
+  // Subscribe to the entity's rows. Partitioned entities load one calendar
+  // year of monthly partitions at a time (driven by `year`).
   useEffect(() => {
-    if (!strata || !selectedEntity) return
-    const def = ENTITIES.find((e) => e.name === selectedEntity)
+    if (!strata) return
+    const def = ENTITIES.find((e) => e.name === entityName)
     if (!def) return
 
     if (def.keyStrategy.kind === "singleton") {
@@ -79,7 +157,7 @@ export function DataSection() {
       setLoading(false)
     })
     return () => { sub.unsubscribe() }
-  }, [strata, selectedEntity, year])
+  }, [strata, entityName, year])
 
   const filteredRows = useMemo(() => {
     if (!search.trim()) return rows
@@ -87,113 +165,56 @@ export function DataSection() {
     return rows.filter((r) => Object.values(r).some((v) => formatCell(v).toLowerCase().includes(q)))
   }, [rows, search])
 
-  const selectEntity = (name: string) => {
-    setSelectedEntity(name)
-    setSelectedRow(null)
-    setSingletonRow(null)
-    setRows([])
-    setSearch("")
-    setYear(currentFiscalYear(settings.firstMonth))
-    setLoading(true)
+  if (kind === "singleton") {
+    const view = <SingletonView entity={entityName} row={singletonRow} loading={loading} />
+    return isMobile ? view : <div className="min-w-0 flex-1 overflow-auto rounded-lg border">{view}</div>
   }
 
-  // ── Entity list ──────────────────────────────────────
-
-  const entityList = (
-    <div className="flex flex-col gap-1">
-      {entityNames.map((name) => (
-        <Button
-          key={name}
-          variant={selectedEntity === name ? "secondary" : "ghost"}
-          size="sm"
-          className="justify-start"
-          onClick={() => { selectEntity(name) }}
-        >
-          {name}
-        </Button>
-      ))}
-    </div>
+  const header = (
+    <DetailHeader
+      entity={entityName}
+      total={rows.length}
+      filtered={filteredRows.length}
+      search={search}
+      onSearch={setSearch}
+      year={isPartitioned ? year : null}
+      onYear={setYear}
+    />
   )
-
-  // ── Layout ───────────────────────────────────────────
-
-  const isPartitioned = kind === "partitioned"
 
   if (isMobile) {
     return (
-      <div className="flex flex-col gap-3">
-        {!selectedEntity ? (
-          entityList
-        ) : (
-          <>
-            <Button variant="ghost" size="sm" className="w-fit" onClick={() => { setSelectedEntity(null) }}>
-              ← Entities
-            </Button>
-            {kind === "singleton" ? (
-              <SingletonView entity={selectedEntity} row={singletonRow} loading={loading} />
-            ) : (
-              <>
-                <DetailHeader
-                  entity={selectedEntity}
-                  total={rows.length}
-                  filtered={filteredRows.length}
-                  search={search}
-                  onSearch={setSearch}
-                  year={isPartitioned ? year : null}
-                  onYear={setYear}
-                />
-                <RowCards rows={filteredRows} loading={loading} onSelect={setSelectedRow} />
-                <Sheet open={selectedRow !== null} onOpenChange={(open) => { if (!open) setSelectedRow(null) }}>
-                  <SheetContent side="bottom" className="max-h-[80vh]">
-                    <SheetHeader>
-                      <SheetTitle className="truncate font-mono text-xs">{selectedRow?.id}</SheetTitle>
-                    </SheetHeader>
-                    <pre className="overflow-auto whitespace-pre-wrap break-all p-4 pt-0 text-xs">
-                      {selectedRow ? JSON.stringify(selectedRow, null, 2) : ""}
-                    </pre>
-                  </SheetContent>
-                </Sheet>
-              </>
-            )}
-          </>
-        )}
-      </div>
+      <>
+        {header}
+        <RowCards rows={filteredRows} loading={loading} onSelect={setSelectedRow} />
+        <Sheet open={selectedRow !== null} onOpenChange={(open) => { if (!open) setSelectedRow(null) }}>
+          <SheetContent side="bottom" className="max-h-[80vh]">
+            <SheetHeader>
+              <SheetTitle className="truncate font-mono text-xs">{selectedRow?.id}</SheetTitle>
+            </SheetHeader>
+            <pre className="overflow-auto whitespace-pre-wrap break-all p-4 pt-0 text-xs">
+              {selectedRow ? JSON.stringify(selectedRow, null, 2) : ""}
+            </pre>
+          </SheetContent>
+        </Sheet>
+      </>
     )
   }
 
   return (
-    <div className="flex h-[calc(100vh-12rem)] gap-3">
-      <div className="w-44 shrink-0 overflow-auto rounded-lg border p-2">
-        <h3 className="mb-2 px-2 text-sm font-semibold">Entities</h3>
-        {entityList}
+    <>
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-lg border">
+        {header}
+        <div className="min-h-0 flex-1 overflow-auto">
+          <RowTable rows={filteredRows} loading={loading} selectedId={selectedRow?.id ?? null} onSelect={setSelectedRow} />
+        </div>
       </div>
-      {selectedEntity && kind === "singleton" && (
-        <div className="min-w-0 flex-1 overflow-auto rounded-lg border">
-          <SingletonView entity={selectedEntity} row={singletonRow} loading={loading} />
-        </div>
-      )}
-      {selectedEntity && kind !== "singleton" && (
-        <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-lg border">
-          <DetailHeader
-            entity={selectedEntity}
-            total={rows.length}
-            filtered={filteredRows.length}
-            search={search}
-            onSearch={setSearch}
-            year={isPartitioned ? year : null}
-            onYear={setYear}
-          />
-          <div className="min-h-0 flex-1 overflow-auto">
-            <RowTable rows={filteredRows} loading={loading} selectedId={selectedRow?.id ?? null} onSelect={setSelectedRow} />
-          </div>
-        </div>
-      )}
-      {selectedRow && kind !== "singleton" && (
+      {selectedRow && (
         <div className="w-1/3 shrink-0 overflow-auto rounded-lg border">
           <JsonPanel row={selectedRow} onClose={() => { setSelectedRow(null) }} />
         </div>
       )}
-    </div>
+    </>
   )
 }
 
