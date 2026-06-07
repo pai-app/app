@@ -27,8 +27,9 @@ const HouseholdPage: React.FC = () => {
     const autoSelectDefault = !params.get('pick');
 
     const returnBack = useCallback(() => {
-        navigate('/');
-    }, [navigate]);
+        const householdId = params.get('householdId');
+        navigate(householdId ? `/${householdId}` : '/');
+    }, [navigate, params]);
 
     const loadHousehold = useCallback(async (household: Household) => {
         if (!tenantManager) return;
