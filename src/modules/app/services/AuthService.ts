@@ -7,7 +7,6 @@ import { EntityName } from "../entities/entities";
 import { BaseService } from "./BaseService";
 
 type AuthState = {
-    returnUrl?: string;
     token?: IAuthToken;
 }
 
@@ -19,12 +18,11 @@ export class AuthService extends BaseService {
 
     // state format:
     // <handler-id>.<household-id>?
-    async login(handlerId: string, currentLocation: string = '/', householdId?: string) {
+    async login(handlerId: string, householdId?: string) {
         const handler = AuthMatrix.Handlers[handlerId];
         if (!handler) throw new Error('Invalid auth handler');
         const state = householdId ? `${handlerId}.${householdId}` : `${handlerId}`;
         const loginUrl = await handler.getLoginUrl(state);
-        this.storeLocalItem<AuthState>(this.stateKey, { returnUrl: currentLocation });
         window.location.href = loginUrl;
     }
 
@@ -108,7 +106,7 @@ export class AuthService extends BaseService {
         } else {
             this.storeLocalItem(this.authKey, token);
             await useTokenForLogin(token);
-            return authState.returnUrl || '/';
+            return '/';
         }
     }
 
@@ -139,7 +137,7 @@ export class AuthService extends BaseService {
             repo.save(AuthAccountSchema.parse({ token, user }));
         }
 
-        return authState.returnUrl || '/' + householdId;
+        return `/${householdId}/import`;
     }
 
     private clearAndGetLocalItem<T>(key: string): T {

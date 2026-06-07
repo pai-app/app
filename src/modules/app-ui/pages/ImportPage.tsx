@@ -426,7 +426,7 @@ const ImportPage: React.FC = () => {
                 <display.icon className="size-6" />
                 <div className="text-xl">{display.name}</div>
                 <div className="flex-1" />
-                <Button variant="outline" size="sm" className="flex flex-row items-center" onClick={() => service.login(handlerId, location.pathname, householdId)}>
+                <Button variant="outline" size="sm" className="flex flex-row items-center" onClick={() => service.login(handlerId, householdId)}>
                     <Plus />
                     Add New Account
                 </Button>

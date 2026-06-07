@@ -27,20 +27,16 @@ const HouseholdPage: React.FC = () => {
     const autoSelectDefault = !params.get('pick');
 
     const returnBack = useCallback(() => {
-        navigate(params.get('returnUrl') || '/');
-    }, [navigate, params]);
+        navigate('/');
+    }, [navigate]);
 
     const loadHousehold = useCallback(async (household: Household) => {
         if (!tenantManager) return;
         setLoading(true);
         try {
-            setParams(prev => {
-                const existingReturnUrl = prev.get('returnUrl');
-                return new URLSearchParams({
-                    householdId: household.id!,
-                    returnUrl: existingReturnUrl || `/${household.id}`,
-                });
-            });
+            setParams(new URLSearchParams({
+                householdId: household.id!,
+            }));
             await loadDataSync(tenantManager.getDataSyncConfig(household));
         } finally {
             setLoading(false);

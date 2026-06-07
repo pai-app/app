@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect } from "react";
-import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Outlet, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { useDataSync } from "../data-sync/providers/DataSyncProvider";
 
@@ -7,25 +7,19 @@ export const AppLoader: React.FC = () => {
     const { currentUser } = useAuth();
     const { orchestrator } = useDataSync();
     const { householdId } = useParams();
-    const location = useLocation();
     const navigate = useNavigate();
 
     const goToLogin = useCallback(() => {
-        const params = {
-            returnUrl: location.pathname
-        };
-        navigate('/auth/login?' + new URLSearchParams(params).toString());
-    }, [navigate, location]);
+        navigate('/auth/login');
+    }, [navigate]);
 
     const goToHouseholdSelection = useCallback(() => {
-        const params: Record<string, string> = {
-            returnUrl: location.pathname
-        };
+        const params: Record<string, string> = {};
         if (householdId) {
             params.householdId = householdId;
         }
         navigate('/auth/households?' + new URLSearchParams(params).toString());
-    }, [navigate, location, householdId]);
+    }, [navigate, householdId]);
 
     useEffect(() => {
         if (!currentUser) {

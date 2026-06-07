@@ -2,19 +2,17 @@ import { AuthService } from "@/modules/app/services/AuthService";
 import { AuthMatrix } from "@/modules/auth/AuthMatrix";
 import { useAuth } from "@/modules/auth/AuthProvider";
 import { createElement, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const LoginPage: React.FC = () => {
 
     const service = useRef(new AuthService()).current;
     const navigate = useNavigate();
-    const [params] = useSearchParams();
     const { loading, currentUser } = useAuth();
 
     useEffect(() => {
         if (currentUser) {
-            const returnUrl = params.get('returnUrl') || '/';
-            navigate(returnUrl);
+            navigate('/');
         }
     }, [currentUser, navigate]);
 
