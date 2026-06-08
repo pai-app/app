@@ -1,6 +1,7 @@
 import { authAccountEntity } from "./auth-account"
 import { emailImportSettingEntity } from "./email-import-setting"
 import { importLogEntity } from "./import-log"
+import { importSourceEntity } from "./import-source"
 import { moneyAccountEntity } from "./money-account"
 import { notificationEntity } from "./notification"
 import { tagEntity } from "./tag"
@@ -15,6 +16,7 @@ export { emailImportSettingEntity } from "./email-import-setting"
 
 export type {
   ImportLog,
+  ImportLogEmailRun,
   ImportLogEmailSource,
   ImportLogError,
   ImportLogFileSource,
@@ -24,6 +26,9 @@ export type {
   ImportPromptPayload,
 } from "./import-log"
 export { importLogEntity } from "./import-log"
+
+export type { ImportSource, ImportSourceDescriptor } from "./import-source"
+export { importSourceEntity, importSourceMonthKey } from "./import-source"
 
 export type { Money } from "./money"
 
@@ -51,6 +56,7 @@ export const ENTITIES = [
   moneyAccountEntity,
   transactionEntity,
   importLogEntity,
+  importSourceEntity,
   emailImportSettingEntity,
   notificationEntity,
 ] as const

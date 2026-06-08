@@ -10,6 +10,7 @@ import { LoginPage } from "@/pages/login/login-page"
 import { AuthCallbackPage } from "@/pages/auth/auth-callback-page"
 import { LandingPage } from "@/pages/landing/landing-page"
 import { SettingsPage } from "@/pages/settings/settings-page"
+import { TransactionsPage } from "@/pages/transactions/transactions-page"
 import { GeneralSection } from "@/pages/settings/sections/general-section"
 import { AccountsSection } from "@/pages/settings/sections/accounts-section"
 import { ImportsSection } from "@/pages/settings/sections/imports-section"
@@ -92,6 +93,7 @@ export function AppRouter() {
           <Route path="/t/:tenantId" element={<TenantGuardRoute />}>
             <Route element={<DefaultLayoutRoute />}>
               <Route index element={<HomePage />} />
+              <Route path="transactions" element={<TransactionsPage />} />
               <Route path="settings" element={<SettingsPage />}>
                 <Route path="general" element={<GeneralSection />} />
                 <Route path="accounts" element={<AccountsSection />} />

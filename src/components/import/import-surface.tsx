@@ -5,12 +5,21 @@ import { AdaptiveSurface } from "@/components/adaptive-surface"
 import { Button } from "@/ui/button"
 import { Icon } from "@/ui/icon"
 import { Spinner } from "@/ui/spinner"
+import { Progress } from "@/ui/progress"
+import { useApp } from "@/providers/app-provider"
+import { useEntity } from "@/providers/entity-provider"
 import { useImportService } from "@/providers/import-provider"
 import { useEmailPreview } from "@/components/import/use-email-preview"
 import { PasswordPrompt, AccountSelectionPrompt, ConfirmPrompt } from "@/components/import/import-prompts"
 import type { ContextStatus } from "@/services/import/import-context"
-import { importLogEntity, type ImportLog } from "@/services/entities/import-log"
-import type { EmailPreview } from "@/services/email-preview"
+import { importLogEntity, sweepProgress, type ImportLog } from "@/services/entities/import-log"
+import {
+  importSourceEntity,
+  importSourceMonthKey,
+  type ImportSource,
+} from "@/services/entities/import-source"
+import type { EmailPreview } from "@/services/email-types"
+import { cn } from "@/lib/utils"
 
 /**
  * Single adaptive surface for ALL imports — file and email, live and
@@ -20,6 +29,7 @@ import type { EmailPreview } from "@/services/email-preview"
  */
 export function ImportSurface() {
   const { openLogId, openContext: ctx, closeSheet } = useImportService()
+  const { isMobile } = useApp()
   const strata = useStrata()
 
   const [log, setLog] = useState<(ImportLog & BaseEntity) | null>(null)
@@ -67,9 +77,10 @@ export function ImportSurface() {
       onOpenChange={(open) => { if (!open) closeSheet() }}
       title="Import"
       content={
-        <div className="flex w-full min-w-0 flex-col gap-4">
+        <div className={cn("flex w-full min-w-0 flex-col gap-4", isMobile && "px-4 pb-4")}>
           <Header log={log} email={email} emailLoading={emailLoading} />
           <StatusLine status={status} log={log} ctxError={ctx?.error} />
+          {log.emailRun && <SweepProgress log={log} live={isInProgress} />}
           <DetailBlock log={log} />
 
           {prompt?.kind === "password" && (
@@ -129,6 +140,23 @@ function Header({ log, email, emailLoading }: {
   }
 
   // email source
+  //
+  // A sweep covers the whole mailbox — there is no single email to preview
+  // until a specific message demands attention (e.g. a password prompt sets
+  // `source.emailId`). Until then, show a mailbox summary, not a faux
+  // single-email card built from the account address + blank subject.
+  if (!log.source.emailId) {
+    return (
+      <div className="flex items-start gap-3 rounded-lg border p-3">
+        <Icon name="mailbox" className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+        <div className="min-w-0">
+          <div className="truncate text-sm font-medium">{log.source.from}</div>
+          <div className="text-xs text-muted-foreground">Mailbox sync</div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-2 rounded-lg border p-3">
       <div className="flex items-start gap-3">
@@ -199,6 +227,87 @@ function StatusLine({ status, log, ctxError }: {
   }
 }
 
+// ── Sweep progress ──────────────────────────────────────
+
+/**
+ * Subscribe to the `importSource` rows for a run. Scoped to the partition(s)
+ * the sources live in (the run's month, plus the current month so a long
+ * sweep that crosses a month boundary still resolves).
+ */
+function useImportSources(log: ImportLog & BaseEntity): readonly (ImportSource & BaseEntity)[] {
+  const strata = useStrata()
+  const [sources, setSources] = useState<readonly (ImportSource & BaseEntity)[]>([])
+
+  useEffect(() => {
+    if (!strata) return
+    // Sources live in the run's month, plus the current month so a long sweep
+    // that crosses a month boundary still resolves.
+    const keys = [...new Set([importSourceMonthKey(log.triggeredAt), importSourceMonthKey(Date.now())])]
+    const sub = strata
+      .repo(importSourceEntity)
+      .observeQuery({ keys, where: { importLogId: log.id } })
+      .subscribe(setSources)
+    return () => { sub.unsubscribe() }
+  }, [strata, log.id, log.triggeredAt])
+
+  return sources
+}
+
+/**
+ * Live time-progress for an email sweep. The cursor walks newest → oldest, so
+ * the bar fills as the run reaches back in time. Incremental runs with a known
+ * floor show an exact date-based bar; the first full backfill (or a run past a
+ * corrupt high-water mark) shows an estimated fill driven by the scan count.
+ *
+ * The per-account breakdown is derived live from the run's `importSource`
+ * rows, not stored on the log.
+ */
+function SweepProgress({ log, live }: { log: ImportLog & BaseEntity; live: boolean }) {
+  const { accounts } = useEntity()
+  const sources = useImportSources(log)
+  const run = log.emailRun
+  if (!run) return null
+
+  const { cursorAt, scanned, imported, currentFrom } = run
+  const { value, estimated } = sweepProgress(run, live)
+  const reached = formatMonthYear(cursorAt)
+  const label = estimated && live ? `Rewinding through ${reached}…` : `Reached ${reached}`
+
+  // Roll the source rows up per account for a compact, bounded breakdown.
+  const byAccount = new Map<string, number>()
+  for (const s of sources) {
+    if (!s.accountId) continue
+    byAccount.set(s.accountId, (byAccount.get(s.accountId) ?? 0) + s.counts.new)
+  }
+  const rollup = [...byAccount].sort((a, b) => b[1] - a[1])
+
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border p-3">
+      <div className="flex items-center justify-between gap-4 text-xs">
+        <span className="truncate font-medium">{label}</span>
+        <span className="shrink-0 tabular-nums text-muted-foreground">{imported} / {scanned}</span>
+      </div>
+      <Progress value={value * 100} />
+      {live && currentFrom && (
+        <div className="truncate text-xs text-muted-foreground">Now: {currentFrom}</div>
+      )}
+      {rollup.length > 0 && (
+        <div className="flex flex-col gap-0.5 pt-1">
+          {rollup.map(([accountId, newCount]) => {
+            const name = accounts.find((x) => x.id === accountId)?.name ?? accountId
+            return (
+              <div key={accountId} className="flex justify-between gap-4 text-xs">
+                <span className="truncate text-muted-foreground">{name}</span>
+                <span className="shrink-0 tabular-nums">+{newCount}</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Detail block ────────────────────────────────────────
 
 function DetailBlock({ log }: { log: ImportLog }) {
@@ -212,13 +321,8 @@ function DetailBlock({ log }: { log: ImportLog }) {
     rows.push({ label: "New", value: String(log.counts.new) })
     rows.push({ label: "Duplicate", value: String(log.counts.duplicate) })
   }
-  if (log.touchedAccountIds.length > 0) {
+  if (!log.emailRun && log.touchedAccountIds.length > 0) {
     rows.push({ label: "Accounts touched", value: String(log.touchedAccountIds.length) })
-  }
-  if (log.emailRun) {
-    rows.push({ label: "Scanned range", value: formatDateRange(log.emailRun.windowStart, log.emailRun.windowEnd) })
-    rows.push({ label: "Emails scanned", value: String(log.emailRun.readEmailCount) })
-    rows.push({ label: "Emails imported", value: String(log.emailRun.importedEmailCount) })
   }
   rows.push({ label: "Triggered", value: new Date(log.triggeredAt).toLocaleString() })
 
@@ -244,15 +348,7 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-/** Compact day range, earliest first. Year shown on both ends unless they share it. */
-function formatDateRange(a: number, b: number): string {
-  const start = Math.min(a, b)
-  const end = Math.max(a, b)
-  const startDate = new Date(start)
-  const endDate = new Date(end)
-  const sameYear = startDate.getFullYear() === endDate.getFullYear()
-  const base: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" }
-  const from = startDate.toLocaleDateString(undefined, sameYear ? base : { ...base, year: "numeric" })
-  const to = endDate.toLocaleDateString(undefined, { ...base, year: "numeric" })
-  return `${from} – ${to}`
+/** Month + year, e.g. "Mar 2023". */
+function formatMonthYear(ms: number): string {
+  return new Date(ms).toLocaleDateString(undefined, { month: "short", year: "numeric" })
 }

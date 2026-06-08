@@ -10,9 +10,22 @@ export type EmailImportCursor = {
 }
 
 export type EmailImportState = {
-  /** Newest point already scanned. Next sweep continues forward from here. */
+  /**
+   * Newest email of the **current** (possibly interrupted) run. Captured once
+   * on the first page; becomes the next `endPoint` when the run completes.
+   */
+  readonly startPoint?: EmailImportCursor
+  /**
+   * Checkpoint — the last email actually processed. Persisted after every
+   * email so an interrupted run (crash / cancel / password prompt) resumes
+   * exactly where it stopped.
+   */
   readonly currentPoint?: EmailImportCursor
-  /** Oldest point of the initial back-fill window. Sweeps walk back to here. */
+  /**
+   * High-water mark — newest email reached by the last *fully completed* run.
+   * Forward boundary that stops later runs from re-scanning old mail. Set only
+   * at completion (`endPoint = startPoint`).
+   */
   readonly endPoint?: EmailImportCursor
   readonly lastImportAt?: number     // ms epoch
 }

@@ -17,14 +17,15 @@ import type { Money } from "./money"
 export type Transaction = {
   readonly accountId: string                     // → MoneyAccount.id
   readonly tagId?: string                        // → Tag.id (real or synthetic 'account-<id>')
-  readonly title: string
-  readonly narration?: string
+  readonly title?: string                        // user-set label; falls back to narration
+  readonly narration: string                     // raw imported text
   readonly transactionAt: number                 // ms epoch
   readonly amount: Money                         // sign = direction (signed minor units)
   readonly hash: string                          // dedup key
-  /** Composite `importLog` id linking this transaction to its import run.
-   *  All source metadata lives on the ImportLog row — no duplication here. */
-  readonly activityLogId?: string
+  /** Composite `importSource` id linking this transaction to the specific
+   *  email/file it was imported from. The run is reachable transitively:
+   *  `transaction → importSource → importLog`. Absent for manual entries. */
+  readonly sourceId?: string
 }
 
 /** YYYY-MM partition key derived from the transaction date. */

@@ -1,200 +1,245 @@
-import { parseEmail, ParseError } from "@fin-app/adapters"
-import type { ImportData } from "@fin-app/adapters"
+import { parseEmail, ParseError, statementEmailDomains } from "@fin-app/adapters"
+import type { AccountDetails, AccountKind } from "@fin-app/adapters"
 import type { BaseEntity } from "@strata/core"
 import type { Repository } from "@strata/core"
-import { searchEmails, fetchFullEmail } from "@/services/gmail"
-import { searchOutlookEmails, fetchFullOutlookEmail } from "@/services/outlook"
+import { getMailProvider } from "@/services/mail"
+import type { EmailSummary, MailCursor, MailQuery } from "@/services/mail"
 import type { AuthAccount } from "@/services/entities/auth-account"
-import type { MoneyAccount } from "@/services/entities/money-account"
 import type { Transaction } from "@/services/entities/transaction"
 import type { EmailImportState, EmailImportCursor } from "@/services/entities/email-import-setting"
 import { ImportContext } from "./import-context"
-import { CancelledError, throwIfCancelled, findMatchingAccounts, hashAndDedup, EmailPasswordError } from "./import-utils"
+import { CancelledError, throwIfCancelled, hashAndDedup, EmailPasswordError } from "./import-utils"
 import type { HashedTransaction } from "./import-utils"
+
+// ── Tuning ──────────────────────────────────────────────
+
+/** Politeness delay between provider pages to avoid throttling during backfill. */
+const PAGE_DELAY_MS = 400
+
+/** Server-side filter for statement emails — the union of every registered
+ *  bank's email domains (same pre-filter `parseEmail` applies to `email.from`).
+ *  Falls back to a subject match when no bank declares domains. */
+function statementQuery(): MailQuery {
+  const domains = statementEmailDomains()
+  return domains.length > 0 ? { domains } : { subject: "statement" }
+}
 
 // ── Result ──────────────────────────────────────────────
 
-export type EmailImportResult = {
-  readonly processedEmails: ReadonlyArray<EmailResult>
-  readonly state: EmailImportState
-  readonly windowStart: number
-  readonly windowEnd: number
-  readonly readEmailCount: number
-  readonly importedEmailCount: number
-}
-
+/** Per-email parse result. Account resolution + persistence happen at commit
+ *  time (the `commitEmail` hook), so no `accountId` is carried here. */
 export type EmailResult = {
   readonly emailId: string
   readonly from: string
   readonly subject: string
   readonly date: number
   readonly adapterId: string
-  readonly accountId: string
-  readonly newAccount: boolean
+  readonly kind: AccountKind
+  readonly accountDetails: AccountDetails
   readonly transactions: ReadonlyArray<HashedTransaction>
   readonly newCount: number
   readonly duplicateCount: number
 }
 
+/** Live time-progress for the sweep, reported once per page. The cursor walks
+ *  newest → oldest, so `cursorAt` decreases from `newestAt` toward `targetAt`
+ *  (absent during the first full backfill → indeterminate bar). */
+export type EmailRunProgress = {
+  readonly newestAt: number          // run's newest email (0% anchor)
+  readonly cursorAt: number          // checkpoint reached so far (live fill)
+  readonly targetAt?: number         // window floor (100% anchor), if known
+  readonly scanned: number           // emails read so far
+  readonly imported: number          // emails that produced data
+  readonly currentFrom?: string      // sender of the page in flight
+}
+
+/** Run-level totals for the import log. Same shape as the last progress tick,
+ *  minus the transient `currentFrom`. */
+export type EmailRunSummary = Omit<EmailRunProgress, "currentFrom">
+
+/** Side-effects the sweep delegates to the caller, in order: each email is
+ *  committed *before* its checkpoint is saved, so an interrupted run never
+ *  advances past un-persisted data. */
+export type EmailRunHooks = {
+  /** Persist one email's account + transactions. */
+  readonly commitEmail: (result: EmailResult) => void
+  /** Persist the sweep checkpoint state. */
+  readonly saveState: (state: EmailImportState) => void
+  /** Report live time-progress once per page (for the import-log surface). */
+  readonly reportProgress: (progress: EmailRunProgress) => void
+}
+
 // ── Runner ──────────────────────────────────────────────
 
 /**
- * Run an email sync for a connected account. Scans emails using the
- * sliding-window state (currentPoint/endPoint) from
- * `EmailImportSetting.importState`. Auto-commits — no confirm prompt.
+ * Sweep a mailbox for statement emails, newest → oldest, with checkpoints.
  *
- * Ported from old `EmailImportProcessContext` + `ImportService.processEmails`.
+ * - **Backfill** (no `endPoint`): paginate to the oldest email.
+ * - **Incremental** (with `endPoint`): stop at the previous high-water mark.
+ * - **Resumable**: `currentPoint` is checkpointed after every email; an
+ *   interrupted run continues from there. `startPoint` records the run's
+ *   newest email and becomes the next `endPoint` only when the sweep drains.
+ *
+ * See `docs/email-import-windowing.md` for the full design.
  */
 export async function runEmailImport(
   ctx: ImportContext,
   account: AuthAccount & BaseEntity,
-  state: EmailImportState,
+  initialState: EmailImportState,
   filePasswords: readonly string[],
-  accountRepo: Repository<MoneyAccount>,
   transactionRepo: Repository<Transaction>,
-): Promise<EmailImportResult> {
+  hooks: EmailRunHooks,
+): Promise<EmailRunSummary> {
   ctx.status = "in_progress"
+  const provider = getMailProvider(account)
+  const query = statementQuery()
 
-  const results: EmailResult[] = []
-  let readEmailCount = 0
-  let importedEmailCount = 0
-  let windowStart = Date.now()
-  let windowEnd = state.endPoint?.date ?? 0
+  let state = initialState
+  let scanned = 0
+  let imported = 0
+  // The newest email of the run anchors 0%. Backfill has no known floor
+  // (`targetAt` undefined → indeterminate); incremental stops at `endPoint`.
+  let newestAt = state.startPoint?.date ?? 0
+  const targetAt = state.endPoint?.date
+  let cursorAt = state.currentPoint?.date ?? newestAt
 
-  // Determine date bounds for the search query
-  const afterDate = state.endPoint?.date
-    ? formatDateParam(state.endPoint.date)
-    : undefined
+  // First fetch of a resumed run is bounded by the checkpoint; later pages
+  // follow the provider's page token.
+  let before: MailCursor | undefined = toMailCursor(state.currentPoint)
+  let pageToken: string | undefined
 
-  // Search for statement emails
-  const emails = account.provider === "microsoft"
-    ? await searchOutlookEmails(account, "statement", afterDate, undefined)
-    : await searchEmails(account, "statement", afterDate, undefined)
-
-  throwIfCancelled(ctx)
-
-  if (emails.length === 0) {
-    return {
-      processedEmails: [],
-      state: { ...state, lastImportAt: Date.now() },
-      windowStart,
-      windowEnd,
-      readEmailCount: 0,
-      importedEmailCount: 0,
-    }
-  }
-
-  // Track the scan window
-  windowStart = emails[0].date.getTime()
-  const oldest = emails[emails.length - 1]
-  if (!windowEnd || oldest.date.getTime() < windowEnd) {
-    windowEnd = oldest.date.getTime()
-  }
-
-  // Filter out already-scanned emails
-  const newEmails = filterNewEmails(emails, state)
-
-  for (const email of newEmails) {
+  for (;;) {
     throwIfCancelled(ctx)
-    readEmailCount++
+    const page = await provider.listMessages({ query, before, pageToken })
+    pageToken = page.nextPageToken
+    let messages = [...page.messages]
+    if (messages.length === 0) break
 
-    try {
-      const fullEmail = account.provider === "microsoft"
-        ? await fetchFullOutlookEmail(account, email.id)
-        : await fetchFullEmail(account, email.id)
-
-      throwIfCancelled(ctx)
-
-      const data = await parseEmail(fullEmail, filePasswords)
-      if (!data) continue
-
-      throwIfCancelled(ctx)
-
-      const adapterId = `${data.bankId}/${data.offeringId}`
-      const accountId = resolveAccountSync(data, accountRepo)
-      const hashed = hashAndDedup(data, accountId, transactionRepo)
-
-      const newCount = hashed.filter((t) => t.isNew).length
-      const duplicateCount = hashed.length - newCount
-      importedEmailCount++
-
-      results.push({
-        emailId: fullEmail.id,
-        from: fullEmail.from,
-        subject: fullEmail.subject,
-        date: fullEmail.date,
-        adapterId,
-        accountId,
-        newAccount: accountId === "",
-        transactions: hashed,
-        newCount,
-        duplicateCount,
-      })
-    } catch (err) {
-      if (err instanceof CancelledError) throw err
-      if (err instanceof ParseError && err.kind === "password-required") {
-        throw new EmailPasswordError(email.id, err)
-      }
-      // Skip unreadable emails (parse failures, network errors)
-      continue
+    // First page of a fresh run — capture the run's newest email.
+    if (!state.startPoint) {
+      const top = toCursor(messages[0])
+      state = { ...state, startPoint: top, currentPoint: top }
+      newestAt = top.date
+      cursorAt = top.date
+      hooks.saveState(state)
     }
+
+    // Resume: drop emails at/newer than the checkpoint (already processed).
+    if (before && state.currentPoint) {
+      messages = sliceAfterCursor(messages, state.currentPoint)
+    }
+    before = undefined
+
+    // Incremental: stop at the previous completed run's high-water mark.
+    if (state.endPoint) {
+      const idx = indexOfCursor(messages, state.endPoint)
+      if (idx >= 0) {
+        messages = messages.slice(0, idx)
+        pageToken = undefined
+      }
+    }
+
+    let currentFrom: string | undefined
+    for (const email of messages) {
+      throwIfCancelled(ctx)
+      scanned++
+      currentFrom = email.from
+      try {
+        const result = await buildEmailResult(provider, email, filePasswords, transactionRepo)
+        if (result) {
+          hooks.commitEmail(result)            // persist BEFORE checkpoint
+          imported++
+        }
+      } catch (err) {
+        if (err instanceof CancelledError) throw err
+        if (err instanceof ParseError && err.kind === "password-required") {
+          throw new EmailPasswordError(email.id, err)
+        }
+        // Skip unreadable emails (parse / network failures).
+      }
+      cursorAt = email.date
+      state = { ...state, currentPoint: toCursor(email), lastImportAt: Date.now() }
+      hooks.saveState(state)                    // checkpoint
+    }
+
+    // One progress tick per page (after its emails are checkpointed).
+    hooks.reportProgress({ newestAt, cursorAt, targetAt, scanned, imported, currentFrom })
+
+    if (!pageToken) break
+    await delay(PAGE_DELAY_MS)
   }
 
-  // Advance sliding window
-  const newCurrentPoint: EmailImportCursor | undefined =
-    newEmails.length > 0
-      ? { date: newEmails[0].date.getTime(), emailId: newEmails[0].id }
-      : state.currentPoint
-
-  const newEndPoint: EmailImportCursor | undefined =
-    state.endPoint ?? (newEmails.length > 0
-      ? { date: newEmails[newEmails.length - 1].date.getTime(), emailId: newEmails[newEmails.length - 1].id }
-      : undefined)
-
-  const newState: EmailImportState = {
-    currentPoint: newCurrentPoint,
-    endPoint: newEndPoint,
+  // Completion barrier — promote the run's top to the high-water mark.
+  hooks.saveState({
+    endPoint: state.startPoint ?? state.endPoint,
+    startPoint: undefined,
+    currentPoint: undefined,
     lastImportAt: Date.now(),
-  }
+  })
 
   return {
-    processedEmails: results,
-    state: newState,
-    windowStart,
-    windowEnd,
-    readEmailCount,
-    importedEmailCount,
+    newestAt: newestAt || Date.now(),
+    cursorAt,
+    targetAt,
+    scanned,
+    imported,
   }
 }
 
 // ── Helpers ─────────────────────────────────────────────
 
-type EmailSummary = { readonly id: string; readonly date: Date }
+async function buildEmailResult(
+  provider: ReturnType<typeof getMailProvider>,
+  email: EmailSummary,
+  filePasswords: readonly string[],
+  transactionRepo: Repository<Transaction>,
+): Promise<EmailResult | null> {
+  const fullEmail = await provider.fetchMessage(email.id)
+  const data = await parseEmail(fullEmail, filePasswords)
+  if (!data) return null
 
-function filterNewEmails(
+  const hashed = hashAndDedup(data, transactionRepo)
+  const newCount = hashed.filter((t) => t.isNew).length
+
+  return {
+    emailId: fullEmail.id,
+    from: fullEmail.from,
+    subject: fullEmail.subject,
+    date: fullEmail.date,
+    adapterId: `${data.bankId}/${data.offeringId}`,
+    kind: data.kind,
+    accountDetails: data.account,
+    transactions: hashed,
+    newCount,
+    duplicateCount: hashed.length - newCount,
+  }
+}
+
+function toCursor(email: EmailSummary): EmailImportCursor {
+  return { date: email.date, emailId: email.id }
+}
+
+function toMailCursor(cursor: EmailImportCursor | undefined): MailCursor | undefined {
+  return cursor ? { date: cursor.date, id: cursor.emailId ?? "" } : undefined
+}
+
+/** Drop emails at/newer than `cursor` — keep only those after it (older). */
+function sliceAfterCursor(
   emails: ReadonlyArray<EmailSummary>,
-  state: EmailImportState,
+  cursor: EmailImportCursor,
 ): EmailSummary[] {
-  if (!state.currentPoint) return [...emails]
-  const cp = state.currentPoint
-  return emails.filter((e) => {
-    if (e.date.getTime() > cp.date) return true
-    if (e.date.getTime() === cp.date && e.id !== cp.emailId) return true
-    return false
-  })
+  const idx = indexOfCursor(emails, cursor)
+  if (idx >= 0) return emails.slice(idx + 1)
+  return emails.filter((e) => e.date < cursor.date)
 }
 
-function resolveAccountSync(
-  data: ImportData,
-  accountRepo: Repository<MoneyAccount>,
-): string {
-  const all = accountRepo.query()
-  const matches = findMatchingAccounts(all, data)
-  if (matches.length === 1) return matches[0].id
-  return matches.length === 0 ? "" : matches[0].id
+function indexOfCursor(
+  emails: ReadonlyArray<EmailSummary>,
+  cursor: EmailImportCursor,
+): number {
+  return emails.findIndex((e) => e.id === cursor.emailId)
 }
 
-function formatDateParam(epochMs: number): string {
-  const d = new Date(epochMs)
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }

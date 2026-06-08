@@ -3,7 +3,8 @@ import { useStrata } from "@strata/plugins-ui"
 import type { BaseEntity } from "@strata/core"
 import { authAccountEntity } from "@/services/entities/auth-account"
 import type { ImportLog } from "@/services/entities/import-log"
-import { fetchEmailPreview, type EmailPreview } from "@/services/email-preview"
+import { getMailProvider } from "@/services/mail"
+import type { EmailPreview } from "@/services/email-types"
 
 export type EmailPreviewState = {
   readonly email: EmailPreview | null
@@ -35,7 +36,7 @@ export function useEmailPreview(log: (ImportLog & BaseEntity) | null): EmailPrev
     setLoading(true)
     const account = strata.repo(authAccountEntity).get(source.authAccountId)
     if (account) {
-      void fetchEmailPreview(account, source.emailId)
+      void getMailProvider(account).fetchPreview(source.emailId)
         .then(setEmail)
         .catch(() => { /* best-effort */ })
         .finally(() => { setLoading(false) })

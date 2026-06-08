@@ -68,7 +68,7 @@ export async function runFileImport(
   throwIfCancelled(ctx)
 
   // 3. Hash & dedup
-  const hashed = hashAndDedup(data, accountId, transactionRepo)
+  const hashed = hashAndDedup(data, transactionRepo)
   throwIfCancelled(ctx)
 
   const newCount = hashed.filter((t) => t.isNew).length
@@ -111,7 +111,7 @@ async function resolveAccount(
   accountRepo: Repository<MoneyAccount>,
 ): Promise<string> {
   const all = accountRepo.query()
-  const matches = findMatchingAccounts(all, data)
+  const matches = findMatchingAccounts(all, data.bankId, data.account)
 
   if (matches.length === 0) return ""
   if (matches.length === 1) return matches[0].id

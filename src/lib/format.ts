@@ -44,8 +44,17 @@ export function isKnownCurrency(code: string): code is CurrencyCode {
 }
 
 /**
- * Formats `amount` as a complete currency string using `Intl.NumberFormat`.
- * Example: `formatMoney(-1234.5, { locale: 'en-IN', currency: 'INR' })` → `"-₹1,234.50"`.
+ * Converts an integer minor-unit amount to major units for display.
+ * Example: `minorToMajor(-123450, 'INR')` → `-1234.5`.
+ */
+export function minorToMajor(minor: number, currency: string): number {
+  return minor / 10 ** getCurrencyDigits(currency)
+}
+
+/**
+ * Formats a minor-unit `amount` as a complete currency string using
+ * `Intl.NumberFormat`.
+ * Example: `formatMoney(-123450, { locale: 'en-IN', currency: 'INR' })` → `"-₹1,234.50"`.
  */
 export function formatMoney(
   amount: number,
@@ -54,7 +63,7 @@ export function formatMoney(
   return new Intl.NumberFormat(opts.locale, {
     style: "currency",
     currency: opts.currency,
-  }).format(amount)
+  }).format(minorToMajor(amount, opts.currency))
 }
 
 /**

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { useStrata } from "@strata/plugins-ui"
 import { USER_SETTINGS_DEFAULTS, userSettingsEntity, type UserSettings } from "@/services/entities"
+import { useTenantReady } from "@/providers/use-tenant-ready"
 import { log } from "@/log"
 
 export type UseLoadSettingsResult = {
@@ -15,16 +16,17 @@ export type UseLoadSettingsResult = {
  */
 export function useLoadSettings(): UseLoadSettingsResult {
   const strata = useStrata()
+  const ready = useTenantReady()
   const [settings, setSettings] = useState<UserSettings>(USER_SETTINGS_DEFAULTS)
 
   useEffect(() => {
-    if (!strata) return
+    if (!strata || !ready) return
     const repo = strata.repo(userSettingsEntity)
     const sub = repo.observe().subscribe((row) => {
       setSettings({ ...USER_SETTINGS_DEFAULTS, ...row })
     })
     return () => { sub.unsubscribe(); }
-  }, [strata])
+  }, [strata, ready])
 
   const patchSettings = useCallback((patch: Partial<UserSettings>) => {
     if (!strata) {

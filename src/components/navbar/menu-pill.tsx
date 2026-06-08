@@ -12,6 +12,7 @@ type MenuItem = {
 
 const MENU: readonly MenuItem[] = [
   { key: "home", label: "Home", path: "", iconName: "home" },
+  { key: "transactions", label: "Transactions", path: "transactions", iconName: "arrow-left-right" },
 ]
 
 type MenuPillProps = {

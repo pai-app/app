@@ -7,8 +7,8 @@ import { ImportContext } from "./import-context"
 
 // ── Hash ────────────────────────────────────────────────
 
-export function computeHash(scope: string, date: number, amount: number, description: string): string {
-  const raw = `${scope}|${date}|${amount}|${description}`
+export function computeHash(date: number, amount: number, description: string): string {
+  const raw = `${date}|${amount}|${description}`
   let h = 0
   for (let i = 0; i < raw.length; i++) {
     h = Math.imul(31, h) + raw.charCodeAt(i) | 0
@@ -25,11 +25,12 @@ export function monthKeyFromEpoch(epoch: number): string {
 
 export function findMatchingAccounts(
   accounts: ReadonlyArray<MoneyAccount & BaseEntity>,
-  data: ImportData,
+  bankId: string,
+  details: AccountDetails,
 ): ReadonlyArray<MoneyAccount & BaseEntity> {
   return accounts.filter((acct) => {
-    if (acct.bankId !== data.bankId) return false
-    return matchesAccountDetails(acct, data.account)
+    if (acct.bankId !== bankId) return false
+    return matchesAccountDetails(acct, details)
   })
 }
 
@@ -37,7 +38,7 @@ function matchesAccountDetails(
   acct: MoneyAccount & BaseEntity,
   details: AccountDetails,
 ): boolean {
-  if (!acct.metadata || !details.accountNumber) return false
+  if (!details.accountNumber) return false
   // metadata values may not exist for the "accountNumber" key at runtime
   // even though the type is Record<string, readonly string[]>
   const acctNumbers = acct.metadata["accountNumber"] as readonly string[] | undefined
@@ -57,11 +58,10 @@ export type HashedTransaction = {
 
 export function hashAndDedup(
   data: ImportData,
-  accountId: string,
   transactionRepo: Repository<Transaction>,
 ): HashedTransaction[] {
   return data.transactions.map((tx) => {
-    const hash = computeHash(accountId || data.bankId, tx.date, tx.amount, tx.description)
+    const hash = computeHash(tx.date, tx.amount, tx.description)
     const existing = transactionRepo.get(`transaction.${monthKeyFromEpoch(tx.date)}.${hash}`)
     return {
       date: tx.date,

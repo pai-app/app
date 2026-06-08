@@ -38,7 +38,7 @@ export const MONEY_ACCOUNT_KINDS: readonly MoneyAccountKind[] = [
  * - `icon` is an override; UI falls back to bank icon → kind default
  * - `metadata` holds parser match-keys (accountNumber, ifscCode, etc.) as
  *   open-ended `key → string[]` so parsers can evolve their matching scheme
- *   without entity migrations.
+ *   without entity migrations. Always present (empty `{}` when none known).
  */
 export type MoneyAccount = {
   readonly kind: MoneyAccountKind
@@ -47,7 +47,7 @@ export type MoneyAccount = {
   readonly initialBalance: Money
   readonly bankId?: string
   readonly icon?: string                                       // override
-  readonly metadata?: Record<string, readonly string[]>
+  readonly metadata: Record<string, readonly string[]>
   readonly archived?: boolean
 }
 

@@ -1,6 +1,6 @@
 import { Minus, Plus } from "lucide-react"
 import { useEntity } from "@/providers/entity-provider"
-import { formatMoney, formatNumber, getCurrencyDigits } from "@/lib/format"
+import { formatMoney, formatNumber, getCurrencyDigits, minorToMajor } from "@/lib/format"
 import { Currency } from "@/ui/currency"
 import { cn } from "@/lib/utils"
 
@@ -43,12 +43,13 @@ export function Money({
     return <span className={className}>{formatMoney(amount, { locale: loc, currency: code })}</span>
   }
 
-  // variant === "icon" — old-app split layout
+  // variant === "icon" — old-app split layout. Decimals are shown only when
+  // present (whole amounts render without a trailing ".00").
   const SignIcon = amount < 0 ? Minus : Plus
   const digits = getCurrencyDigits(code)
-  const number = formatNumber(Math.abs(amount), {
+  const number = formatNumber(minorToMajor(Math.abs(amount), code), {
     locale: loc,
-    minimumFractionDigits: digits,
+    minimumFractionDigits: 0,
     maximumFractionDigits: digits,
   })
 

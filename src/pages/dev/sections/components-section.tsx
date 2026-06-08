@@ -129,20 +129,20 @@ export function ComponentsSection() {
           {CURRENCIES.map((code) => (
             <div key={code} className="flex items-center justify-between gap-3 rounded-md bg-muted/30 px-3 py-2">
               <Text variant="caption">{code}</Text>
-              <Money amount={1234567.89} currency={code} />
+              <Money amount={123456789} currency={code} />
             </div>
           ))}
           <div className="flex items-center justify-between gap-3 rounded-md bg-destructive/10 px-3 py-2">
             <Text variant="caption">negative INR</Text>
-            <Money amount={-1234.5} currency="INR" />
+            <Money amount={-123450} currency="INR" />
           </div>
         </div>
       </Section>
 
       <Section title="Money — icon variant">
-        <Money amount={1234.5} currency="INR" variant="icon" />
-        <Money amount={-1234.5} currency="INR" variant="icon" />
-        <Money amount={42} currency="USD" variant="icon" />
+        <Money amount={123450} currency="INR" variant="icon" />
+        <Money amount={-123450} currency="INR" variant="icon" />
+        <Money amount={4200} currency="USD" variant="icon" />
         <Money amount={9999} currency="JPY" variant="icon" />
       </Section>
 

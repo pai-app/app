@@ -5,6 +5,7 @@ import type { BaseEntity } from "@strata/core"
 import { ImportService } from "@/services/import/import-service"
 import type { ImportContext } from "@/services/import/import-context"
 import { type AuthAccount } from "@/services/entities/auth-account"
+import { useTenantReady } from "@/providers/use-tenant-ready"
 import { registerNotificationAction } from "@/lib/notification-actions"
 
 // ── Context shape ───────────────────────────────────────
@@ -38,23 +39,28 @@ type ImportProviderProps = { readonly children: ReactNode }
  */
 export function ImportProvider({ children }: ImportProviderProps) {
   const strata = useStrata()
-  const service = useMemo(() => strata ? new ImportService(strata) : null, [strata])
+  const ready = useTenantReady()
+  // Defer service construction until a tenant is open — the constructor's init
+  // sweep queries repositories, which must run with an active tenant.
+  const service = useMemo(() => strata && ready ? new ImportService(strata) : null, [strata, ready])
 
   const [openLogId, setOpenLogId] = useState<string | null>(null)
 
   const startFileImport = useCallback((files: File[]) => {
-    if (!service || files.length === 0) return
+    if (!service) throw new StrataConfigError("Import is unavailable until a household is open")
+    if (files.length === 0) return
     const logId = service.startFileImport(files[0]) // one file at a time
     setOpenLogId(logId)
   }, [service])
 
   const startEmailSync = useCallback((account: AuthAccount & BaseEntity) => {
+    if (!service) throw new StrataConfigError("Import is unavailable until a household is open")
     // Background — does NOT open the sheet.
-    service?.startEmailSync(account)
+    service.startEmailSync(account)
   }, [service])
 
   const openSheet = useCallback((logId: string) => {
-    if (!service) return
+    if (!service) throw new StrataConfigError("Import is unavailable until a household is open")
     // Reconnect to a live context if one exists; otherwise resume from the log.
     if (!service.getContext(logId)) {
       service.resume(logId)

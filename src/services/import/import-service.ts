@@ -6,8 +6,14 @@ import {
   type ImportLogEmailSource,
 } from "@/services/entities/import-log"
 import {
+  importSourceEntity,
+  type ImportSource,
+  type ImportSourceDescriptor,
+} from "@/services/entities/import-source"
+import {
   emailImportSettingEntity,
   type EmailImportSetting,
+  type EmailImportState,
 } from "@/services/entities/email-import-setting"
 import { notify } from "@/services/notifications"
 import {
@@ -28,8 +34,8 @@ import { authAccountEntity } from "@/services/entities/auth-account"
 import { ImportContext } from "./import-context"
 import type { PromptAnswer } from "./import-context"
 import { runFileImport, type FileImportResult } from "./file-import-context"
-import { runEmailImport, type EmailImportResult } from "./email-import-context"
-import { CancelledError, EmailPasswordError } from "./import-utils"
+import { runEmailImport, type EmailResult, type EmailRunProgress } from "./email-import-context"
+import { CancelledError, EmailPasswordError, findMatchingAccounts } from "./import-utils"
 import { log } from "@/log"
 
 // ── Active context entry ────────────────────────────────
@@ -45,8 +51,9 @@ type ActiveImport = {
  * Orchestrates file and email imports. One instance per `Strata`.
  *
  * Responsibilities:
- * - Creates/updates `importLog` rows as imports progress.
- * - Writes `transaction` rows with `activityLogId` pointing to the log.
+ * - Creates/updates `importLog` rows (the run aggregate) as imports progress.
+ * - Creates one `importSource` per imported email/file that yielded data, and
+ *   writes `transaction` rows with `sourceId` pointing to that source.
  * - Spawns `notification` rows on failure.
  * - Maintains an in-memory map of active contexts for prompt relay.
  * - On construction, runs an init sweep to purge stale file-source
@@ -55,6 +62,7 @@ type ActiveImport = {
 export class ImportService {
   private readonly strata: Strata
   private readonly logRepo: Repository<ImportLog>
+  private readonly sourceRepo: Repository<ImportSource>
   private readonly settingsRepo: Repository<EmailImportSetting>
   private readonly userSettingsRepo: SingletonRepository<UserSettings>
   private readonly txRepo: Repository<Transaction>
@@ -64,6 +72,7 @@ export class ImportService {
   constructor(strata: Strata) {
     this.strata = strata
     this.logRepo = strata.repo(importLogEntity)
+    this.sourceRepo = strata.repo(importSourceEntity)
     this.settingsRepo = strata.repo(emailImportSettingEntity)
     this.userSettingsRepo = strata.repo(userSettingsEntity)
     this.txRepo = strata.repo(transactionEntity)
@@ -91,8 +100,20 @@ export class ImportService {
     return logId
   }
 
-  /** Start an email sync for an account. Returns the log id. */
+  /** Start an email sync for an account. Returns the log id.
+   *
+   * Guards against concurrent sweeps of the same mailbox: a second trigger
+   * while a run is already live (`in_progress` or parked on `needs_input`)
+   * returns the existing log id instead of spawning a parallel run. Two runs
+   * would race on the single shared `EmailImportSetting.importState` cursor and
+   * corrupt the high-water mark. */
   startEmailSync(account: AuthAccount & BaseEntity): string {
+    const existing = this.findActiveEmailLog(account.id)
+    if (existing) {
+      log.import('email sync already active: account=%s logId=%s', account.email, existing)
+      return existing
+    }
+
     const source: ImportLogEmailSource = {
       kind: "email",
       authAccountId: account.id,
@@ -108,6 +129,18 @@ export class ImportService {
 
     void this.executeEmailImport(logId, ctx, account)
     return logId
+  }
+
+  /** The live (`in_progress` / `needs_input`) email-sweep log id for an
+   *  account, if one is currently active. */
+  private findActiveEmailLog(authAccountId: string): string | null {
+    for (const logId of this.active.keys()) {
+      const row = this.logRepo.get(logId)
+      if (row?.source.kind === "email" && row.source.authAccountId === authAccountId) {
+        return logId
+      }
+    }
+    return null
   }
 
   /** Relay a user's answer to a prompt. */
@@ -201,17 +234,34 @@ export class ImportService {
     // Create or resolve account
     const accountId = result.accountId || this.createAccount(result)
 
-    // Write transactions
+    // Write transactions, parented to a per-file source row (only created
+    // when the file actually yielded new data).
     const newTxs = result.transactions.filter((t) => t.isNew)
-    for (const tx of newTxs) {
-      this.txRepo.save({
+    if (newTxs.length > 0) {
+      const log = this.logRepo.get(logId)
+      const descriptor: ImportSourceDescriptor =
+        log?.source.kind === "file"
+          ? log.source
+          : { kind: "file", fileName: "import" }
+      const sourceId = this.createSource(logId, descriptor, {
+        adapterId: result.adapterId,
         accountId,
-        title: tx.description,
-        transactionAt: tx.date,
-        amount: { units: tx.amount },
-        hash: tx.hash,
-        activityLogId: logId,
+        counts: {
+          parsed: result.transactions.length,
+          new: result.newCount,
+          duplicate: result.duplicateCount,
+        },
       })
+      for (const tx of newTxs) {
+        this.txRepo.save({
+          accountId,
+          narration: tx.description,
+          transactionAt: tx.date,
+          amount: tx.amount,
+          hash: tx.hash,
+          sourceId,
+        })
+      }
     }
 
     // Append new passwords to vault
@@ -241,32 +291,107 @@ export class ImportService {
     account: AuthAccount & BaseEntity,
   ): Promise<void> {
     try {
-      const emailSetting = this.getOrCreateEmailSetting(account)
       const passwords = [...this.getUserSettings().filePasswords]
+
+      // Accumulators across the (possibly multi-attempt) run. Each email is
+      // committed here, immediately before the sweep checkpoints it.
+      const touchedAccountIds = new Set<string>()
+      let parsed = 0
+      let newCount = 0
+      let duplicate = 0
+
+      const commitEmail = (result: EmailResult): void => {
+        const accountId = this.resolveOrCreateEmailAccount(result, account)
+        touchedAccountIds.add(accountId)
+        const newTxs = result.transactions.filter((t) => t.isNew)
+        // Only inputs that yield new data get a source row, so source count is
+        // bounded by the run's imported count, never by mailbox size.
+        if (newTxs.length > 0) {
+          const descriptor: ImportSourceDescriptor = {
+            kind: "email",
+            authAccountId: account.id,
+            emailId: result.emailId,
+            receivedAt: result.date,
+            from: result.from,
+            subject: result.subject,
+          }
+          const sourceId = this.createSource(logId, descriptor, {
+            adapterId: result.adapterId,
+            accountId,
+            counts: {
+              parsed: result.transactions.length,
+              new: result.newCount,
+              duplicate: result.duplicateCount,
+            },
+          })
+          for (const tx of newTxs) {
+            this.txRepo.save({
+              accountId,
+              narration: tx.description,
+              transactionAt: tx.date,
+              amount: tx.amount,
+              hash: tx.hash,
+              sourceId,
+            })
+          }
+        }
+        parsed += result.transactions.length
+        newCount += result.newCount
+        duplicate += result.duplicateCount
+      }
+
+      const saveState = (state: EmailImportState): void => {
+        const current = this.getOrCreateEmailSetting(account)
+        this.settingsRepo.save({ ...current, importState: state, lastErrorLogId: undefined })
+      }
+
+      // Flush a live snapshot of the run once per page so the import surface
+      // can render a moving time-progress bar. The per-source breakdown is
+      // derived from `importSource` rows, not stored on the log.
+      const reportProgress = (progress: EmailRunProgress): void => {
+        this.updateLog(logId, {
+          status: "in_progress",
+          touchedAccountIds: [...touchedAccountIds],
+          counts: { parsed, new: newCount, duplicate },
+          emailRun: {
+            newestAt: progress.newestAt,
+            cursorAt: progress.cursorAt,
+            targetAt: progress.targetAt,
+            scanned: progress.scanned,
+            imported: progress.imported,
+            currentFrom: progress.currentFrom,
+          },
+        })
+      }
 
       // Retry loop for password-required errors
       for (;;) {
         try {
-          const result = await runEmailImport(
-            ctx, account, emailSetting.importState,
-            passwords, this.accountRepo, this.txRepo,
+          const summary = await runEmailImport(
+            ctx, account, this.getOrCreateEmailSetting(account).importState,
+            passwords, this.txRepo, { commitEmail, saveState, reportProgress },
           )
-          this.commitEmailResult(logId, result, account)
           ctx.status = "completed"
-          log.import('email sync completed: logId=%s emails=%d imported=%d', logId, result.readEmailCount, result.importedEmailCount)
-
-          // Update email setting with new state
-          this.settingsRepo.save({
-            ...emailSetting,
-            importState: result.state,
-            lastErrorLogId: undefined,
-          })
+          log.import('email sync completed: logId=%s emails=%d imported=%d', logId, summary.scanned, summary.imported)
 
           // Persist any new passwords
           const origSet = new Set(this.getUserSettings().filePasswords)
           const newPwds = passwords.filter((p) => !origSet.has(p))
           if (newPwds.length > 0) this.appendPasswords(newPwds)
 
+          this.updateLog(logId, {
+            status: "completed",
+            completedAt: Date.now(),
+            touchedAccountIds: [...touchedAccountIds],
+            counts: { parsed, new: newCount, duplicate },
+            emailRun: {
+              newestAt: summary.newestAt,
+              cursorAt: summary.cursorAt,
+              targetAt: summary.targetAt,
+              scanned: summary.scanned,
+              imported: summary.imported,
+            },
+          })
           return
         } catch (innerErr) {
           if (innerErr instanceof EmailPasswordError) {
@@ -305,48 +430,6 @@ export class ImportService {
       this.active.delete(logId)
       ctx.dispose()
     }
-  }
-
-  private commitEmailResult(
-    logId: string,
-    result: EmailImportResult,
-    account: AuthAccount & BaseEntity,
-  ): void {
-    const touchedAccountIds = new Set<string>()
-
-    for (const emailResult of result.processedEmails) {
-      const accountId = emailResult.accountId || this.createAccountFromEmail(emailResult, account)
-      touchedAccountIds.add(accountId)
-
-      const newTxs = emailResult.transactions.filter((t) => t.isNew)
-      for (const tx of newTxs) {
-        this.txRepo.save({
-          accountId,
-          title: tx.description,
-          transactionAt: tx.date,
-          amount: { units: tx.amount },
-          hash: tx.hash,
-          activityLogId: logId,
-        })
-      }
-    }
-
-    const totalParsed = result.processedEmails.reduce((s, e) => s + e.transactions.length, 0)
-    const totalNew = result.processedEmails.reduce((s, e) => s + e.newCount, 0)
-    const totalDup = result.processedEmails.reduce((s, e) => s + e.duplicateCount, 0)
-
-    this.updateLog(logId, {
-      status: "completed",
-      completedAt: Date.now(),
-      touchedAccountIds: [...touchedAccountIds],
-      counts: { parsed: totalParsed, new: totalNew, duplicate: totalDup },
-      emailRun: {
-        windowStart: result.windowStart,
-        windowEnd: result.windowEnd,
-        readEmailCount: result.readEmailCount,
-        importedEmailCount: result.importedEmailCount,
-      },
-    })
   }
 
   // ── Error handling ────────────────────────────────────
@@ -442,6 +525,23 @@ export class ImportService {
     this.logRepo.save({ ...existing, ...patch })
   }
 
+  /** Create one `importSource` row for an imported email/file, parented to its
+   *  run. Returns the composite id to stamp onto that input's transactions. */
+  private createSource(
+    logId: string,
+    descriptor: ImportSourceDescriptor,
+    extra: Pick<ImportSource, "adapterId" | "accountId" | "counts">,
+  ): string {
+    return this.sourceRepo.save({
+      importLogId: logId,
+      importedAt: Date.now(),
+      descriptor,
+      adapterId: extra.adapterId,
+      accountId: extra.accountId,
+      counts: extra.counts,
+    })
+  }
+
   // ── Account creation ─────────────────────────────────
 
   private createAccount(result: FileImportResult): string {
@@ -449,24 +549,43 @@ export class ImportService {
       kind: result.importData.kind,
       name: result.importData.bankId,
       currency: result.importData.account.currency,
-      initialBalance: { units: 0 },
+      initialBalance: 0,
       bankId: result.importData.bankId,
       metadata: buildMetadata(result.importData.account),
     })
   }
 
   private createAccountFromEmail(
-    emailResult: { adapterId: string; transactions: ReadonlyArray<{ amount: number }> },
+    emailResult: EmailResult,
     account: AuthAccount & BaseEntity,
   ): string {
     const [bankId] = emailResult.adapterId.split("/")
     return this.accountRepo.save({
-      kind: "bank",
+      kind: emailResult.kind,
       name: bankId || account.email,
-      currency: "INR",  // default; updated on next parse
-      initialBalance: { units: 0 },
+      currency: emailResult.accountDetails.currency,
+      initialBalance: 0,
       bankId,
+      metadata: buildMetadata(emailResult.accountDetails),
     })
+  }
+
+  /**
+   * Resolve the MoneyAccount for an email result, creating it only when no
+   * match exists. Accounts are created lazily at commit time, so two emails
+   * from the same account both arrive with `accountId: ""`; re-querying here
+   * (the repo's in-memory store reflects a `save` synchronously) lets the
+   * second email reuse the account the first one just created instead of
+   * spawning a duplicate.
+   */
+  private resolveOrCreateEmailAccount(
+    emailResult: EmailResult,
+    account: AuthAccount & BaseEntity,
+  ): string {
+    const [bankId] = emailResult.adapterId.split("/")
+    const matches = findMatchingAccounts(this.accountRepo.query(), bankId, emailResult.accountDetails)
+    if (matches.length > 0) return matches[0].id
+    return this.createAccountFromEmail(emailResult, account)
   }
 
   // ── Settings helpers ──────────────────────────────────

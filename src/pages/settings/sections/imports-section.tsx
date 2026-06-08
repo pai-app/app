@@ -3,7 +3,8 @@ import { useStrata } from "@strata/plugins-ui"
 import type { BaseEntity } from "@strata/core"
 import { Icon } from "@/ui/icon"
 import { Button } from "@/ui/button"
-import { importLogEntity, type ImportLog } from "@/services/entities/import-log"
+import { Progress } from "@/ui/progress"
+import { importLogEntity, sweepProgress, type ImportLog } from "@/services/entities/import-log"
 import { useImportService } from "@/providers/import-provider"
 import { useEntity } from "@/providers/entity-provider"
 
@@ -83,6 +84,7 @@ function LogRow({ log, onOpen }: { log: ImportLog & BaseEntity; onOpen: () => vo
           {formatDate(log.triggeredAt)}
           {log.adapterId && ` · ${log.adapterId}`}
         </div>
+        {log.status === "in_progress" && log.emailRun && <MiniSweepBar run={log.emailRun} />}
       </div>
       <div className="shrink-0 text-xs text-muted-foreground">
         {log.counts.new > 0 && <span className="text-green-600">{log.counts.new} new</span>}
@@ -100,6 +102,20 @@ function LogRow({ log, onOpen }: { log: ImportLog & BaseEntity; onOpen: () => vo
         </span>
       )}
     </button>
+  )
+}
+
+/** Thin live progress bar for an in-flight email sweep, labelled with the
+ *  month-year the cursor has reached. */
+function MiniSweepBar({ run }: { run: NonNullable<ImportLog["emailRun"]> }) {
+  const { value } = sweepProgress(run, true)
+  return (
+    <div className="mt-1.5 flex items-center gap-2">
+      <Progress value={value * 100} className="h-1 flex-1" />
+      <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
+        {new Date(run.cursorAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
+      </span>
+    </div>
   )
 }
 

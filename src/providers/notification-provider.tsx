@@ -9,6 +9,7 @@ import {
   registerChannelEmitter,
   type NotificationPayload,
 } from "@/services/notifications"
+import { useTenantReady } from "@/providers/use-tenant-ready"
 import { runNotificationAction } from "@/lib/notification-actions"
 
 // ── Context shape ───────────────────────────────────────
@@ -33,14 +34,15 @@ type NotificationProviderProps = { readonly children: ReactNode }
  */
 export function NotificationProvider({ children }: NotificationProviderProps) {
   const strata = useStrata()
+  const ready = useTenantReady()
   const [notifications, setNotifications] = useState<ReadonlyArray<Notification & BaseEntity>>([])
 
   useEffect(() => {
-    if (!strata) return
+    if (!strata || !ready) return
     const repo = strata.repo(notificationEntity)
     const sub = repo.observeQuery().subscribe(setNotifications)
     return () => { sub.unsubscribe() }
-  }, [strata])
+  }, [strata, ready])
 
   // Register the toast channel. Clicking the toast's action runs the ref's
   // registered handler and acknowledges the inbox row (when persisted).
@@ -69,9 +71,9 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
   )
 
   const acknowledge = useCallback((id: string) => {
-    if (!strata) return
+    if (!strata || !ready) throw new StrataConfigError("Notifications are unavailable until a household is open")
     acknowledgeNotification(strata, id)
-  }, [strata])
+  }, [strata, ready])
 
   const value = useMemo<NotificationContextValue>(
     () => ({ notifications, unacknowledgedCount, acknowledge }),

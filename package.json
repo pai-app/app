@@ -17,7 +17,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260408.1",
     "@eslint/js": "^10.0.1",
-    "@fontsource-variable/geist": "^5.2.8",
+    "@fontsource-variable/montserrat": "^5.2.8",
     "@strata/core": "^0.1.6",
     "@strata/plugins": "^0.1.2",
     "@strata/plugins-ui": "^0.0.1",

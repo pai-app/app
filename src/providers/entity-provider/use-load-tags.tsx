@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react"
 import type { BaseEntity } from "@strata/core"
 import { useStrata } from "@strata/plugins-ui"
-import { SYSTEM_TAGS, tagEntity, type MoneyAccount, type Tag } from "@/services/entities"
+import { SYSTEM_TAGS, tagEntity, type Tag } from "@/services/entities"
 import { MoneyAccountIcon } from "@/ui/money-account-icon"
+import { useTenantReady } from "@/providers/use-tenant-ready"
 import type { ComponentType, SVGProps } from "react"
 import type { AccountRow } from "./use-load-accounts"
 
@@ -28,9 +29,21 @@ function accountTagId(accountId: string): string {
   return `account-${accountId}`
 }
 
-function maskAccountNumber(meta: MoneyAccount["metadata"]): string | undefined {
-  const numbers = meta?.accountNumber
-  const first = numbers?.[0]
+/** Null-safe read of an account's stored numbers (legacy rows may lack metadata). */
+function accountNumbersOf(account: AccountRow): readonly string[] {
+  // `metadata` is typed non-optional, but legacy rows created before it became
+  // mandatory may omit it (and individual keys) at runtime — read defensively.
+  const metadata = account.metadata as Record<string, readonly string[]> | undefined
+  return metadata?.["accountNumber"] ?? []
+}
+
+/** Whether an account carries enough parser detail to be a meaningful tag. */
+function hasFullDetails(account: AccountRow): boolean {
+  return accountNumbersOf(account).length > 0
+}
+
+function maskAccountNumber(account: AccountRow): string | undefined {
+  const first = accountNumbersOf(account)[0]
   if (!first || first.length < 4) return undefined
   return `****${first.slice(-4)}`
 }
@@ -45,7 +58,7 @@ function maskAccountNumber(meta: MoneyAccount["metadata"]): string | undefined {
  * Account renames flow into the UI on the next render without a write.
  */
 function accountToDisplayTag(account: AccountRow): DisplayTag {
-  const masked = maskAccountNumber(account.metadata)
+  const masked = maskAccountNumber(account)
   const name = masked ? `${account.name} ${masked}` : account.name
 
   return {
@@ -67,18 +80,23 @@ function accountToDisplayTag(account: AccountRow): DisplayTag {
  */
 export function useLoadTags(accounts: readonly AccountRow[]): readonly DisplayTag[] {
   const strata = useStrata()
+  const ready = useTenantReady()
   const [userTags, setUserTags] = useState<readonly (Tag & BaseEntity)[]>([])
 
   useEffect(() => {
-    if (!strata) return
+    if (!strata || !ready) return
     const repo = strata.repo(tagEntity)
     const sub = repo.observeQuery().subscribe(setUserTags)
     return () => { sub.unsubscribe(); }
-  }, [strata])
+  }, [strata, ready])
 
   return useMemo<readonly DisplayTag[]>(() => {
     const sortedUserTags = [...userTags].sort((a, b) => a.name.localeCompare(b.name))
-    const accountTags = accounts.filter((a) => !a.archived).map(accountToDisplayTag)
+    // Only surface accounts with full parser detail as tags — skips archived
+    // accounts and partial/legacy rows that lack an account number.
+    const accountTags = accounts
+      .filter((a) => !a.archived && hasFullDetails(a))
+      .map(accountToDisplayTag)
     return [...SYSTEM_TAGS, ...sortedUserTags, ...accountTags]
   }, [userTags, accounts])
 }
