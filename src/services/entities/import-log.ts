@@ -58,7 +58,7 @@ export type ImportLogError = {
  * imported inputs (emails/files) become `importSource` rows parented to this
  * log; transactions link to those sources, not directly to the log.
  *
- * Partitioned monthly by `triggeredAt`. The Strata composite id
+ * Partitioned monthly by `triggeredAt`. The FyreDb composite id
  * (`import-log.<YYYY-MM>.<uid>`) encodes the partition, so cross-partition
  * lookup is unambiguous.
  */

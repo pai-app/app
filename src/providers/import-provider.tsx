@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
-import { useStrata } from "@fyre-db/plugins-ui"
-import { StrataConfigError } from "@fyre-db/core"
+import { useFyreDb } from "@fyre-db/plugins-ui"
+import { FyreDbConfigError } from "@fyre-db/core"
 import type { BaseEntity } from "@fyre-db/core"
 import { ImportService } from "@/services/import/import-service"
 import type { ImportContext } from "@/services/import/import-context"
@@ -38,29 +38,29 @@ type ImportProviderProps = { readonly children: ReactNode }
  * `openLogId`. All real logic lives in `ImportService`.
  */
 export function ImportProvider({ children }: ImportProviderProps) {
-  const strata = useStrata()
+  const fyredb = useFyreDb()
   const ready = useTenantReady()
   // Defer service construction until a tenant is open — the constructor's init
   // sweep queries repositories, which must run with an active tenant.
-  const service = useMemo(() => strata && ready ? new ImportService(strata) : null, [strata, ready])
+  const service = useMemo(() => fyredb && ready ? new ImportService(fyredb) : null, [fyredb, ready])
 
   const [openLogId, setOpenLogId] = useState<string | null>(null)
 
   const startFileImport = useCallback((files: File[]) => {
-    if (!service) throw new StrataConfigError("Import is unavailable until a household is open")
+    if (!service) throw new FyreDbConfigError("Import is unavailable until a household is open")
     if (files.length === 0) return
     const logId = service.startFileImport(files[0]) // one file at a time
     setOpenLogId(logId)
   }, [service])
 
   const startEmailSync = useCallback((account: AuthAccount & BaseEntity) => {
-    if (!service) throw new StrataConfigError("Import is unavailable until a household is open")
+    if (!service) throw new FyreDbConfigError("Import is unavailable until a household is open")
     // Background — does NOT open the sheet.
     service.startEmailSync(account)
   }, [service])
 
   const openSheet = useCallback((logId: string) => {
-    if (!service) throw new StrataConfigError("Import is unavailable until a household is open")
+    if (!service) throw new FyreDbConfigError("Import is unavailable until a household is open")
     // Reconnect to a live context if one exists; otherwise resume from the log.
     if (!service.getContext(logId)) {
       service.resume(logId)
@@ -101,6 +101,6 @@ export function ImportProvider({ children }: ImportProviderProps) {
 
 export function useImportService(): ImportContextValue {
   const ctx = useContext(ImportCtx)
-  if (!ctx) throw new StrataConfigError("useImportService must be used within an ImportProvider")
+  if (!ctx) throw new FyreDbConfigError("useImportService must be used within an ImportProvider")
   return ctx
 }

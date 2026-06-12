@@ -5,7 +5,7 @@ import type { Notification } from "@/services/entities/notification"
  * Channel emitter registry. Non-persistent channels (toast, and later
  * `push` for browser/native notifications) register an emitter here; `notify()`
  * fans a resolved notification out to whichever channels its kind targets. The
- * `inbox` channel is handled directly by `notify()` (it needs `strata`), so it
+ * `inbox` channel is handled directly by `notify()` (it needs `fyredb`), so it
  * does not register here.
  *
  * Pure TS, framework-agnostic — mirrors the magic-word registry. The toast

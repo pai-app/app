@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import type { BaseEntity } from "@fyre-db/core"
-import { useStrata } from "@fyre-db/plugins-ui"
+import { useFyreDb } from "@fyre-db/plugins-ui"
 import { SYSTEM_TAGS, tagEntity, type Tag } from "@/services/entities"
 import { MoneyAccountIcon } from "@/ui/money-account-icon"
 import { useTenantReady } from "@/providers/use-tenant-ready"
@@ -79,16 +79,16 @@ function accountToDisplayTag(account: AccountRow): DisplayTag {
  * Only consumed by `<EntityProvider>`; consumers read the list via `useEntity()`.
  */
 export function useLoadTags(accounts: readonly AccountRow[]): readonly DisplayTag[] {
-  const strata = useStrata()
+  const fyredb = useFyreDb()
   const ready = useTenantReady()
   const [userTags, setUserTags] = useState<readonly (Tag & BaseEntity)[]>([])
 
   useEffect(() => {
-    if (!strata || !ready) return
-    const repo = strata.repo(tagEntity)
+    if (!fyredb || !ready) return
+    const repo = fyredb.repo(tagEntity)
     const sub = repo.observeQuery().subscribe(setUserTags)
     return () => { sub.unsubscribe(); }
-  }, [strata, ready])
+  }, [fyredb, ready])
 
   return useMemo<readonly DisplayTag[]>(() => {
     const sortedUserTags = [...userTags].sort((a, b) => a.name.localeCompare(b.name))

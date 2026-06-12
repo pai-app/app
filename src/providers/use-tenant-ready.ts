@@ -1,7 +1,7 @@
 import { useTenant } from "@fyre-db/plugins-ui"
 
 /**
- * True once a tenant is open in the Strata core. Repository reads/subscriptions
+ * True once a tenant is open in the FyreDb core. Repository reads/subscriptions
  * must wait for this — calling `repo.observe()`/`observeQuery()` before a tenant
  * is active fires `ensurePartition` with no tenant context, which resolves to
  * the wrong (un-scoped) storage key and silently yields no data with no retry.

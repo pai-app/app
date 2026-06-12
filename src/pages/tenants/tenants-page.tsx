@@ -17,7 +17,7 @@ import {
 import { useTheme } from "@/providers/theme-provider"
 import { getColor } from "@/lib/colors"
 import { getInitials } from "@/lib/text"
-import { providers } from "@/lib/strata-config"
+import { providers } from "@/lib/fyredb-config"
 
 const wizardClassNames = {
   overlay: "fixed inset-0 z-50 bg-black/50 backdrop-blur-sm",

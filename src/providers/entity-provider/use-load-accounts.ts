@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import type { BaseEntity } from "@fyre-db/core"
-import { useStrata } from "@fyre-db/plugins-ui"
+import { useFyreDb } from "@fyre-db/plugins-ui"
 import { moneyAccountEntity, type MoneyAccount } from "@/services/entities"
 import { useTenantReady } from "@/providers/use-tenant-ready"
 
@@ -12,16 +12,16 @@ export type AccountRow = MoneyAccount & BaseEntity
  * `useAccounts()`.
  */
 export function useLoadAccounts(): readonly AccountRow[] {
-  const strata = useStrata()
+  const fyredb = useFyreDb()
   const ready = useTenantReady()
   const [accounts, setAccounts] = useState<readonly AccountRow[]>([])
 
   useEffect(() => {
-    if (!strata || !ready) return
-    const repo = strata.repo(moneyAccountEntity)
+    if (!fyredb || !ready) return
+    const repo = fyredb.repo(moneyAccountEntity)
     const sub = repo.observeQuery().subscribe(setAccounts)
     return () => { sub.unsubscribe() }
-  }, [strata, ready])
+  }, [fyredb, ready])
 
   return accounts
 }

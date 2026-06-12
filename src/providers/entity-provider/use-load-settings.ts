@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-import { useStrata } from "@fyre-db/plugins-ui"
+import { useFyreDb } from "@fyre-db/plugins-ui"
 import { USER_SETTINGS_DEFAULTS, userSettingsEntity, type UserSettings } from "@/services/entities"
 import { useTenantReady } from "@/providers/use-tenant-ready"
 import { log } from "@/log"
@@ -15,28 +15,28 @@ export type UseLoadSettingsResult = {
  * `<EntityProvider>`; consumers read the result through `useSettings()`.
  */
 export function useLoadSettings(): UseLoadSettingsResult {
-  const strata = useStrata()
+  const fyredb = useFyreDb()
   const ready = useTenantReady()
   const [settings, setSettings] = useState<UserSettings>(USER_SETTINGS_DEFAULTS)
 
   useEffect(() => {
-    if (!strata || !ready) return
-    const repo = strata.repo(userSettingsEntity)
+    if (!fyredb || !ready) return
+    const repo = fyredb.repo(userSettingsEntity)
     const sub = repo.observe().subscribe((row) => {
       setSettings({ ...USER_SETTINGS_DEFAULTS, ...row })
     })
     return () => { sub.unsubscribe(); }
-  }, [strata, ready])
+  }, [fyredb, ready])
 
   const patchSettings = useCallback((patch: Partial<UserSettings>) => {
-    if (!strata) {
-      log.app.warn("setSettings called before Strata is ready; ignoring")
+    if (!fyredb) {
+      log.app.warn("setSettings called before FyreDb is ready; ignoring")
       return
     }
-    const repo = strata.repo(userSettingsEntity)
+    const repo = fyredb.repo(userSettingsEntity)
     const current = repo.get()
     repo.save({ ...USER_SETTINGS_DEFAULTS, ...current, ...patch })
-  }, [strata])
+  }, [fyredb])
 
   return { settings, setSettings: patchSettings }
 }

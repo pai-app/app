@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Icon } from "@/ui/icon"
-import { useStrata } from "@fyre-db/plugins-ui"
+import { useFyreDb } from "@fyre-db/plugins-ui"
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover"
 import { Button } from "@/ui/button"
 import { cn } from "@/lib/utils"
@@ -11,16 +11,16 @@ type SyncStatusProps = {
 }
 
 export function SyncStatus({ className }: SyncStatusProps) {
-  const strata = useStrata()
+  const fyredb = useFyreDb()
   const [dirty, setDirty] = useState(false)
   const [syncing, setSyncing] = useState(false)
 
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (!strata) return
-    const dirtySub = strata.observe("dirty").subscribe(setDirty)
-    const syncSub = strata.observe("sync").subscribe((evt) => {
+    if (!fyredb) return
+    const dirtySub = fyredb.observe("dirty").subscribe(setDirty)
+    const syncSub = fyredb.observe("sync").subscribe((evt) => {
       if (evt.type === "sync-started") {
         log.sync('sync started: %s → %s', evt.source, evt.target)
         setSyncing(true)
@@ -34,9 +34,9 @@ export function SyncStatus({ className }: SyncStatusProps) {
       dirtySub.unsubscribe()
       syncSub.unsubscribe()
     }
-  }, [strata])
+  }, [fyredb])
 
-  if (!strata) return null
+  if (!fyredb) return null
 
   const icon = saving
     ? <Icon name="refresh-cw" className="animate-spin" />
@@ -48,7 +48,7 @@ export function SyncStatus({ className }: SyncStatusProps) {
 
   const saveChanges = () => {
     setSaving(true)
-    // Strata doesn't expose syncNow() yet — trigger a no-op write to nudge the sync engine
+    // FyreDb doesn't expose syncNow() yet — trigger a no-op write to nudge the sync engine
     setTimeout(() => { setSaving(false); }, 1500)
   }
 

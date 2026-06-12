@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router"
-import { useStrata } from "@fyre-db/plugins-ui"
+import { useFyreDb } from "@fyre-db/plugins-ui"
 import type { BaseEntity, EntityDefinition, RepositoryType as Repository, SingletonRepositoryType as SingletonRepository } from "@fyre-db/core"
 import { Icon } from "@/ui/icon"
 import { Input } from "@/ui/input"
@@ -122,7 +122,7 @@ function EntityDetail({ entityName, isMobile }: {
   entityName: string
   isMobile: boolean
 }) {
-  const strata = useStrata()
+  const fyredb = useFyreDb()
   const { settings } = useEntity()
   const kind = entityKind(entityName)
   const isPartitioned = kind === "partitioned"
@@ -137,12 +137,12 @@ function EntityDetail({ entityName, isMobile }: {
   // Subscribe to the entity's rows. Partitioned entities load one calendar
   // year of monthly partitions at a time (driven by `year`).
   useEffect(() => {
-    if (!strata) return
+    if (!fyredb) return
     const def = ENTITIES.find((e) => e.name === entityName)
     if (!def) return
 
     if (def.keyStrategy.kind === "singleton") {
-      const repo = strata.repo(def as unknown as EntityDefinition<Row, "singleton">) as SingletonRepository<Row>
+      const repo = fyredb.repo(def as unknown as EntityDefinition<Row, "singleton">) as SingletonRepository<Row>
       const sub = repo.observe().subscribe((row) => {
         setSingletonRow(row ?? null)
         setLoading(false)
@@ -150,14 +150,14 @@ function EntityDetail({ entityName, isMobile }: {
       return () => { sub.unsubscribe() }
     }
 
-    const repo = strata.repo(def as unknown as EntityDefinition<Row, "global" | "partitioned">) as Repository<Row>
+    const repo = fyredb.repo(def as unknown as EntityDefinition<Row, "global" | "partitioned">) as Repository<Row>
     const opts = def.keyStrategy.kind === "partitioned" ? { keys: monthKeysForYear(year) } : undefined
     const sub = repo.observeQuery(opts).subscribe((list) => {
       setRows(list)
       setLoading(false)
     })
     return () => { sub.unsubscribe() }
-  }, [strata, entityName, year])
+  }, [fyredb, entityName, year])
 
   const filteredRows = useMemo(() => {
     if (!search.trim()) return rows

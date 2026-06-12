@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useStrata } from "@fyre-db/plugins-ui"
+import { useFyreDb } from "@fyre-db/plugins-ui"
 import { TagPicker } from "@/components/tag-picker"
 import { type DisplayTag } from "@/providers/entity-provider"
 import { transactionEntity } from "@/services/entities"
@@ -18,12 +18,12 @@ export type TagPickerCellProps = {
  * tapping the tag doesn't also open the row's detail panel.
  */
 export function TagPickerCell({ tx, className }: TagPickerCellProps) {
-  const strata = useStrata()
+  const fyredb = useFyreDb()
   const [open, setOpen] = useState(false)
 
   const setTag = (tag: DisplayTag | null) => {
-    if (strata) {
-      strata.repo(transactionEntity).save({ ...tx, tagId: tag?.id })
+    if (fyredb) {
+      fyredb.repo(transactionEntity).save({ ...tx, tagId: tag?.id })
       log.home("transaction tag updated: %s -> %s", tx.id, tag?.id ?? "(none)")
     }
     setOpen(false)

@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react"
-import { StrataConfigError } from "@fyre-db/core"
+import { FyreDbConfigError } from "@fyre-db/core"
 import type { UserSettings } from "@/services/entities"
 import { fiscalYearMonthKeys } from "@/lib/fiscal"
 import { useLoadAccounts, type AccountRow } from "./use-load-accounts"
@@ -57,6 +57,6 @@ export function EntityProvider({ children }: EntityProviderProps) {
 /** Single hook for everything `<EntityProvider>` exposes. */
 export function useEntity(): EntityContextValue {
   const ctx = useContext(EntityContext)
-  if (!ctx) throw new StrataConfigError("useEntity must be used within an EntityProvider")
+  if (!ctx) throw new FyreDbConfigError("useEntity must be used within an EntityProvider")
   return ctx
 }

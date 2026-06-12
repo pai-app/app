@@ -151,7 +151,7 @@ export function ComponentsSection() {
 }
 
 /**
- * Fires toast-only notifications (`channels: ["toast"]`, `strata: null`) — no
+ * Fires toast-only notifications (`channels: ["toast"]`, `fyredb: null`) — no
  * inbox row is written, demonstrating non-persistent delivery.
  */
 function NotificationDemo() {

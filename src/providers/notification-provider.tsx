@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
 import { toast } from "sonner"
-import { useStrata } from "@fyre-db/plugins-ui"
-import { StrataConfigError } from "@fyre-db/core"
+import { useFyreDb } from "@fyre-db/plugins-ui"
+import { FyreDbConfigError } from "@fyre-db/core"
 import type { BaseEntity } from "@fyre-db/core"
 import { notificationEntity, type Notification } from "@/services/entities/notification"
 import {
@@ -33,16 +33,16 @@ type NotificationProviderProps = { readonly children: ReactNode }
  * fan transient toasts out via sonner.
  */
 export function NotificationProvider({ children }: NotificationProviderProps) {
-  const strata = useStrata()
+  const fyredb = useFyreDb()
   const ready = useTenantReady()
   const [notifications, setNotifications] = useState<ReadonlyArray<Notification & BaseEntity>>([])
 
   useEffect(() => {
-    if (!strata || !ready) return
-    const repo = strata.repo(notificationEntity)
+    if (!fyredb || !ready) return
+    const repo = fyredb.repo(notificationEntity)
     const sub = repo.observeQuery().subscribe(setNotifications)
     return () => { sub.unsubscribe() }
-  }, [strata, ready])
+  }, [fyredb, ready])
 
   // Register the toast channel. Clicking the toast's action runs the ref's
   // registered handler and acknowledges the inbox row (when persisted).
@@ -51,7 +51,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
       const { notification: n, display } = payload
       const run = () => {
         runNotificationAction(n.ref)
-        if (strata) acknowledgeNotification(strata, payload.id)
+        if (fyredb) acknowledgeNotification(fyredb, payload.id)
       }
       const action = n.ref
         ? { label: n.actionLabel ?? "View", onClick: run }
@@ -63,7 +63,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
       else if (variant === "success") toast.success(n.title, options)
       else toast.info(n.title, options)
     })
-  }, [strata])
+  }, [fyredb])
 
   const unacknowledgedCount = useMemo(
     () => notifications.filter((n) => !n.acknowledgedAt).length,
@@ -71,9 +71,9 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
   )
 
   const acknowledge = useCallback((id: string) => {
-    if (!strata || !ready) throw new StrataConfigError("Notifications are unavailable until a household is open")
-    acknowledgeNotification(strata, id)
-  }, [strata, ready])
+    if (!fyredb || !ready) throw new FyreDbConfigError("Notifications are unavailable until a household is open")
+    acknowledgeNotification(fyredb, id)
+  }, [fyredb, ready])
 
   const value = useMemo<NotificationContextValue>(
     () => ({ notifications, unacknowledgedCount, acknowledge }),
@@ -87,6 +87,6 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
 
 export function useNotifications(): NotificationContextValue {
   const ctx = useContext(NotificationCtx)
-  if (!ctx) throw new StrataConfigError("useNotifications must be used within a NotificationProvider")
+  if (!ctx) throw new FyreDbConfigError("useNotifications must be used within a NotificationProvider")
   return ctx
 }

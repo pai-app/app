@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useStrata } from "@fyre-db/plugins-ui"
+import { useFyreDb } from "@fyre-db/plugins-ui"
 import { Icon } from "@/ui/icon"
 import { Separator } from "@/ui/separator"
 import { Textarea } from "@/ui/textarea"
@@ -61,7 +61,7 @@ export type TransactionDetailProps = {
 export function TransactionDetail({ tx, onClose }: TransactionDetailProps) {
   const { isMobile } = useApp()
   const { accounts } = useEntity()
-  const strata = useStrata()
+  const fyredb = useFyreDb()
 
   // Local edit buffer for the Notes field, reset (during render, not in an
   // effect) whenever the selected transaction changes.
@@ -74,15 +74,15 @@ export function TransactionDetail({ tx, onClose }: TransactionDetailProps) {
 
   // Resolve import provenance. The composite `sourceId` encodes its partition,
   // so a direct in-memory `get` is unambiguous across months. Resolved during
-  // render and memoised by (strata-ready, sourceId) so it re-runs once the
+  // render and memoised by (fyredb-ready, sourceId) so it re-runs once the
   // repo becomes available.
-  const resolveKey = `${strata ? "1" : "0"}:${tx.sourceId ?? ""}`
+  const resolveKey = `${fyredb ? "1" : "0"}:${tx.sourceId ?? ""}`
   const [sourceState, setSourceState] = useState<{ key: string; source: ImportSourceDescriptor | null }>(
     () => ({ key: "", source: null }),
   )
   if (sourceState.key !== resolveKey) {
-    const resolved = strata && tx.sourceId
-      ? strata.repo(importSourceEntity).get(tx.sourceId)?.descriptor ?? null
+    const resolved = fyredb && tx.sourceId
+      ? fyredb.repo(importSourceEntity).get(tx.sourceId)?.descriptor ?? null
       : null
     setSourceState({ key: resolveKey, source: resolved })
   }
@@ -93,10 +93,10 @@ export function TransactionDetail({ tx, onClose }: TransactionDetailProps) {
   const debited = tx.amount < 0
 
   const saveTitle = () => {
-    if (!strata) return
+    if (!fyredb) return
     const next = title.trim()
     if (next === (tx.title ?? "")) return
-    strata.repo(transactionEntity).save({ ...tx, title: next })
+    fyredb.repo(transactionEntity).save({ ...tx, title: next })
     log.home("transaction title updated: %s", tx.id)
   }
 
@@ -114,8 +114,8 @@ export function TransactionDetail({ tx, onClose }: TransactionDetailProps) {
   const setTitle = (value: string) => { setTitleState({ id: tx.id, value }) }
 
   const setTag = (tag: DisplayTag | null) => {
-    if (!strata) return
-    strata.repo(transactionEntity).save({ ...tx, tagId: tag?.id })
+    if (!fyredb) return
+    fyredb.repo(transactionEntity).save({ ...tx, tagId: tag?.id })
     setTagPickerOpen(false)
   }
 

@@ -1,4 +1,4 @@
-import { clientAuth } from "@/lib/strata-config"
+import { clientAuth } from "@/lib/fyredb-config"
 import type { AuthAccount } from "@/services/entities"
 
 /** Refresh a token a little before it actually expires, to avoid races. */

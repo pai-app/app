@@ -3,7 +3,7 @@ import {
   ClientAuthService,
   CloudService,
 } from "@fyre-db/plugins"
-import { GoogleDriveProvider, OneDriveProvider, createStrataConfig, CloudProviderService } from "@fyre-db/plugins-ui"
+import { GoogleDriveProvider, OneDriveProvider, createFyreDbConfig, CloudProviderService } from "@fyre-db/plugins-ui"
 import {
   GOOGLE_AUTH_NAME,
   MICROSOFT_AUTH_NAME,
@@ -43,7 +43,7 @@ export const onedriveProvider = new OneDriveProvider({
 export const cloud = new CloudService([googleProvider, onedriveProvider], clientAuth)
 export const providers = new CloudProviderService([googleProvider, onedriveProvider], cloud)
 
-export const strataConfig = createStrataConfig({
+export const fyredbConfig = createFyreDbConfig({
   appId: APP_ID,
   entities: ENTITIES,
   cloud,

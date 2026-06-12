@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useStrata } from "@fyre-db/plugins-ui"
+import { useFyreDb } from "@fyre-db/plugins-ui"
 import type { BaseEntity } from "@fyre-db/core"
 import { Icon } from "@/ui/icon"
 import { Button } from "@/ui/button"
@@ -9,17 +9,17 @@ import { useImportService } from "@/providers/import-provider"
 import { useEntity } from "@/providers/entity-provider"
 
 export function ImportsSection() {
-  const strata = useStrata()
+  const fyredb = useFyreDb()
   const { startFileImport, openSheet } = useImportService()
   const { monthKeys } = useEntity()
   const [logs, setLogs] = useState<ReadonlyArray<ImportLog & BaseEntity>>([])
 
   useEffect(() => {
-    if (!strata) return
-    const repo = strata.repo(importLogEntity)
+    if (!fyredb) return
+    const repo = fyredb.repo(importLogEntity)
     const sub = repo.observeQuery({ keys: monthKeys }).subscribe(setLogs)
     return () => { sub.unsubscribe() }
-  }, [strata, monthKeys])
+  }, [fyredb, monthKeys])
 
   const sorted = [...logs].sort((a, b) => b.triggeredAt - a.triggeredAt)
 

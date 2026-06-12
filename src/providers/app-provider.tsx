@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react"
-import { StrataConfigError, type Strata } from '@fyre-db/core'
-import { useStrata } from "@fyre-db/plugins-ui"
+import { FyreDbConfigError, type FyreDb } from '@fyre-db/core'
+import { useFyreDb } from "@fyre-db/plugins-ui"
 import { registerMagicWord } from "@/lib/magic-word"
 
 const MOBILE_BREAKPOINT = 768
@@ -9,7 +9,7 @@ const DEV_MODE_WORD = "FINDEVMODE"
 /** Debug handle exposed on `window.fin` while dev mode is on. */
 declare global {
   interface Window {
-    fin?: { readonly strata: Strata | null }
+    fin?: { readonly fyredb: FyreDb | null }
   }
 }
 
@@ -31,7 +31,7 @@ type AppProviderProps = {
 export function AppProvider({ children, scrollElementRef: externalRef }: AppProviderProps) {
   const internalRef = useRef<HTMLDivElement | null>(null)
   const scrollElementRef = externalRef ?? internalRef
-  const strata = useStrata()
+  const fyredb = useFyreDb()
 
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT,
@@ -53,13 +53,13 @@ export function AppProvider({ children, scrollElementRef: externalRef }: AppProv
     return registerMagicWord(DEV_MODE_WORD, () => { setDevMode((on) => !on); })
   }, [])
 
-  // Expose a `window.fin` debug handle (holding the active Strata instance)
+  // Expose a `window.fin` debug handle (holding the active FyreDb instance)
   // while dev mode is on. Removed when dev mode is off or on unmount.
   useEffect(() => {
     if (!devMode) return
-    window.fin = { strata }
+    window.fin = { fyredb }
     return () => { delete window.fin }
-  }, [devMode, strata])
+  }, [devMode, fyredb])
 
   const value = useMemo<AppContextValue>(
     () => ({ isMobile, scrollElementRef, devMode, setDevMode }),
@@ -73,6 +73,6 @@ export function AppProvider({ children, scrollElementRef: externalRef }: AppProv
 
 export function useApp(): AppContextValue {
   const ctx = useContext(AppContext)
-  if (!ctx) throw new StrataConfigError("useApp must be used within an AppProvider")
+  if (!ctx) throw new FyreDbConfigError("useApp must be used within an AppProvider")
   return ctx
 }

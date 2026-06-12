@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useStrata } from "@fyre-db/plugins-ui"
+import { useFyreDb } from "@fyre-db/plugins-ui"
 import type { BaseEntity } from "@fyre-db/core"
 import { authAccountEntity } from "@/services/entities/auth-account"
 import type { ImportLog } from "@/services/entities/import-log"
@@ -21,7 +21,7 @@ export type EmailPreviewState = {
  * preview refreshes if the same log moves to a different email.
  */
 export function useEmailPreview(log: (ImportLog & BaseEntity) | null): EmailPreviewState {
-  const strata = useStrata()
+  const fyredb = useFyreDb()
   const [email, setEmail] = useState<EmailPreview | null>(null)
   const [loading, setLoading] = useState(false)
   const [fetchedFor, setFetchedFor] = useState<string | null>(null)
@@ -30,11 +30,11 @@ export function useEmailPreview(log: (ImportLog & BaseEntity) | null): EmailPrev
   const emailId = source?.kind === "email" ? source.emailId : undefined
   const key = log && emailId ? `${log.id}:${emailId}` : null
 
-  if (key && key !== fetchedFor && strata && source?.kind === "email" && source.emailId) {
+  if (key && key !== fetchedFor && fyredb && source?.kind === "email" && source.emailId) {
     setFetchedFor(key)
     setEmail(null)
     setLoading(true)
-    const account = strata.repo(authAccountEntity).get(source.authAccountId)
+    const account = fyredb.repo(authAccountEntity).get(source.authAccountId)
     if (account) {
       void getMailProvider(account).fetchPreview(source.emailId)
         .then(setEmail)

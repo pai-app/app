@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useStrata } from "@fyre-db/plugins-ui"
+import { useFyreDb } from "@fyre-db/plugins-ui"
 import type { BaseEntity } from "@fyre-db/core"
 import { AdaptiveSurface } from "@/components/adaptive-surface"
 import { Button } from "@/ui/button"
@@ -30,19 +30,19 @@ import { cn } from "@/lib/utils"
 export function ImportSurface() {
   const { openLogId, openContext: ctx, closeSheet } = useImportService()
   const { isMobile } = useApp()
-  const strata = useStrata()
+  const fyredb = useFyreDb()
 
   const [log, setLog] = useState<(ImportLog & BaseEntity) | null>(null)
   const [liveStatus, setLiveStatus] = useState<ContextStatus | null>(null)
 
   // Subscribe to the active log row so status/counts update live.
   useEffect(() => {
-    if (!strata || !openLogId) return
-    const sub = strata.repo(importLogEntity).observe(openLogId).subscribe((row) => {
+    if (!fyredb || !openLogId) return
+    const sub = fyredb.repo(importLogEntity).observe(openLogId).subscribe((row) => {
       setLog(row ?? null)
     })
     return () => { sub.unsubscribe() }
-  }, [strata, openLogId])
+  }, [fyredb, openLogId])
 
   useEffect(() => {
     if (!ctx) return
@@ -235,20 +235,20 @@ function StatusLine({ status, log, ctxError }: {
  * sweep that crosses a month boundary still resolves).
  */
 function useImportSources(log: ImportLog & BaseEntity): readonly (ImportSource & BaseEntity)[] {
-  const strata = useStrata()
+  const fyredb = useFyreDb()
   const [sources, setSources] = useState<readonly (ImportSource & BaseEntity)[]>([])
 
   useEffect(() => {
-    if (!strata) return
+    if (!fyredb) return
     // Sources live in the run's month, plus the current month so a long sweep
     // that crosses a month boundary still resolves.
     const keys = [...new Set([importSourceMonthKey(log.triggeredAt), importSourceMonthKey(Date.now())])]
-    const sub = strata
+    const sub = fyredb
       .repo(importSourceEntity)
       .observeQuery({ keys, where: { importLogId: log.id } })
       .subscribe(setSources)
     return () => { sub.unsubscribe() }
-  }, [strata, log.id, log.triggeredAt])
+  }, [fyredb, log.id, log.triggeredAt])
 
   return sources
 }

@@ -1,4 +1,4 @@
-import type { Strata } from "@fyre-db/core"
+import type { FyreDb } from "@fyre-db/core"
 import { notificationEntity, type Notification } from "@/services/entities/notification"
 import {
   resolveDisplay,
@@ -23,11 +23,11 @@ export type NotifyOptions = {
  * save; transient-only notifications get a throwaway random id (it is never
  * stored, so it only needs to be unique for the in-flight payload).
  *
- * `strata` may be `null` for purely transient notifications (e.g. toast-only);
+ * `fyredb` may be `null` for purely transient notifications (e.g. toast-only);
  * the `inbox` channel is simply skipped when no store is available.
  */
 export function notify(
-  strata: Strata | null,
+  fyredb: FyreDb | null,
   notification: Notification,
   options?: NotifyOptions,
 ): string | undefined {
@@ -35,8 +35,8 @@ export function notify(
   const display = resolveDisplay(notification.display)
 
   let id: string | undefined
-  if (channels.includes("inbox") && strata) {
-    id = strata.repo(notificationEntity).save(notification)
+  if (channels.includes("inbox") && fyredb) {
+    id = fyredb.repo(notificationEntity).save(notification)
   }
 
   const payload: NotificationPayload = {
@@ -53,8 +53,8 @@ export function notify(
 }
 
 /** Mark a persisted notification acknowledged (idempotent). */
-export function acknowledgeNotification(strata: Strata, id: string): void {
-  const repo = strata.repo(notificationEntity)
+export function acknowledgeNotification(fyredb: FyreDb, id: string): void {
+  const repo = fyredb.repo(notificationEntity)
   const existing = repo.get(id)
   if (!existing || existing.acknowledgedAt) return
   repo.save({ ...existing, acknowledgedAt: Date.now() })

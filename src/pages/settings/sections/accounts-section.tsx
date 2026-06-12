@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react"
-import { useStrata } from "@fyre-db/plugins-ui"
+import { useFyreDb } from "@fyre-db/plugins-ui"
 import type { BaseEntity } from "@fyre-db/core"
 import { Icon } from "@/ui/icon"
 import { Button } from "@/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar"
 import { authAccountEntity, type AuthAccount } from "@/services/entities"
 import { emailImportSettingEntity, type EmailImportSetting } from "@/services/entities/email-import-setting"
-import { clientAuth } from "@/lib/strata-config"
+import { clientAuth } from "@/lib/fyredb-config"
 import { GOOGLE_AUTH_NAME, MICROSOFT_AUTH_NAME } from "@shared/providers"
 import { useImportService } from "@/providers/import-provider"
 
@@ -15,14 +15,14 @@ type AccountRow = AuthAccount & BaseEntity & {
 }
 
 export function AccountsSection() {
-  const strata = useStrata()
+  const fyredb = useFyreDb()
   const { startEmailSync } = useImportService()
   const [accounts, setAccounts] = useState<ReadonlyArray<AccountRow>>([])
 
   useEffect(() => {
-    if (!strata) return
-    const authRepo = strata.repo(authAccountEntity)
-    const settingsRepo = strata.repo(emailImportSettingEntity)
+    if (!fyredb) return
+    const authRepo = fyredb.repo(authAccountEntity)
+    const settingsRepo = fyredb.repo(emailImportSettingEntity)
     const sub = authRepo.observeQuery().subscribe((authAccounts) => {
       const settings = settingsRepo.query()
       const settingsMap = new Map(settings.map((s) => [s.authAccountId, s]))
@@ -33,7 +33,7 @@ export function AccountsSection() {
       )
     })
     return () => { sub.unsubscribe() }
-  }, [strata])
+  }, [fyredb])
 
   const handleAddGoogle = () => {
     void clientAuth.supportedAuths().find((a) => a.name === GOOGLE_AUTH_NAME)?.login("email")
@@ -50,10 +50,10 @@ export function AccountsSection() {
   }
 
   const handleRemove = (account: AccountRow) => {
-    if (!strata) return
-    strata.repo(authAccountEntity).delete(account.id)
+    if (!fyredb) return
+    fyredb.repo(authAccountEntity).delete(account.id)
     if (account.setting) {
-      strata.repo(emailImportSettingEntity).delete(account.setting.id)
+      fyredb.repo(emailImportSettingEntity).delete(account.setting.id)
     }
   }
 

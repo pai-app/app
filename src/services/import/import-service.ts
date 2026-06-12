@@ -1,4 +1,4 @@
-import type { Strata, BaseEntity, RepositoryType as Repository, SingletonRepositoryType as SingletonRepository } from "@fyre-db/core"
+import type { FyreDb, BaseEntity, RepositoryType as Repository, SingletonRepositoryType as SingletonRepository } from "@fyre-db/core"
 import {
   importLogEntity,
   type ImportLog,
@@ -48,7 +48,7 @@ type ActiveImport = {
 // ── Service ─────────────────────────────────────────────
 
 /**
- * Orchestrates file and email imports. One instance per `Strata`.
+ * Orchestrates file and email imports. One instance per `FyreDb`.
  *
  * Responsibilities:
  * - Creates/updates `importLog` rows (the run aggregate) as imports progress.
@@ -60,7 +60,7 @@ type ActiveImport = {
  *   `needs_input` rows left over from a previous session.
  */
 export class ImportService {
-  private readonly strata: Strata
+  private readonly fyredb: FyreDb
   private readonly logRepo: Repository<ImportLog>
   private readonly sourceRepo: Repository<ImportSource>
   private readonly settingsRepo: Repository<EmailImportSetting>
@@ -69,14 +69,14 @@ export class ImportService {
   private readonly accountRepo: Repository<MoneyAccount>
   private readonly active = new Map<string, ActiveImport>()
 
-  constructor(strata: Strata) {
-    this.strata = strata
-    this.logRepo = strata.repo(importLogEntity)
-    this.sourceRepo = strata.repo(importSourceEntity)
-    this.settingsRepo = strata.repo(emailImportSettingEntity)
-    this.userSettingsRepo = strata.repo(userSettingsEntity)
-    this.txRepo = strata.repo(transactionEntity)
-    this.accountRepo = strata.repo(moneyAccountEntity)
+  constructor(fyredb: FyreDb) {
+    this.fyredb = fyredb
+    this.logRepo = fyredb.repo(importLogEntity)
+    this.sourceRepo = fyredb.repo(importSourceEntity)
+    this.settingsRepo = fyredb.repo(emailImportSettingEntity)
+    this.userSettingsRepo = fyredb.repo(userSettingsEntity)
+    this.txRepo = fyredb.repo(transactionEntity)
+    this.accountRepo = fyredb.repo(moneyAccountEntity)
     log.import('service initialised')
     this.initSweep()
   }
@@ -188,7 +188,7 @@ export class ImportService {
     if (!canResume) return null
 
     // Look up the auth account
-    const authRepo = this.strata.repo(authAccountEntity)
+    const authRepo = this.fyredb.repo(authAccountEntity)
     const account = authRepo.get(existingLog.source.authAccountId)
     if (!account) {
       log.import.error('resume failed: auth account %s not found', existingLog.source.authAccountId)
@@ -455,7 +455,7 @@ export class ImportService {
     })
 
     // Spawn notification
-    notify(this.strata, {
+    notify(this.fyredb, {
       kind: "import-error",
       display: "error",
       title: "Import failed",
@@ -466,7 +466,7 @@ export class ImportService {
 
   /** Notify the user that a background email import is parked awaiting input. */
   private notifyNeedsInput(logId: string, account: AuthAccount & BaseEntity): void {
-    notify(this.strata, {
+    notify(this.fyredb, {
       kind: "import-needs-input",
       display: "warning",
       title: "Import needs your input",

@@ -22,8 +22,8 @@ export const log = {
 
 /**
  * Known logging namespaces, grouped by package, for the dev logging tool.
- * `fin` entries are derived from `log` so new loggers appear automatically;
- * `core` (strata-data-sync) namespaces are listed explicitly since that
+ * `pai` entries are derived from `log` so new loggers appear automatically;
+ * `core` (@fyre-db/core) namespaces are listed explicitly since that
  * package's `log` object is not exported publicly.
  */
 export const LOG_NAMESPACES: ReadonlyArray<{
@@ -31,7 +31,7 @@ export const LOG_NAMESPACES: ReadonlyArray<{
   readonly namespaces: ReadonlyArray<string>
 }> = [
   { group: 'fin', namespaces: Object.values(log).map((l) => l.namespace) },
-  { group: 'core', namespaces: ['core:strata', 'core:repo', 'core:store', 'core:sync', 'core:tenant'] },
+  { group: 'core', namespaces: ['core:fyredb', 'core:repo', 'core:store', 'core:sync', 'core:tenant'] },
 ]
 
 /** Whether `debug` would currently emit for the given namespace. */

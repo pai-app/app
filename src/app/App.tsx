@@ -1,6 +1,6 @@
 import { useRef } from "react"
-import { StrataProvider, TenantProvider } from "@fyre-db/plugins-ui"
-import { strataConfig } from "@/lib/strata-config"
+import { FyreDbProvider, TenantProvider } from "@fyre-db/plugins-ui"
+import { fyredbConfig } from "@/lib/fyredb-config"
 import { AppProvider } from "@/providers/app-provider"
 import { EntityProvider } from "@/providers/entity-provider"
 import { ImportProvider } from "@/providers/import-provider"
@@ -17,7 +17,7 @@ export function App() {
     <ThemeProvider defaultTheme="system">
       <div className="h-full grainy bg-[radial-gradient(ellipse_at_top_left,oklch(0.96_0.025_260),var(--background)_60%)] dark:bg-linear-to-br dark:from-background dark:to-muted/40">
         <div ref={scrollElementRef} className="overflow-auto h-full">
-          <StrataProvider config={strataConfig}>
+          <FyreDbProvider config={fyredbConfig}>
             <TenantProvider>
               <AppProvider scrollElementRef={scrollElementRef}>
                 <EntityProvider>
@@ -31,7 +31,7 @@ export function App() {
                 </EntityProvider>
               </AppProvider>
             </TenantProvider>
-          </StrataProvider>
+          </FyreDbProvider>
         </div>
       </div>
       <Toaster />

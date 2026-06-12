@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { useStrata } from "@fyre-db/plugins-ui"
+import { useFyreDb } from "@fyre-db/plugins-ui"
 import { authAccountEntity } from "@/services/entities/auth-account"
 import { FEATURE_CREDS_KEY, MICROSOFT_AUTH_NAME } from "@shared/providers"
 import { log } from "@/log"
@@ -13,14 +13,14 @@ type FeatureCreds = {
 
 /**
  * Checks sessionStorage for feature creds left by AuthCallbackPage and
- * saves them as AuthAccount entities. Runs when `strata` becomes available
+ * saves them as AuthAccount entities. Runs when `fyredb` becomes available
  * (tenant loaded) — the creds are a one-shot value written by the callback.
  */
 export function useConsumeFeatureCreds() {
-  const strata = useStrata()
+  const fyredb = useFyreDb()
 
   useEffect(() => {
-    if (!strata) return
+    if (!fyredb) return
     const raw = sessionStorage.getItem(FEATURE_CREDS_KEY)
     if (!raw) return
     sessionStorage.removeItem(FEATURE_CREDS_KEY)
@@ -32,7 +32,7 @@ export function useConsumeFeatureCreds() {
       return
     }
 
-    const repo = strata.repo(authAccountEntity)
+    const repo = fyredb.repo(authAccountEntity)
     void (async () => {
       let userId = ""
       let email = ""
@@ -71,5 +71,5 @@ export function useConsumeFeatureCreds() {
         refreshToken: creds.refreshToken,
       })
     })()
-  }, [strata])
+  }, [fyredb])
 }
