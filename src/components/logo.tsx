@@ -8,7 +8,7 @@ type LogoProps = {
   readonly linked?: boolean
 }
 
-export function Logo({ className, title = "fin", linked = false }: LogoProps) {
+export function Logo({ className, title = "pai", linked = false }: LogoProps) {
   const inRouter = useInRouterContext()
   const params = useParams<{ tenantId?: string }>()
 
@@ -16,7 +16,7 @@ export function Logo({ className, title = "fin", linked = false }: LogoProps) {
     <LogoSvg
       role="img"
       aria-label={title}
-      className={cn("m-1 h-4 w-8 font-bold", className)}
+      className={cn("m-1 h-7 w-auto font-bold", className)}
     />
   )
 
