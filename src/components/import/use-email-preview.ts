@@ -1,6 +1,6 @@
 import { useState } from "react"
-import { useStrata } from "@strata/plugins-ui"
-import type { BaseEntity } from "@strata/core"
+import { useStrata } from "@fyre-db/plugins-ui"
+import type { BaseEntity } from "@fyre-db/core"
 import { authAccountEntity } from "@/services/entities/auth-account"
 import type { ImportLog } from "@/services/entities/import-log"
 import { getMailProvider } from "@/services/mail"

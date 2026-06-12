@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from "react-router"
 import { Icon } from "@/ui/icon"
 import { Button } from "@/ui/button"
-import { useAuth } from "@strata/plugins-ui"
+import { useAuth } from "@fyre-db/plugins-ui"
 import {
   DropdownMenu,
   DropdownMenuContent,

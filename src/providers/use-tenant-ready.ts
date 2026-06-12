@@ -1,4 +1,4 @@
-import { useTenant } from "@strata/plugins-ui"
+import { useTenant } from "@fyre-db/plugins-ui"
 
 /**
  * True once a tenant is open in the Strata core. Repository reads/subscriptions

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
-import type { BaseEntity } from "@strata/core"
-import { useStrata } from "@strata/plugins-ui"
+import type { BaseEntity } from "@fyre-db/core"
+import { useStrata } from "@fyre-db/plugins-ui"
 import { SYSTEM_TAGS, tagEntity, type Tag } from "@/services/entities"
 import { MoneyAccountIcon } from "@/ui/money-account-icon"
 import { useTenantReady } from "@/providers/use-tenant-ready"

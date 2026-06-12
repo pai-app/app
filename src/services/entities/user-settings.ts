@@ -1,4 +1,4 @@
-import { defineEntity } from "@strata/core"
+import { defineEntity } from "@fyre-db/core"
 
 /**
  * Per-tenant user-controlled settings. Singleton — exactly one row per tenant.

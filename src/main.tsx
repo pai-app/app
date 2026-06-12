@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { StrataConfigError } from '@strata/core'
+import { StrataConfigError } from '@fyre-db/core'
 import { loadPack } from '@/lib/icons'
 import { log } from '@/log'
 import './index.css'

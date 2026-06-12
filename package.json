@@ -1,7 +1,7 @@
 {
-  "name": "fin",
+  "name": "@pai-app/app",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "concurrently \"npm:dev:app\" \"npm:dev:worker\"",
@@ -18,9 +18,9 @@
     "@cloudflare/workers-types": "^4.20260408.1",
     "@eslint/js": "^10.0.1",
     "@fontsource-variable/montserrat": "^5.2.8",
-    "@strata/core": "^0.1.6",
-    "@strata/plugins": "^0.1.2",
-    "@strata/plugins-ui": "^0.0.1",
+    "@fyre-db/core": "^0.0.1",
+    "@fyre-db/plugins": "^0.0.1",
+    "@fyre-db/plugins-ui": "^0.0.1",
     "@tailwindcss/vite": "^4.2.2",
     "@types/debug": "^4.1.13",
     "@types/node": "^25.5.0",
@@ -55,7 +55,7 @@
     "wrangler": "^4.81.0"
   },
   "dependencies": {
-    "@fin-app/adapters": "*",
+    "@pai-app/adapters": "*",
     "@tanstack/react-virtual": "^3.13.24",
     "debug": "^4.4.3",
     "sonner": "^2.0.7",

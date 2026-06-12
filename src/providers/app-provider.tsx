@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react"
-import { StrataConfigError, type Strata } from '@strata/core'
-import { useStrata } from "@strata/plugins-ui"
+import { StrataConfigError, type Strata } from '@fyre-db/core'
+import { useStrata } from "@fyre-db/plugins-ui"
 import { registerMagicWord } from "@/lib/magic-word"
 
 const MOBILE_BREAKPOINT = 768

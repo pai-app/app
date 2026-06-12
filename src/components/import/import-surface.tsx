@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
-import { useStrata } from "@strata/plugins-ui"
-import type { BaseEntity } from "@strata/core"
+import { useStrata } from "@fyre-db/plugins-ui"
+import type { BaseEntity } from "@fyre-db/core"
 import { AdaptiveSurface } from "@/components/adaptive-surface"
 import { Button } from "@/ui/button"
 import { Icon } from "@/ui/icon"

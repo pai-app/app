@@ -1,6 +1,6 @@
 import { useEffect } from "react"
 import { useNavigate } from "react-router"
-import { LoginButtons, useAuth } from "@strata/plugins-ui"
+import { LoginButtons, useAuth } from "@fyre-db/plugins-ui"
 import { LobbyTemplate } from "@/templates/lobby-template"
 import { useTheme } from "@/providers/theme-provider"
 

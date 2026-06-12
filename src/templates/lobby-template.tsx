@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import { Icon } from "@/ui/icon"
-import { useAuth } from "@strata/plugins-ui"
+import { useAuth } from "@fyre-db/plugins-ui"
 import { Logo } from "@/components/logo"
 import { Button } from "@/ui/button"
 import { ThemeSwitcher } from "@/components/theme-switcher"

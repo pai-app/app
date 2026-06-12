@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react"
-import { StrataConfigError } from "@strata/core"
+import { StrataConfigError } from "@fyre-db/core"
 import type { UserSettings } from "@/services/entities"
 import { fiscalYearMonthKeys } from "@/lib/fiscal"
 import { useLoadAccounts, type AccountRow } from "./use-load-accounts"

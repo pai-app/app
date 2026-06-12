@@ -1,4 +1,4 @@
-import type { Strata, BaseEntity, Repository, SingletonRepository } from "@strata/core"
+import type { Strata, BaseEntity, RepositoryType as Repository, SingletonRepositoryType as SingletonRepository } from "@fyre-db/core"
 import {
   importLogEntity,
   type ImportLog,
@@ -623,7 +623,7 @@ export class ImportService {
 // ── Utilities ───────────────────────────────────────────
 
 function buildMetadata(
-  account: import("@fin-app/adapters").AccountDetails,
+  account: import("@pai-app/adapters").AccountDetails,
 ): Record<string, readonly string[]> {
   const meta: Record<string, readonly string[]> = {}
   if (account.accountNumber?.length) meta["accountNumber"] = account.accountNumber
@@ -635,7 +635,7 @@ function buildMetadata(
   return meta
 }
 
-function isParseError(err: Error): err is import("@fin-app/adapters").ParseError {
+function isParseError(err: Error): err is import("@pai-app/adapters").ParseError {
   return err.name === "ParseError" && "kind" in err
 }
 

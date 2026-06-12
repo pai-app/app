@@ -1,4 +1,4 @@
-import type { MailMessage } from "@fin-app/adapters"
+import type { MailMessage } from "@pai-app/adapters"
 import type { EmailPreview } from "@/services/email-types"
 
 // ── Cursors & summaries ─────────────────────────────────

@@ -1,8 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
 import { toast } from "sonner"
-import { useStrata } from "@strata/plugins-ui"
-import { StrataConfigError } from "@strata/core"
-import type { BaseEntity } from "@strata/core"
+import { useStrata } from "@fyre-db/plugins-ui"
+import { StrataConfigError } from "@fyre-db/core"
+import type { BaseEntity } from "@fyre-db/core"
 import { notificationEntity, type Notification } from "@/services/entities/notification"
 import {
   acknowledgeNotification,

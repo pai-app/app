@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
-import { useStrata } from "@strata/plugins-ui"
-import type { BaseEntity } from "@strata/core"
+import { useStrata } from "@fyre-db/plugins-ui"
+import type { BaseEntity } from "@fyre-db/core"
 import { transactionEntity, type Transaction } from "@/services/entities"
 import { useEntity } from "@/providers/entity-provider"
 

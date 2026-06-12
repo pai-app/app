@@ -1,4 +1,4 @@
-import type { Strata } from "@strata/core"
+import type { Strata } from "@fyre-db/core"
 import { notificationEntity, type Notification } from "@/services/entities/notification"
 import {
   resolveDisplay,

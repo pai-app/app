@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Outlet, useParams, useNavigate } from "react-router"
 import { useEffect } from "react"
-import { AuthGuard, TenantGuard, useAuth } from "@strata/plugins-ui"
+import { AuthGuard, TenantGuard, useAuth } from "@fyre-db/plugins-ui"
 import { useTheme } from "@/providers/theme-provider"
 import { FullPageSpinner } from "@/components/full-page-spinner"
 import { DefaultTemplate } from "@/templates/default-template"

@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "react-router"
 import { Icon } from "@/ui/icon"
-import { useTenant } from "@strata/plugins-ui"
+import { useTenant } from "@fyre-db/plugins-ui"
 import {
   DropdownMenu,
   DropdownMenuContent,

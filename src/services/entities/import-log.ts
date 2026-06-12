@@ -1,5 +1,5 @@
-import { defineEntity } from "@strata/core"
-import { partitioned } from "@strata/core"
+import { defineEntity } from "@fyre-db/core"
+import { partitioned } from "@fyre-db/core"
 
 // ── Status & trigger ────────────────────────────────────
 

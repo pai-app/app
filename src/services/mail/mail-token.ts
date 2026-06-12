@@ -7,7 +7,7 @@ const EXPIRY_MARGIN_MS = 60_000
 const DEFAULT_TTL_MS = 5 * 60_000
 
 /**
- * Per-account feature-token cache. `ClientAuthService.refreshFeature` does a
+ * Per-account feature-token cache. `ClientAuthService.getFeatureToken` does a
  * network round-trip on every call, so without caching a mailbox sweep would
  * refresh once per email. One cache lives on each `MailProvider` instance and
  * is reused across all its calls; the token is refreshed only when missing or
@@ -26,7 +26,7 @@ export class MailTokenCache {
     if (this.token && Date.now() < this.expiresAt - EXPIRY_MARGIN_MS) {
       return this.token
     }
-    const result = await clientAuth.refreshFeature(
+    const result = await clientAuth.getFeatureToken(
       this.account.provider,
       this.account.feature,
       this.account.refreshToken,
@@ -34,6 +34,6 @@ export class MailTokenCache {
     if (!result) throw new Error("Failed to refresh feature token")
     this.token = result.token
     this.expiresAt = result.expiresAt ?? Date.now() + DEFAULT_TTL_MS
-    return this.token
+    return result.token
   }
 }

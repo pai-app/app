@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Icon } from "@/ui/icon"
-import { useStrata } from "@strata/plugins-ui"
+import { useStrata } from "@fyre-db/plugins-ui"
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover"
 import { Button } from "@/ui/button"
 import { cn } from "@/lib/utils"

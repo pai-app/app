@@ -29,6 +29,6 @@ export const MICROSOFT_EMAIL_SCOPES: readonly string[] = [
   "Mail.Read",
 ] as const
 
-// localStorage (via strata-adapters)
+// localStorage (via @fyre-db/plugins)
 export const DEVICE_ID_KEY = "fin_device_id"
 export const THEME_KEY = "fin_ui_theme"

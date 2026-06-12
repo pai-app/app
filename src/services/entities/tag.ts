@@ -1,4 +1,4 @@
-import { defineEntity } from "@strata/core"
+import { defineEntity } from "@fyre-db/core"
 
 /**
  * Tag — categorises transactions. Stored globally per tenant. Hierarchical via

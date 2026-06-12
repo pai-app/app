@@ -2,8 +2,8 @@ import {
   BffClientAdapter,
   ClientAuthService,
   CloudService,
-} from "@strata/plugins"
-import { GoogleDriveProvider, OneDriveProvider, createStrataConfig, CloudProviderService } from "@strata/plugins-ui"
+} from "@fyre-db/plugins"
+import { GoogleDriveProvider, OneDriveProvider, createStrataConfig, CloudProviderService } from "@fyre-db/plugins-ui"
 import {
   GOOGLE_AUTH_NAME,
   MICROSOFT_AUTH_NAME,

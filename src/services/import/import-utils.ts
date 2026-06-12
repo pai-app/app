@@ -1,8 +1,8 @@
-import type { ImportData, AccountDetails } from "@fin-app/adapters"
-import type { BaseEntity } from "@strata/core"
+import type { ImportData, AccountDetails } from "@pai-app/adapters"
+import type { BaseEntity } from "@fyre-db/core"
 import type { MoneyAccount } from "@/services/entities/money-account"
 import type { Transaction } from "@/services/entities/transaction"
-import type { Repository } from "@strata/core"
+import type { RepositoryType as Repository } from "@fyre-db/core"
 import { ImportContext } from "./import-context"
 
 // ── Hash ────────────────────────────────────────────────

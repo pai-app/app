@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-import { useStrata } from "@strata/plugins-ui"
+import { useStrata } from "@fyre-db/plugins-ui"
 import { USER_SETTINGS_DEFAULTS, userSettingsEntity, type UserSettings } from "@/services/entities"
 import { useTenantReady } from "@/providers/use-tenant-ready"
 import { log } from "@/log"

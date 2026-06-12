@@ -5,7 +5,7 @@ import {
   GOOGLE_DRIVE_SCOPES,
   MICROSOFT_OAUTH_ENDPOINTS,
   ONEDRIVE_SCOPES,
-} from "@strata/plugins"
+} from "@fyre-db/plugins"
 import { GOOGLE_AUTH_NAME, MICROSOFT_AUTH_NAME, AUTH_BASE_PREFIX, REFRESH_COOKIE, CSRF_COOKIE, GOOGLE_EMAIL_SCOPES, MICROSOFT_EMAIL_SCOPES } from "../../shared/providers"
 import debug from "debug"
 

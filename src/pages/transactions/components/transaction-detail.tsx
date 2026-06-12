@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useStrata } from "@strata/plugins-ui"
+import { useStrata } from "@fyre-db/plugins-ui"
 import { Icon } from "@/ui/icon"
 import { Separator } from "@/ui/separator"
 import { Textarea } from "@/ui/textarea"

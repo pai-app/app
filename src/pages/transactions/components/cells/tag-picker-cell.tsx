@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useStrata } from "@strata/plugins-ui"
+import { useStrata } from "@fyre-db/plugins-ui"
 import { TagPicker } from "@/components/tag-picker"
 import { type DisplayTag } from "@/providers/entity-provider"
 import { transactionEntity } from "@/services/entities"

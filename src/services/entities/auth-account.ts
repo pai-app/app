@@ -1,4 +1,4 @@
-import { defineEntity } from "@strata/core"
+import { defineEntity } from "@fyre-db/core"
 
 /**
  * Connected auth accounts (e.g. email via Google OAuth feature login).

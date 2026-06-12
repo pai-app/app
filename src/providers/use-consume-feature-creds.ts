@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { useStrata } from "@strata/plugins-ui"
+import { useStrata } from "@fyre-db/plugins-ui"
 import { authAccountEntity } from "@/services/entities/auth-account"
 import { FEATURE_CREDS_KEY, MICROSOFT_AUTH_NAME } from "@shared/providers"
 import { log } from "@/log"
