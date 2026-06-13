@@ -20,9 +20,9 @@
     "@cloudflare/workers-types": "^4.20260408.1",
     "@eslint/js": "^10.0.1",
     "@fontsource-variable/montserrat": "^5.2.8",
-    "@fyre-db/core": "^0.1.0",
-    "@fyre-db/plugins": "^0.1.0",
-    "@fyre-db/plugins-ui": "^0.1.0",
+    "@fyre-db/core": "*",
+    "@fyre-db/plugins": "*",
+    "@fyre-db/plugins-ui": "*",
     "@tailwindcss/vite": "^4.2.2",
     "@types/debug": "^4.1.13",
     "@types/node": "^25.5.0",
@@ -57,7 +57,7 @@
     "wrangler": "^4.81.0"
   },
   "dependencies": {
-    "@pai-app/adapters": "^0.1.0",
+    "@pai-app/adapters": "*",
     "@tanstack/react-virtual": "^3.13.24",
     "debug": "^4.4.3",
     "sonner": "^2.0.7",
