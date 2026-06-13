@@ -4,7 +4,7 @@ import { FyreDbConfigError } from '@fyre-db/core'
 import { loadPack } from '@/lib/icons'
 import { log } from '@/log'
 import './index.css'
-import { App } from './app/app'
+import { App } from './app/App'
 
 // Eager-load the chrome icon bundle so navbar / theme switcher / sync status
 // icons render synchronously on first paint instead of flickering in.

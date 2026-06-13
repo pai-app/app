@@ -10,6 +10,7 @@
     "gen:icons": "tsx scripts/generate-icons.ts",
     "prebuild": "npm run gen:icons",
     "predev:app": "npm run gen:icons",
+    "prelint": "npm run gen:icons",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "deploy": "npm run build && wrangler deploy",
