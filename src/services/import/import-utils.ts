@@ -26,10 +26,15 @@ export function monthKeyFromEpoch(epoch: number): string {
 export function findMatchingAccounts(
   accounts: ReadonlyArray<MoneyAccount & BaseEntity>,
   bankId: string,
+  kind: MoneyAccount["kind"],
   details: AccountDetails,
 ): ReadonlyArray<MoneyAccount & BaseEntity> {
   return accounts.filter((acct) => {
     if (acct.bankId !== bankId) return false
+    // A bank can offer multiple products under one identifier (e.g. Paytm
+    // wallet vs. savings sometimes share the same number), so the kind must
+    // also match — otherwise a savings statement merges into the wallet.
+    if (acct.kind !== kind) return false
     return matchesAccountDetails(acct, details)
   })
 }

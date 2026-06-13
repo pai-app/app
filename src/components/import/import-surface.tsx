@@ -274,12 +274,17 @@ function SweepProgress({ log, live }: { log: ImportLog & BaseEntity; live: boole
   const label = estimated && live ? `Rewinding through ${reached}…` : `Reached ${reached}`
 
   // Roll the source rows up per account for a compact, bounded breakdown.
-  const byAccount = new Map<string, number>()
+  // Carry the adapter id so the breakdown can show the offering (e.g.
+  // `paytm/savings` → "savings") alongside the bank name.
+  const byAccount = new Map<string, { newCount: number; adapterId?: string }>()
   for (const s of sources) {
     if (!s.accountId) continue
-    byAccount.set(s.accountId, (byAccount.get(s.accountId) ?? 0) + s.counts.new)
+    const cur = byAccount.get(s.accountId) ?? { newCount: 0, adapterId: s.adapterId }
+    cur.newCount += s.counts.new
+    if (!cur.adapterId) cur.adapterId = s.adapterId
+    byAccount.set(s.accountId, cur)
   }
-  const rollup = [...byAccount].sort((a, b) => b[1] - a[1])
+  const rollup = [...byAccount].sort((a, b) => b[1].newCount - a[1].newCount)
 
   return (
     <div className="flex flex-col gap-2 rounded-lg border p-3">
@@ -293,12 +298,14 @@ function SweepProgress({ log, live }: { log: ImportLog & BaseEntity; live: boole
       )}
       {rollup.length > 0 && (
         <div className="flex flex-col gap-0.5 pt-1">
-          {rollup.map(([accountId, newCount]) => {
-            const name = accounts.find((x) => x.id === accountId)?.name ?? accountId
+          {rollup.map(([accountId, info]) => {
+            const account = accounts.find((x) => x.id === accountId)
             return (
               <div key={accountId} className="flex justify-between gap-4 text-xs">
-                <span className="truncate text-muted-foreground">{name}</span>
-                <span className="shrink-0 tabular-nums">+{newCount}</span>
+                <span className="truncate text-muted-foreground">
+                  {formatAccountLabel(account?.name ?? accountId, info.adapterId, account)}
+                </span>
+                <span className="shrink-0 tabular-nums">+{info.newCount}</span>
               </div>
             )
           })}
@@ -311,8 +318,18 @@ function SweepProgress({ log, live }: { log: ImportLog & BaseEntity; live: boole
 // ── Detail block ────────────────────────────────────────
 
 function DetailBlock({ log }: { log: ImportLog }) {
+  const { accounts } = useEntity()
   const rows: Array<{ label: string; value: string }> = []
-  if (log.adapterId) rows.push({ label: "Adapter", value: log.adapterId })
+  if (log.adapterId) {
+    const [bankId, offering] = log.adapterId.split("/")
+    rows.push({ label: "Bank", value: bankId })
+    if (offering) rows.push({ label: "Offering", value: offering })
+  }
+  // Single-import: surface the resolved account's last-4 when unambiguous.
+  if (!log.emailRun && log.touchedAccountIds.length === 1) {
+    const last4 = accountLast4(accounts.find((a) => a.id === log.touchedAccountIds[0]))
+    if (last4) rows.push({ label: "Account", value: `••${last4}` })
+  }
   if (log.source.kind === "email" && log.source.receivedAt > 0) {
     rows.push({ label: "Email date", value: new Date(log.source.receivedAt).toLocaleString() })
   }
@@ -341,6 +358,28 @@ function DetailBlock({ log }: { log: ImportLog }) {
 }
 
 // ── Utils ───────────────────────────────────────────────
+
+/** Masked last-4 of an account's number (from `metadata.accountNumber`), or
+ *  null when none is known. Uses the last recorded number and trailing digits. */
+function accountLast4(account: { metadata?: Record<string, readonly string[]> } | undefined): string | null {
+  const numbers = account?.metadata?.accountNumber
+  const raw = numbers && numbers.length > 0 ? numbers[numbers.length - 1] : null
+  if (!raw) return null
+  const digits = raw.replace(/\D/g, "")
+  return digits.length >= 4 ? digits.slice(-4) : null
+}
+
+/** Compact account label for the sweep breakdown: `bank · offering · ••1234`,
+ *  omitting any part that is unavailable. */
+function formatAccountLabel(
+  name: string,
+  adapterId: string | undefined,
+  account: { metadata?: Record<string, readonly string[]> } | undefined,
+): string {
+  const offering = adapterId && adapterId.includes("/") ? adapterId.split("/")[1] : undefined
+  const last4 = accountLast4(account)
+  return [name, offering, last4 ? `••${last4}` : undefined].filter(Boolean).join(" · ")
+}
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
