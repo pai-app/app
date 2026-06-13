@@ -583,7 +583,7 @@ export class ImportService {
     account: AuthAccount & BaseEntity,
   ): string {
     const [bankId] = emailResult.adapterId.split("/")
-    const matches = findMatchingAccounts(this.accountRepo.query(), bankId, emailResult.accountDetails)
+    const matches = findMatchingAccounts(this.accountRepo.query(), bankId, emailResult.kind, emailResult.accountDetails)
     if (matches.length > 0) return matches[0].id
     return this.createAccountFromEmail(emailResult, account)
   }
