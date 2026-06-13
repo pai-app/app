@@ -28,7 +28,7 @@ export const EMPTY_FILTER: TransactionFilter = {
   search: "",
 }
 
-const STORAGE_PREFIX = "fin:tx-filter:"
+const STORAGE_PREFIX = "pai:tx-filter:"
 
 function storageKey(tenantId: string | undefined): string {
   return `${STORAGE_PREFIX}${tenantId ?? "_"}`

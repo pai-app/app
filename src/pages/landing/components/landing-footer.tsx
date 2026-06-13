@@ -16,7 +16,7 @@ export function LandingFooter() {
           <a href="/privacy.html" className="transition-colors hover:text-foreground">
             Privacy
           </a>
-          <span>© {new Date().getFullYear()} fin. Your data stays yours.</span>
+          <span>© {new Date().getFullYear()} Pai. Your data stays yours.</span>
         </div>
       </div>
     </footer>

@@ -4,19 +4,19 @@ import { useFyreDb } from "@fyre-db/plugins-ui"
 import { registerMagicWord } from "@/lib/magic-word"
 
 const MOBILE_BREAKPOINT = 768
-const DEV_MODE_WORD = "FINDEVMODE"
+const DEV_MODE_WORD = "PAIDEVMODE"
 
-/** Debug handle exposed on `window.fin` while dev mode is on. */
+/** Debug handle exposed on `window.pai` while dev mode is on. */
 declare global {
   interface Window {
-    fin?: { readonly fyredb: FyreDb | null }
+    pai?: { readonly fyredb: FyreDb | null }
   }
 }
 
 type AppContextValue = {
   readonly isMobile: boolean
   readonly scrollElementRef: RefObject<HTMLDivElement | null>
-  /** Whether developer tools are enabled. Toggled by typing `FINDEVMODE`. */
+  /** Whether developer tools are enabled. Toggled by typing `PAIDEVMODE`. */
   readonly devMode: boolean
   readonly setDevMode: (on: boolean) => void
 }
@@ -38,7 +38,7 @@ export function AppProvider({ children, scrollElementRef: externalRef }: AppProv
   )
 
   // Default-on for `npm run dev`, off in production. Runtime-only — resets
-  // on reload. Typing `FINDEVMODE` toggles it on any page.
+  // on reload. Typing `PAIDEVMODE` toggles it on any page.
   const [devMode, setDevMode] = useState<boolean>(import.meta.env.DEV)
 
   useEffect(() => {
@@ -53,12 +53,12 @@ export function AppProvider({ children, scrollElementRef: externalRef }: AppProv
     return registerMagicWord(DEV_MODE_WORD, () => { setDevMode((on) => !on); })
   }, [])
 
-  // Expose a `window.fin` debug handle (holding the active FyreDb instance)
+  // Expose a `window.pai` debug handle (holding the active FyreDb instance)
   // while dev mode is on. Removed when dev mode is off or on unmount.
   useEffect(() => {
     if (!devMode) return
-    window.fin = { fyredb }
-    return () => { delete window.fin }
+    window.pai = { fyredb }
+    return () => { delete window.pai }
   }, [devMode, fyredb])
 
   const value = useMemo<AppContextValue>(

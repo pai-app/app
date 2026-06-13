@@ -73,7 +73,7 @@ function RootRoute() {
   }, [status, navigate])
 
   if (status === "loading") return <FullPageSpinner message="Signing in…" />
-  if (status === "signed-in") return <FullPageSpinner message="Opening fin…" />
+  if (status === "signed-in") return <FullPageSpinner message="Opening Pai…" />
   return <LandingPage />
 }
 

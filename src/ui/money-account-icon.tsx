@@ -14,7 +14,7 @@ const KIND_ICON: Record<MoneyAccountKind, string> = {
 
 /**
  * Bank id → bank icon key in the `bank-icons` pack. Stub registry — will
- * move into `fin-parsers` (A1) when that lands. Until then the table lives
+ * move into `@pai-app/adapters` (A1) when that lands. Until then the table lives
  * here so the icon fallback chain runs through one path.
  */
 const BANK_ICON: Readonly<Record<string, string>> = {

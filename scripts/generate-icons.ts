@@ -24,9 +24,9 @@ import { manifest } from '../icons.config';
 import type { IconEntry, IconNode, Manifest } from './types';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const FIN_ROOT = resolve(__dirname, '..');
-const ASSETS_DIR = join(FIN_ROOT, 'src', 'assets', 'icons');
-const OUT_DIR = join(FIN_ROOT, 'src', 'lib', 'icons', 'generated');
+const PROJECT_ROOT = resolve(__dirname, '..');
+const ASSETS_DIR = join(PROJECT_ROOT, 'src', 'assets', 'icons');
+const OUT_DIR = join(PROJECT_ROOT, 'src', 'lib', 'icons', 'generated');
 
 const LUCIDE_SVG_ATTRS = `width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"`;
 

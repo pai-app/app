@@ -1,5 +1,5 @@
 /**
- * Shared constants between the browser app and the Cloudflare Pages worker.
+ * Shared constants between the browser app and the Cloudflare Worker.
  * Per PLUGGABLES_V2 §4 + §6 — endpoints/scopes are owned by the adapters
  * package; here we only declare app-level identifiers.
  */
@@ -10,13 +10,13 @@ export const AUTH_BASE_PREFIX = "/api/auth"
 export const AUTH_CALLBACK_PATH = `${AUTH_BASE_PREFIX}/callback`
 
 // sessionStorage
-export const SESSION_KEY = "fin_auth_session"
-export const FEATURE_CREDS_KEY = "fin_feature_creds"
-export const RETURN_URL_KEY = "fin_return_url"
+export const SESSION_KEY = "pai_auth_session"
+export const FEATURE_CREDS_KEY = "pai_feature_creds"
+export const RETURN_URL_KEY = "pai_return_url"
 
 // HTTP cookies
-export const REFRESH_COOKIE = "fin_refresh"
-export const CSRF_COOKIE = "fin_csrf"
+export const REFRESH_COOKIE = "pai_refresh"
+export const CSRF_COOKIE = "pai_csrf"
 
 // Feature scopes (email import)
 export const GOOGLE_EMAIL_SCOPES: readonly string[] = [
@@ -32,5 +32,5 @@ export const MICROSOFT_EMAIL_SCOPES: readonly string[] = [
 ] as const
 
 // localStorage (via @fyre-db/plugins)
-export const DEVICE_ID_KEY = "fin_device_id"
-export const THEME_KEY = "fin_ui_theme"
+export const DEVICE_ID_KEY = "pai_device_id"
+export const THEME_KEY = "pai_ui_theme"
