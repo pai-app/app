@@ -1,0 +1,54 @@
+name: Deploy
+
+# Auto-deploy to Cloudflare Workers.
+#   - main → production       → https://pai.<subdomain>.workers.dev
+#   - any other branch here   → preview alias → https://<branch>-pai.<subdomain>.workers.dev
+#
+# Branch list is hardcoded below; add a branch to `on.push.branches` to enable
+# its automatic deployment.
+#
+# Requires repo secrets:
+#   - CLOUDFLARE_API_TOKEN   (Workers Scripts:Edit)
+#   - CLOUDFLARE_ACCOUNT_ID
+
+on:
+  push:
+    branches: [main, v2]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - run: npm install
+
+      - run: npm run build
+
+      # Production deploy from main.
+      - name: Deploy (production)
+        if: github.ref == 'refs/heads/main'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
+
+      # Preview deploy from any other (hardcoded) branch — stable per-branch
+      # alias URL: https://<branch>-pai.<subdomain>.workers.dev
+      - name: Deploy (preview alias)
+        if: github.ref != 'refs/heads/main'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: versions upload --preview-alias ${{ github.ref_name }}

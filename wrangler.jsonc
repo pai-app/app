@@ -1,8 +1,19 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "fin",
+  "name": "pai",
+  "main": "worker/index.ts",
   "compatibility_date": "2025-04-01",
-  "pages_build_output_dir": "./dist",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Static SPA assets (built by `vite build` into ./dist).
+  // The Worker runs first for /api/* (auth/BFF); all other paths are served
+  // directly from assets, with SPA fallback to index.html for client routes.
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
 
   // Dev settings
   "dev": {
@@ -10,6 +21,6 @@
   },
 
   // Environment variables (secrets set via `wrangler secret put`)
-  // Dev vars (GOOGLE_CLIENT_ID, GOOGLE_CALLBACK_URL) are in .dev.vars
+  // Dev vars (GOOGLE_CLIENT_ID, GOOGLE_CALLBACK_URL, ...) are in .dev.vars
   "vars": {}
 }

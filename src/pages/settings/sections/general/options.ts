@@ -1,4 +1,4 @@
-import { CURRENCIES, type CurrencyMeta } from "@/lib/format"
+import { CURRENCIES } from "@/lib/format"
 
 /** A single choice in a settings dropdown. */
 export type SettingOption = {
@@ -9,7 +9,6 @@ export type SettingOption = {
 /** Currency choices sourced from the shared currency table. */
 export function currencyOptions(): readonly SettingOption[] {
   return Object.values(CURRENCIES)
-    .filter((c): c is CurrencyMeta => c !== undefined)
     .map((c) => ({ value: c.code, label: `${c.name} (${c.symbol})` }))
 }
 

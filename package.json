@@ -6,21 +6,22 @@
   "scripts": {
     "dev": "concurrently \"npm:dev:app\" \"npm:dev:worker\"",
     "dev:app": "vite",
-    "dev:worker": "wrangler pages dev dist --port 8788 --inspector-port 9229 --binding DEBUG=*",
+    "dev:worker": "wrangler dev --port 8788 --inspector-port 9229",
     "gen:icons": "tsx scripts/generate-icons.ts",
     "prebuild": "npm run gen:icons",
     "predev:app": "npm run gen:icons",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "wrangler pages dev dist --port 5173"
+    "deploy": "npm run build && wrangler deploy",
+    "preview": "npm run build && wrangler dev --port 5173"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260408.1",
     "@eslint/js": "^10.0.1",
     "@fontsource-variable/montserrat": "^5.2.8",
-    "@fyre-db/core": "^0.0.1",
-    "@fyre-db/plugins": "^0.0.1",
-    "@fyre-db/plugins-ui": "^0.0.1",
+    "@fyre-db/core": "^0.1.0",
+    "@fyre-db/plugins": "^0.1.0",
+    "@fyre-db/plugins-ui": "^0.1.0",
     "@tailwindcss/vite": "^4.2.2",
     "@types/debug": "^4.1.13",
     "@types/node": "^25.5.0",
@@ -55,7 +56,7 @@
     "wrangler": "^4.81.0"
   },
   "dependencies": {
-    "@pai-app/adapters": "*",
+    "@pai-app/adapters": "^0.1.0",
     "@tanstack/react-virtual": "^3.13.24",
     "debug": "^4.4.3",
     "sonner": "^2.0.7",

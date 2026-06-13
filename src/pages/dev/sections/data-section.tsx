@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router"
 import { useFyreDb } from "@fyre-db/plugins-ui"
-import type { BaseEntity, EntityDefinition, RepositoryType as Repository, SingletonRepositoryType as SingletonRepository } from "@fyre-db/core"
+import type { BaseEntity, EntityDefinition } from "@fyre-db/core"
 import { Icon } from "@/ui/icon"
 import { Input } from "@/ui/input"
 import { Button } from "@/ui/button"
@@ -142,7 +142,7 @@ function EntityDetail({ entityName, isMobile }: {
     if (!def) return
 
     if (def.keyStrategy.kind === "singleton") {
-      const repo = fyredb.repo(def as unknown as EntityDefinition<Row, "singleton">) as SingletonRepository<Row>
+      const repo = fyredb.repo(def as unknown as EntityDefinition<Row, "singleton">)
       const sub = repo.observe().subscribe((row) => {
         setSingletonRow(row ?? null)
         setLoading(false)
@@ -150,7 +150,7 @@ function EntityDetail({ entityName, isMobile }: {
       return () => { sub.unsubscribe() }
     }
 
-    const repo = fyredb.repo(def as unknown as EntityDefinition<Row, "global" | "partitioned">) as Repository<Row>
+    const repo = fyredb.repo(def as unknown as EntityDefinition<Row, "global" | "partitioned">)
     const opts = def.keyStrategy.kind === "partitioned" ? { keys: monthKeysForYear(year) } : undefined
     const sub = repo.observeQuery(opts).subscribe((list) => {
       setRows(list)

@@ -6,7 +6,7 @@ import {
   MICROSOFT_OAUTH_ENDPOINTS,
   ONEDRIVE_SCOPES,
 } from "@fyre-db/plugins"
-import { GOOGLE_AUTH_NAME, MICROSOFT_AUTH_NAME, AUTH_BASE_PREFIX, REFRESH_COOKIE, CSRF_COOKIE, GOOGLE_EMAIL_SCOPES, MICROSOFT_EMAIL_SCOPES } from "../../shared/providers"
+import { GOOGLE_AUTH_NAME, MICROSOFT_AUTH_NAME, AUTH_BASE_PREFIX, REFRESH_COOKIE, CSRF_COOKIE, GOOGLE_EMAIL_SCOPES, MICROSOFT_EMAIL_SCOPES } from "../shared/providers"
 import debug from "debug"
 
 let cachedAuth: ServerAuthService | null = null
@@ -51,7 +51,16 @@ function getAuthService(env: Env): ServerAuthService {
   return cachedAuth
 }
 
-export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
-  if (env.DEBUG) debug.enable(env.DEBUG)
-  return getAuthService(env).fetch(request)
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    if (env.DEBUG) debug.enable(env.DEBUG)
+
+    const url = new URL(request.url)
+    if (url.pathname.startsWith('/api/')) {
+      return getAuthService(env).fetch(request)
+    }
+
+    // Everything else is served from the static SPA assets.
+    return env.ASSETS.fetch(request)
+  },
 }
