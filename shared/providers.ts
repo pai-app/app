@@ -6,6 +6,8 @@
 export const GOOGLE_AUTH_NAME = "google"
 export const MICROSOFT_AUTH_NAME = "microsoft"
 export const AUTH_BASE_PREFIX = "/api/auth"
+/** OAuth redirect path, appended to the request origin to form `redirect_uri`. */
+export const AUTH_CALLBACK_PATH = `${AUTH_BASE_PREFIX}/callback`
 
 // sessionStorage
 export const SESSION_KEY = "fin_auth_session"
