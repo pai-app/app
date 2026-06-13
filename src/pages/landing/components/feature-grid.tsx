@@ -2,7 +2,7 @@ import { Icon } from "@/ui/icon"
 import { Text } from "@/ui/text"
 import { LANDING_FEATURES } from "../features"
 
-/** Responsive grid summarising fin's core capabilities. */
+/** Responsive grid summarising Pai's core capabilities. */
 export function FeatureGrid() {
   return (
     <section className="mx-auto max-w-6xl px-6 py-16 lg:py-20">
@@ -12,7 +12,7 @@ export function FeatureGrid() {
           From inbox to insight, automatically
         </h2>
         <p className="text-pretty text-muted-foreground">
-          fin handles the busywork of tracking money so you can just look at the
+          Pai handles the busywork of tracking money so you can just look at the
           numbers that matter.
         </p>
       </div>

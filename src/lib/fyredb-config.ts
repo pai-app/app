@@ -16,7 +16,7 @@ import { ENTITIES } from "@/services/entities"
 
 export { ENTITIES } from "@/services/entities"
 
-export const APP_ID = "fin"
+export const APP_ID = "pai"
 
 export const clientAuth = new ClientAuthService(
   [

@@ -95,7 +95,7 @@ export function LoggingSection() {
             value={pattern}
             onChange={(e) => { setPattern(e.target.value) }}
             onKeyDown={(e) => { if (e.key === "Enter") applyRaw() }}
-            placeholder="e.g. fin:*,core:repo*,-core:sync*"
+            placeholder="e.g. pai:*,core:repo*,-core:sync*"
             className="h-8 font-mono text-xs"
           />
           <Button size="sm" onClick={applyRaw}>Apply</Button>

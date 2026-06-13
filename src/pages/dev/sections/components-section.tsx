@@ -30,7 +30,7 @@ const CURRENCIES = ["INR", "USD", "EUR", "GBP", "JPY", "GEL", "PHP", "RUB", "SAR
 
 /**
  * Design-system showcase, rendered inside the dev hub's Components section.
- * Renders fin's app-specific components and formatters. Built-in shadcn
+ * Renders Pai's app-specific components and formatters. Built-in shadcn
  * primitives (Button, Card, etc.) are intentionally omitted — they're
  * documented upstream.
  */

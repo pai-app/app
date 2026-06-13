@@ -28,7 +28,7 @@ export function LandingHero() {
           </h1>
 
           <p className="max-w-md text-base text-pretty text-muted-foreground sm:text-lg">
-            fin pulls bank statements from your inbox, tags every transaction
+            Pai pulls bank statements from your inbox, tags every transaction
             automatically, and keeps it all private — encrypted in your own cloud,
             working even when you&apos;re offline.
           </p>

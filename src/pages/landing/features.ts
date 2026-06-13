@@ -9,12 +9,12 @@ export const LANDING_FEATURES: readonly LandingFeature[] = [
   {
     icon: "mail",
     title: "Import from your inbox",
-    body: "Connect Gmail or Outlook and fin pulls bank statements straight from your email — no manual downloads.",
+    body: "Connect Gmail or Outlook and Pai pulls bank statements straight from your email — no manual downloads.",
   },
   {
     icon: "file-text",
     title: "Statements, parsed",
-    body: "Drop a PDF or CSV and fin reads every transaction for you, ready to review in seconds.",
+    body: "Drop a PDF or CSV and Pai reads every transaction for you, ready to review in seconds.",
   },
   {
     icon: "sparkles",

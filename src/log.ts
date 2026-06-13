@@ -1,6 +1,6 @@
 import debug from 'debug'
 
-const root = debug('fin')
+const root = debug('pai')
 
 function createLogger(module: string) {
   const base = root.extend(module)
@@ -30,7 +30,7 @@ export const LOG_NAMESPACES: ReadonlyArray<{
   readonly group: string
   readonly namespaces: ReadonlyArray<string>
 }> = [
-  { group: 'fin', namespaces: Object.values(log).map((l) => l.namespace) },
+  { group: 'pai', namespaces: Object.values(log).map((l) => l.namespace) },
   { group: 'core', namespaces: ['core:fyredb', 'core:repo', 'core:store', 'core:sync', 'core:tenant'] },
 ]
 
