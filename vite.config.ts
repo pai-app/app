@@ -1,32 +1,33 @@
-import tailwindcss from '@tailwindcss/vite'
-import react from '@vitejs/plugin-react'
-import path from "path"
 import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 import svgr from 'vite-plugin-svgr'
+import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: "/",
   plugins: [react(), tailwindcss(), svgr()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      '@': path.resolve(__dirname, './src'),
+      '@shared': path.resolve(__dirname, './shared'),
     },
+    dedupe: ['react', 'react-dom'],
   },
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8787',
+        target: 'http://localhost:8788',
         changeOrigin: true,
-      }
-    }
+        configure: (proxy) => {
+          proxy.on('error', (_err, _req, res) => {
+            if ('headersSent' in res && !res.headersSent) {
+              (res as import('http').ServerResponse).writeHead(503)
+              res.end()
+            }
+          })
+        },
+      },
+    },
   },
-  build: {
-    rollupOptions: {
-      input: {
-        index: path.resolve(__dirname, "index.html"),
-      }
-    }
-  },
-  publicDir: 'public',
 })
