@@ -137,15 +137,18 @@ function buildParams({ query, before }: MailListOptions): string {
     $select: "id,subject,from,receivedDateTime,bodyPreview,hasAttachments",
   })
 
-  const filters: string[] = []
-  if (before) filters.push(`receivedDateTime le ${new Date(before.date).toISOString()}`)
+  // Graph rejects `$orderby` combined with a `contains()`-only `$filter`, so the
+  // `$orderby` property must also appear in `$filter`. Always bound by
+  // `receivedDateTime` — defaulting to "now" on the first (cursorless) page.
+  const boundMs = before ? before.date : Date.now()
+  const filters: string[] = [`receivedDateTime le ${new Date(boundMs).toISOString()}`]
   if (query.domains?.length) {
     filters.push(`(${query.domains.map((d) => `contains(from/emailAddress/address,'${d}')`).join(" or ")})`)
   } else if (query.subject) {
     filters.push(`contains(subject,'${query.subject}')`)
   }
 
-  if (filters.length > 0) params.set("$filter", filters.join(" and "))
+  params.set("$filter", filters.join(" and "))
   return params.toString()
 }
 
