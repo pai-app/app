@@ -32,6 +32,9 @@ jobs:
 
       - run: npm install
 
+      # Gate the deploy on a green test run — never ship failing code.
+      - run: npm test
+
       - run: npm run build
 
       # Production deploy from main.

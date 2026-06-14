@@ -1,43 +1,22 @@
 import { type SVGProps } from "react"
 import { Icon } from "@/ui/icon"
-import type { MoneyAccount, MoneyAccountKind } from "@/services/entities"
-
-/** Default icon when an account has no `icon` override and no resolvable bank. */
-const KIND_ICON: Record<MoneyAccountKind, string> = {
-  bank: "landmark",
-  "credit-card": "credit-card",
-  cash: "wallet",
-  wallet: "wallet",
-  loan: "hand-coins",
-  investment: "chart-candlestick",
-}
-
-/**
- * Bank id → bank icon key in the `bank-icons` pack. Stub registry — will
- * move into `@pai-app/adapters` (A1) when that lands. Until then the table lives
- * here so the icon fallback chain runs through one path.
- */
-const BANK_ICON: Readonly<Record<string, string>> = {
-  federal: "bank-federal",
-  hdfc: "bank-hdfc",
-  jupiter: "bank-jupiter",
-  paytm: "bank-paytm",
-}
+import type { MoneyAccount } from "@/services/entities"
+import { getBankDisplay, KIND_DISPLAY } from "@/services/catalog/bank-display"
 
 /**
  * Resolve the icon key for a money account.
  *
- *   account.icon            // explicit user override
- *     → BANK_ICON[bankId]   // bank brand mark when known
- *     → KIND_ICON[kind]     // generic kind icon
+ *   account.icon                    // explicit user override
+ *     → bank display icon           // bank brand mark when known
+ *     → KIND_DISPLAY[kind].icon     // generic kind icon
  */
 function resolveAccountIcon(account: MoneyAccount): string {
   if (account.icon) return account.icon
   if (account.bankId) {
-    const fromBank = BANK_ICON[account.bankId]
+    const fromBank = getBankDisplay(account.bankId)?.icon
     if (fromBank) return fromBank
   }
-  return KIND_ICON[account.kind]
+  return KIND_DISPLAY[account.kind].icon
 }
 
 export type MoneyAccountIconProps = SVGProps<SVGSVGElement> & {

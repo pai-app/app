@@ -35,7 +35,7 @@ import { ImportContext } from "./import-context"
 import type { PromptAnswer } from "./import-context"
 import { runFileImport, type FileImportResult } from "./file-import-context"
 import { runEmailImport, type EmailResult, type EmailRunProgress } from "./email-import-context"
-import { CancelledError, EmailPasswordError, findMatchingAccounts } from "./import-utils"
+import { CancelledError, EmailPasswordError, findMatchingAccounts, mergeMetadata } from "./import-utils"
 import { log } from "@/log"
 
 // ── Active context entry ────────────────────────────────
@@ -231,8 +231,14 @@ export class ImportService {
   }
 
   private commitFileResult(logId: string, result: FileImportResult): void {
-    // Create or resolve account
-    const accountId = result.accountId || this.createAccount(result)
+    // Create or resolve account. When an existing account is reused, fold the
+    // statement's metadata into it (a re-import may carry complementary fields,
+    // e.g. a full vs. masked account number, or a code one format omits).
+    const existingAccountId = result.accountId
+    const accountId = existingAccountId || this.createAccount(result)
+    if (existingAccountId) {
+      this.mergeAccountMetadata(existingAccountId, buildMetadata(result.importData.account))
+    }
 
     // Write transactions, parented to a per-file source row (only created
     // when the file actually yielded new data).
@@ -551,6 +557,7 @@ export class ImportService {
       currency: result.importData.account.currency,
       initialBalance: 0,
       bankId: result.importData.bankId,
+      offeringId: result.importData.offeringId,
       metadata: buildMetadata(result.importData.account),
     })
   }
@@ -559,13 +566,14 @@ export class ImportService {
     emailResult: EmailResult,
     account: AuthAccount & BaseEntity,
   ): string {
-    const [bankId] = emailResult.adapterId.split("/")
+    const [bankId, offeringId] = emailResult.adapterId.split("/")
     return this.accountRepo.save({
       kind: emailResult.kind,
       name: bankId || account.email,
       currency: emailResult.accountDetails.currency,
       initialBalance: 0,
       bankId,
+      ...(offeringId && { offeringId }),
       metadata: buildMetadata(emailResult.accountDetails),
     })
   }
@@ -584,8 +592,25 @@ export class ImportService {
   ): string {
     const [bankId] = emailResult.adapterId.split("/")
     const matches = findMatchingAccounts(this.accountRepo.query(), bankId, emailResult.kind, emailResult.accountDetails)
-    if (matches.length > 0) return matches[0].id
+    if (matches.length > 0) {
+      this.mergeAccountMetadata(matches[0].id, buildMetadata(emailResult.accountDetails))
+      return matches[0].id
+    }
     return this.createAccountFromEmail(emailResult, account)
+  }
+
+  /**
+   * Fold freshly-parsed metadata into an existing account, unioning values per
+   * key (least-masked first) and persisting only when something changed.
+   */
+  private mergeAccountMetadata(
+    accountId: string,
+    incoming: Record<string, readonly string[]>,
+  ): void {
+    const account = this.accountRepo.get(accountId)
+    if (!account) return
+    const { metadata, changed } = mergeMetadata(account.metadata, incoming)
+    if (changed) this.accountRepo.save({ ...account, metadata })
   }
 
   // ── Settings helpers ──────────────────────────────────

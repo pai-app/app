@@ -33,7 +33,7 @@ export { importSourceEntity, importSourceMonthKey } from "./import-source"
 export type { Money } from "./money"
 
 export type { MoneyAccount, MoneyAccountKind } from "./money-account"
-export { MONEY_ACCOUNT_KINDS, moneyAccountEntity } from "./money-account"
+export { moneyAccountEntity } from "./money-account"
 
 export type { Notification, NotificationRef } from "./notification"
 export { notificationEntity } from "./notification"
