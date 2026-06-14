@@ -22,6 +22,9 @@ jobs:
 
       - run: npm run lint
 
+      # Run unit tests (vitest). Fails CI on any test failure.
+      - run: npm test
+
       # Type-check app + worker (composite project) and build the SPA bundle.
       - run: npm run build
 

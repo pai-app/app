@@ -13,6 +13,7 @@
     "prelint": "npm run gen:icons",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test": "vitest run",
     "deploy": "npm run build && wrangler deploy",
     "preview": "npm run build && wrangler dev --port 5173"
   },
