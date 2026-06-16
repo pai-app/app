@@ -161,6 +161,25 @@ export class TransactionService implements TaggingData {
   }
 
   /**
+   * Apply established rules to a set of already-loaded transactions, auto-tagging
+   * only the still-untagged rows that match a confident (`auto`) rule. A bounded,
+   * on-demand sweep over partitions the caller has hydrated (e.g. the current
+   * fiscal year) — never overwrites an existing tag. Returns the number tagged.
+   */
+  applyRulesToTransactions(txs: readonly TaggingTransaction[]): number {
+    const now = Date.now()
+    let applied = 0
+    for (const tx of txs) {
+      if (tx.tagId !== undefined) continue // never clobber an existing tag
+      const verdict = this.engine.matchTransaction(tx, now)
+      if (verdict.kind !== "auto") continue
+      this.applyOutcome(this.engine.applyAutoTag(tx, verdict, now, this.resolveAdapterId(tx)))
+      applied += 1
+    }
+    return applied
+  }
+
+  /**
    * The shared per-row tag path for `tag` and `tagMany`. Skips missing rows and
    * rows already carrying `tagId`. Untagged rows go through `applyHumanTag`;
    * rows changing tags go through `applyRetag` (a vote, not an auto-apply).
@@ -191,8 +210,8 @@ export class TransactionService implements TaggingData {
       } else {
         // Resolve key → full namespaced entity id: `delete` (like `get`)
         // requires the stored `tagRule._.<key>` id, not the bare key.
-        const rule = this.tagRuleRepo.query({ where: { key: delta.key } })[0]
-        if (rule) this.tagRuleRepo.delete(rule.id)
+        const matches = this.tagRuleRepo.query({ where: { key: delta.key } })
+        if (matches.length > 0) this.tagRuleRepo.delete(matches[0].id)
       }
     }
   }

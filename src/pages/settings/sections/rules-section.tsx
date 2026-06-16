@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { toast } from "sonner"
 import { useFyreDb } from "@fyre-db/plugins-ui"
 import { Button } from "@/ui/button"
 import { Icon } from "@/ui/icon"
@@ -12,7 +13,13 @@ import {
 } from "@/ui/dropdown-menu"
 import { tagRuleEntity } from "@/services/entities"
 import { isDormant, strengthOf } from "@/services/tagging/strength"
-import { useEntity, type AccountRow, type TagRuleRow } from "@/providers/entity-provider"
+import {
+  useEntity,
+  useTransactionService,
+  type AccountRow,
+  type TagRuleRow,
+} from "@/providers/entity-provider"
+import { useTransactionsQuery } from "@/pages/transactions/use-transactions-query"
 import { RuleCard } from "./rules/rule-card"
 
 type SortKey = "lastMatched" | "evidence"
@@ -23,15 +30,17 @@ const SORT_LABELS: Record<SortKey, string> = {
 }
 
 /**
- * Read-only Rules UI (v1). Lists every learned tag rule with its winning tag,
- * strength breakdown, matcher type, provenance, and last-matched age. Allowed
- * actions are view / delete / prune only — no "Recompute strength" (D4) and no
- * "Apply rules to all" sweep (D6). Deleting a rule only stops future
- * auto-tagging; it never untags existing transactions.
+ * Read-only Rules UI (v1). Lists every learned tag rule with its matcher hint,
+ * impact, and status. Actions: view / delete / prune, plus an on-demand
+ * "auto-apply to the current year" sweep over the already-loaded fiscal year.
+ * Deleting a rule only stops future auto-tagging; it never untags existing
+ * transactions.
  */
 export function RulesSection() {
   const fyredb = useFyreDb()
-  const { tagRules, tags, accounts } = useEntity()
+  const txService = useTransactionService()
+  const { tagRules, tags, accounts, year } = useEntity()
+  const { transactions } = useTransactionsQuery()
   const [sort, setSort] = useState<SortKey>("lastMatched")
 
   // UI may read the clock (only the engine may not). Reading it once via a
@@ -67,6 +76,15 @@ export function RulesSection() {
     for (const id of ids) repo.delete(id)
   }
 
+  const autoApplyToYear = () => {
+    const applied = txService.applyRulesToTransactions(transactions)
+    toast(
+      applied > 0
+        ? `Auto-tagged ${applied} transaction${applied === 1 ? "" : "s"} in ${year}`
+        : `No new matches to auto-tag in ${year}`,
+    )
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -89,27 +107,39 @@ export function RulesSection() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {(dormantRuleIds.length > 0 || archivedRuleIds.length > 0) && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" aria-label="Prune rules">
-                <Icon name="ellipsis" className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {dormantRuleIds.length > 0 && (
-                <DropdownMenuItem onClick={() => { deleteRules(dormantRuleIds) }}>
-                  Prune dormant ({dormantRuleIds.length})
-                </DropdownMenuItem>
-              )}
-              {archivedRuleIds.length > 0 && (
-                <DropdownMenuItem onClick={() => { deleteRules(archivedRuleIds) }}>
-                  Prune from archived accounts ({archivedRuleIds.length})
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={tagRules.length === 0}
+            onClick={autoApplyToYear}
+          >
+            <Icon name="sparkles" className="size-4" />
+            Auto-apply to {year}
+          </Button>
+
+          {(dormantRuleIds.length > 0 || archivedRuleIds.length > 0) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" aria-label="Prune rules">
+                  <Icon name="ellipsis" className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {dormantRuleIds.length > 0 && (
+                  <DropdownMenuItem onClick={() => { deleteRules(dormantRuleIds) }}>
+                    Prune dormant ({dormantRuleIds.length})
+                  </DropdownMenuItem>
+                )}
+                {archivedRuleIds.length > 0 && (
+                  <DropdownMenuItem onClick={() => { deleteRules(archivedRuleIds) }}>
+                    Prune from archived accounts ({archivedRuleIds.length})
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
 
       {sortedRules.length === 0 && (
