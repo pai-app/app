@@ -70,6 +70,7 @@ export function FilterSheet({ state, resultCount, ref }: FilterSheetProps) {
               <TagToggle
                 value={filter.tag}
                 onChange={(tag) => { patch({ tag }) }}
+                untaggedCount={state.untaggedCount}
                 className="w-full *:flex-1"
               />
             </Field>

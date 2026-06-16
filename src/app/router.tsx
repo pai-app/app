@@ -14,6 +14,7 @@ import { TransactionsPage } from "@/pages/transactions/transactions-page"
 import { GeneralSection } from "@/pages/settings/sections/general-section"
 import { AccountsSection } from "@/pages/settings/sections/accounts-section"
 import { ImportsSection } from "@/pages/settings/sections/imports-section"
+import { RulesSection } from "@/pages/settings/sections/rules-section"
 import { DevHubPage } from "@/pages/dev/dev-hub-page"
 import { LoggingSection } from "@/pages/dev/sections/logging-section"
 import { ComponentsSection } from "@/pages/dev/sections/components-section"
@@ -98,6 +99,7 @@ export function AppRouter() {
                 <Route path="general" element={<GeneralSection />} />
                 <Route path="accounts" element={<AccountsSection />} />
                 <Route path="imports" element={<ImportsSection />} />
+                <Route path="rules" element={<RulesSection />} />
               </Route>
               <Route path="dev" element={<DevHubPage />}>
                 <Route path="logging" element={<LoggingSection />} />

@@ -5,6 +5,7 @@ import { importSourceEntity } from "./import-source"
 import { moneyAccountEntity } from "./money-account"
 import { notificationEntity } from "./notification"
 import { tagEntity } from "./tag"
+import { tagRuleEntity } from "./tag-rule"
 import { transactionEntity } from "./transaction"
 import { userSettingsEntity } from "./user-settings"
 
@@ -41,6 +42,9 @@ export { notificationEntity } from "./notification"
 export type { Tag } from "./tag"
 export { tagEntity } from "./tag"
 
+export type { TagRule } from "./tag-rule"
+export { tagRuleEntity } from "./tag-rule"
+
 export type { Transaction } from "./transaction"
 export { transactionEntity } from "./transaction"
 
@@ -53,6 +57,7 @@ export const ENTITIES = [
   userSettingsEntity,
   authAccountEntity,
   tagEntity,
+  tagRuleEntity,
   moneyAccountEntity,
   transactionEntity,
   importLogEntity,

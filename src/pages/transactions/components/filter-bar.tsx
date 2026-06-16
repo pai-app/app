@@ -29,7 +29,11 @@ export function FilterBar({ state, ref }: FilterBarProps) {
         selected={filter.accountIds}
         onChange={(accountIds) => { patch({ accountIds }) }}
       />
-      <TagToggle value={filter.tag} onChange={(tag) => { patch({ tag }) }} />
+      <TagToggle
+        value={filter.tag}
+        onChange={(tag) => { patch({ tag }) }}
+        untaggedCount={state.untaggedCount}
+      />
       <AmountRange
         min={filter.amountMin}
         max={filter.amountMax}

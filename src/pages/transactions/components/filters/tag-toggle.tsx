@@ -7,10 +7,11 @@ export type TagToggleProps = {
   readonly value: TagFilter
   readonly onChange: (value: TagFilter) => void
   readonly className?: string
+  readonly untaggedCount?: number
 }
 
 /** Tagged / Untagged toggle. Clicking the active option clears it. */
-export function TagToggle({ value, onChange, className }: TagToggleProps) {
+export function TagToggle({ value, onChange, className, untaggedCount }: TagToggleProps) {
   const toggle = (option: "tagged" | "untagged") => {
     onChange(value === option ? null : option)
   }
@@ -29,6 +30,11 @@ export function TagToggle({ value, onChange, className }: TagToggleProps) {
         onClick={() => { toggle("untagged") }}
       >
         Untagged
+        {untaggedCount !== undefined && untaggedCount > 0 && (
+          <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-secondary px-1 text-[10px] font-medium text-secondary-foreground tabular-nums">
+            {untaggedCount}
+          </span>
+        )}
       </Button>
     </ButtonGroup>
   )

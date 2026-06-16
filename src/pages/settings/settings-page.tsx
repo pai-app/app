@@ -11,6 +11,7 @@ export function SettingsPage() {
     { key: "general", label: "General", icon: "settings", to: `${basePath}/general` },
     { key: "accounts", label: "Accounts", icon: "mail", to: `${basePath}/accounts` },
     { key: "imports", label: "Imports", icon: "upload", to: `${basePath}/imports` },
+    { key: "rules", label: "Tag Rules", icon: "sparkles", to: `${basePath}/rules` },
   ]
 
   return <SectionShell title="Settings" sections={sections} nav={isMobile ? "list" : "pill"} />

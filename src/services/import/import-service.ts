@@ -29,6 +29,7 @@ import {
   moneyAccountEntity,
   type MoneyAccount,
 } from "@/services/entities/money-account"
+import { TransactionService } from "@/services/transactions/transaction-service"
 import type { AuthAccount } from "@/services/entities/auth-account"
 import { authAccountEntity } from "@/services/entities/auth-account"
 import { ImportContext } from "./import-context"
@@ -67,6 +68,7 @@ export class ImportService {
   private readonly userSettingsRepo: SingletonRepository<UserSettings>
   private readonly txRepo: Repository<Transaction>
   private readonly accountRepo: Repository<MoneyAccount>
+  private readonly txService: TransactionService
   private readonly active = new Map<string, ActiveImport>()
 
   constructor(fyredb: FyreDb) {
@@ -77,6 +79,7 @@ export class ImportService {
     this.userSettingsRepo = fyredb.repo(userSettingsEntity)
     this.txRepo = fyredb.repo(transactionEntity)
     this.accountRepo = fyredb.repo(moneyAccountEntity)
+    this.txService = new TransactionService(fyredb)
     log.import('service initialised')
     this.initSweep()
   }
@@ -258,16 +261,16 @@ export class ImportService {
           duplicate: result.duplicateCount,
         },
       })
-      for (const tx of newTxs) {
-        this.txRepo.save({
+      this.txService.importNewTransactions(
+        newTxs.map((tx) => ({
           accountId,
           narration: tx.description,
           transactionAt: tx.date,
           amount: tx.amount,
           hash: tx.hash,
           sourceId,
-        })
-      }
+        })),
+      )
     }
 
     // Append new passwords to vault
@@ -330,16 +333,16 @@ export class ImportService {
               duplicate: result.duplicateCount,
             },
           })
-          for (const tx of newTxs) {
-            this.txRepo.save({
+          this.txService.importNewTransactions(
+            newTxs.map((tx) => ({
               accountId,
               narration: tx.description,
               transactionAt: tx.date,
               amount: tx.amount,
               hash: tx.hash,
               sourceId,
-            })
-          }
+            })),
+          )
         }
         parsed += result.transactions.length
         newCount += result.newCount

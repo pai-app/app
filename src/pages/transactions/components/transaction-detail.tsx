@@ -15,6 +15,7 @@ import {
 } from "@/services/entities"
 import { TagPicker } from "@/components/tag-picker"
 import { log } from "@/log"
+import { useTagWithSimilar } from "../use-tag-with-similar"
 import type { TransactionRow } from "../use-transactions-query"
 import { AmountCell } from "./cells/amount-cell"
 import { TagCell } from "./cells/tag-cell"
@@ -62,6 +63,7 @@ export function TransactionDetail({ tx, onClose }: TransactionDetailProps) {
   const { isMobile } = useApp()
   const { accounts } = useEntity()
   const fyredb = useFyreDb()
+  const { tag, untag } = useTagWithSimilar()
 
   // Local edit buffer for the Notes field, reset (during render, not in an
   // effect) whenever the selected transaction changes.
@@ -113,9 +115,9 @@ export function TransactionDetail({ tx, onClose }: TransactionDetailProps) {
 
   const setTitle = (value: string) => { setTitleState({ id: tx.id, value }) }
 
-  const setTag = (tag: DisplayTag | null) => {
-    if (!fyredb) return
-    fyredb.repo(transactionEntity).save({ ...tx, tagId: tag?.id })
+  const setTag = (selected: DisplayTag | null) => {
+    if (selected) tag(tx.id, selected.id, selected.name)
+    else untag(tx.id)
     setTagPickerOpen(false)
   }
 
@@ -129,7 +131,7 @@ export function TransactionDetail({ tx, onClose }: TransactionDetailProps) {
         selectedTagId={tx.tagId ?? null}
         onSelect={setTag}
       >
-        <TagCell tagId={tx.tagId ?? null} />
+        <TagCell tagId={tx.tagId ?? null} autoTagged={tx.autoTagged} />
       </TagPicker>
 
       <Separator />

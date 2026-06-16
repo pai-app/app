@@ -69,6 +69,7 @@ export type UseTransactionsFilter = {
   readonly activeCount: number
   readonly dirty: boolean
   readonly filtered: readonly TransactionRow[]
+  readonly untaggedCount: number
 }
 
 /**
@@ -98,6 +99,13 @@ export function useTransactionsFilter(
   }, [])
 
   const clearAll = useCallback(() => { setFilter(EMPTY_FILTER) }, [])
+
+  // Inbox-zero target: count untagged rows over the FULL current-year set
+  // (not the filtered subset), so the badge stays stable as filters change.
+  const untaggedCount = useMemo(
+    () => transactions.filter((t) => !t.tagId).length,
+    [transactions],
+  )
 
   // accountId → currency, for converting minor-unit amounts to major units.
   const currencyByAccount = useMemo(() => {
@@ -147,5 +155,6 @@ export function useTransactionsFilter(
     activeCount: countActiveFilters(filter),
     dirty: isDirty(filter),
     filtered,
+    untaggedCount,
   }
 }
