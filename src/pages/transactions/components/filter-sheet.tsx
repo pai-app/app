@@ -21,16 +21,12 @@ export type FilterSheetProps = {
  * apply, no Apply button; the list updates behind the partial-height sheet.
  */
 export function FilterSheet({ state, resultCount, ref }: FilterSheetProps) {
-  const { filter, patch, clearAll, activeCount, dirty } = state
+  const { clearAll, activeCount, dirty } = state
   const [open, setOpen] = useState(false)
 
   return (
     <div ref={ref} className="sticky top-0 z-20 flex flex-row items-center gap-1.5 px-4 pb-3 pt-2">
-      <SearchBar
-        value={filter.search}
-        onChange={(search) => { patch({ search }) }}
-        className="flex-1"
-      />
+      <SearchBar state={state} variant="sheet" />
       <AdaptiveSurface
         open={open}
         onOpenChange={setOpen}
@@ -53,34 +49,16 @@ export function FilterSheet({ state, resultCount, ref }: FilterSheetProps) {
         content={
           <div className="flex flex-col gap-4 p-4">
             <Field label="Sort">
-              <SortControl
-                sort={filter.sort}
-                onChange={(sort) => { patch({ sort }) }}
-                className="w-full justify-start"
-              />
+              <SortControl state={state} variant="sheet" />
             </Field>
             <Field label="Accounts">
-              <AccountFilter
-                selected={filter.accountIds}
-                onChange={(accountIds) => { patch({ accountIds }) }}
-                className="w-full justify-start"
-              />
+              <AccountFilter state={state} variant="sheet" />
             </Field>
             <Field label="Tag">
-              <TagToggle
-                value={filter.tag}
-                onChange={(tag) => { patch({ tag }) }}
-                untaggedCount={state.untaggedCount}
-                className="w-full *:flex-1"
-              />
+              <TagToggle state={state} variant="sheet" />
             </Field>
             <Field label="Amount">
-              <AmountRange
-                min={filter.amountMin}
-                max={filter.amountMax}
-                onChange={({ min, max }) => { patch({ amountMin: min, amountMax: max }) }}
-                inline
-              />
+              <AmountRange state={state} variant="sheet" />
             </Field>
 
             <div className="mt-2 flex items-center justify-between border-t pt-3">

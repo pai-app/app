@@ -18,27 +18,16 @@ export type FilterBarProps = {
  * components. Live-apply; a Clear-all button appears once any filter is set.
  */
 export function FilterBar({ state, ref }: FilterBarProps) {
-  const { filter, patch, clearAll, dirty } = state
+  const { clearAll, dirty } = state
   return (
     <div
       ref={ref}
       className="sticky top-[72px] z-20 -mt-2 flex flex-row flex-wrap items-center gap-1.5 pb-2"
     >
-      <SortControl sort={filter.sort} onChange={(sort) => { patch({ sort }) }} />
-      <AccountFilter
-        selected={filter.accountIds}
-        onChange={(accountIds) => { patch({ accountIds }) }}
-      />
-      <TagToggle
-        value={filter.tag}
-        onChange={(tag) => { patch({ tag }) }}
-        untaggedCount={state.untaggedCount}
-      />
-      <AmountRange
-        min={filter.amountMin}
-        max={filter.amountMax}
-        onChange={({ min, max }) => { patch({ amountMin: min, amountMax: max }) }}
-      />
+      <SortControl state={state} />
+      <AccountFilter state={state} />
+      <TagToggle state={state} />
+      <AmountRange state={state} />
       {dirty && (
         <Button variant="ghost" size="sm" className="font-light" onClick={clearAll}>
           <Icon name="x" />
@@ -46,11 +35,7 @@ export function FilterBar({ state, ref }: FilterBarProps) {
         </Button>
       )}
       <div className="flex-1" />
-      <SearchBar
-        value={filter.search}
-        onChange={(search) => { patch({ search }) }}
-        className="w-56"
-      />
+      <SearchBar state={state} />
     </div>
   )
 }

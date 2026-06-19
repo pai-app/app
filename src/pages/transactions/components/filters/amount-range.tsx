@@ -5,15 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover"
 import { cn } from "@/lib/utils"
 import { useEntity } from "@/providers/entity-provider"
 import { getCurrencyMeta } from "@/lib/format"
-
-export type AmountRangeProps = {
-  readonly min?: number
-  readonly max?: number
-  readonly onChange: (range: { min?: number; max?: number }) => void
-  readonly className?: string
-  /** Render the two inputs inline (mobile sheet) instead of inside a popover. */
-  readonly inline?: boolean
-}
+import type { FilterControlProps } from "./types"
 
 function parse(value: string): number | undefined {
   const trimmed = value.trim()
@@ -22,9 +14,12 @@ function parse(value: string): number | undefined {
   return Number.isFinite(n) ? n : undefined
 }
 
-/** Min/max amount filter (major units, absolute value). Popover on desktop,
- *  inline pair on mobile. */
-export function AmountRange({ min, max, onChange, className, inline }: AmountRangeProps) {
+/** Min/max amount filter (major units, absolute value). Popover on the bar,
+ *  inline pair in the sheet. */
+export function AmountRange({ state, variant = "bar", className }: FilterControlProps) {
+  const { filter, patch } = state
+  const min = filter.amountMin
+  const max = filter.amountMax
   const { settings } = useEntity()
   const symbol = getCurrencyMeta(settings.currency)?.symbol ?? ""
   const active = min !== undefined || max !== undefined
@@ -42,7 +37,7 @@ export function AmountRange({ min, max, onChange, className, inline }: AmountRan
           inputMode="decimal"
           placeholder="Min"
           value={min ?? ""}
-          onChange={(e) => { onChange({ min: parse(e.target.value), max }) }}
+          onChange={(e) => { patch({ amountMin: parse(e.target.value) }) }}
           className={cn(symbol && "pl-6")}
         />
       </div>
@@ -58,14 +53,14 @@ export function AmountRange({ min, max, onChange, className, inline }: AmountRan
           inputMode="decimal"
           placeholder="Max"
           value={max ?? ""}
-          onChange={(e) => { onChange({ min, max: parse(e.target.value) }) }}
+          onChange={(e) => { patch({ amountMax: parse(e.target.value) }) }}
           className={cn(symbol && "pl-6")}
         />
       </div>
     </div>
   )
 
-  if (inline) return <div className={className}>{fields}</div>
+  if (variant === "sheet") return <div className={className}>{fields}</div>
 
   const label = active
     ? [min !== undefined ? `${symbol}${min}` : "0", max !== undefined ? `${symbol}${max}` : "∞"].join(" – ")
@@ -86,7 +81,7 @@ export function AmountRange({ min, max, onChange, className, inline }: AmountRan
             <Button
               variant="ghost"
               size="xs"
-              onClick={() => { onChange({ min: undefined, max: undefined }) }}
+              onClick={() => { patch({ amountMin: undefined, amountMax: undefined }) }}
             >
               Clear
             </Button>
