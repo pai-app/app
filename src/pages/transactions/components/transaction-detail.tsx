@@ -3,6 +3,7 @@ import { useFyreDb } from "@fyre-db/plugins-ui"
 import { Icon } from "@/ui/icon"
 import { Separator } from "@/ui/separator"
 import { Textarea } from "@/ui/textarea"
+import { Money } from "@/ui/money"
 import { MoneyAccountIcon } from "@/ui/money-account-icon"
 import { cn } from "@/lib/utils"
 import { useApp } from "@/providers/app-provider"
@@ -17,7 +18,6 @@ import { TagPicker } from "@/components/tag-picker"
 import { log } from "@/log"
 import { useTagWithSimilar } from "../use-tag-with-similar"
 import type { TransactionRow } from "../use-transactions-query"
-import { AmountCell } from "./cells/amount-cell"
 import { TagCell } from "./cells/tag-cell"
 
 const DETAIL_DATE_FMT = new Intl.DateTimeFormat(undefined, {
@@ -123,7 +123,7 @@ export function TransactionDetail({ tx, onClose }: TransactionDetailProps) {
 
   const content = (
     <div className="flex flex-col items-center gap-4 pb-4">
-      <div className="text-4xl"><AmountCell amount={tx.amount} /></div>
+      <div className="text-4xl"><Money amount={tx.amount} variant="icon" className="font-light" /></div>
 
       <TagPicker
         open={tagPickerOpen}

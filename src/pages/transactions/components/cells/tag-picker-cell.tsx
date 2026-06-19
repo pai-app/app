@@ -2,20 +2,15 @@ import { useState } from "react"
 import { TagPicker } from "@/components/tag-picker"
 import { type DisplayTag } from "@/providers/entity-provider"
 import { useTagWithSimilar } from "../../use-tag-with-similar"
-import type { TransactionRow } from "../../use-transactions-query"
 import { TagCell } from "./tag-cell"
-
-export type TagPickerCellProps = {
-  readonly tx: TransactionRow
-  readonly className?: string
-}
+import type { TransactionCellProps } from "./types"
 
 /**
  * Interactive tag cell for list rows — wraps the presentational `TagCell` in a
  * `TagPicker` and persists the selection. Clicks are kept from bubbling so
  * tapping the tag doesn't also open the row's detail panel.
  */
-export function TagPickerCell({ tx, className }: TagPickerCellProps) {
+export function TagPickerCell({ tx, className }: TransactionCellProps) {
   const { tag, untag } = useTagWithSimilar()
   const [open, setOpen] = useState(false)
 

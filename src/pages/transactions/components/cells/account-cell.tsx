@@ -2,6 +2,7 @@ import { MoneyAccountIcon } from "@/ui/money-account-icon"
 import { cn } from "@/lib/utils"
 import { useEntity } from "@/providers/entity-provider"
 import type { MoneyAccount } from "@/services/entities"
+import type { TransactionCellProps } from "./types"
 
 /** Last-4 mask of an account's stored number, when available. */
 function maskAccountNumber(metadata: MoneyAccount["metadata"]): string | undefined {
@@ -13,18 +14,13 @@ function maskAccountNumber(metadata: MoneyAccount["metadata"]): string | undefin
   return `****${first.slice(-4)}`
 }
 
-export type AccountCellProps = {
-  readonly accountId: string
-  readonly className?: string
-}
-
 /**
  * Account marker for a transaction row — the account icon plus a masked
  * number. The richer popover lands in the editing workstream.
  */
-export function AccountCell({ accountId, className }: AccountCellProps) {
+export function AccountCell({ tx, className }: TransactionCellProps) {
   const { accounts } = useEntity()
-  const account = accounts.find((a) => a.id === accountId)
+  const account = accounts.find((a) => a.id === tx.accountId)
   if (!account) return null
 
   const masked = maskAccountNumber(account.metadata)
