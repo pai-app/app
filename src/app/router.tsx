@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route, Outlet, useParams, useNavigate } from "react-router"
-import { useEffect } from "react"
-import { AuthGuard, TenantGuard, useAuth } from "@fyre-db/plugins-ui"
-import { useTheme } from "@/providers/theme-provider"
+import { useEffect, useRef } from "react"
+import { useStatus, useTenant, useFyreDbApp } from "@fyre-db/plugins-ui"
 import { FullPageSpinner } from "@/components/full-page-spinner"
+import { UnlockDialog } from "@/components/unlock-dialog"
 import { DefaultTemplate } from "@/templates/default-template"
 import { HomePage } from "@/pages/home/home-page"
 import { TenantsPage } from "@/pages/tenants/tenants-page"
@@ -21,33 +21,50 @@ import { ComponentsSection } from "@/pages/dev/sections/components-section"
 import { DataSection } from "@/pages/dev/sections/data-section"
 
 function AuthGuardRoute() {
+  const status = useStatus()
   const navigate = useNavigate()
-  return (
-    <AuthGuard
-      onUnauthenticated={() => {
-        void navigate("/login", { replace: true })
-      }}
-      loading={<FullPageSpinner message="Signing in…" />}
-    >
-      <Outlet />
-    </AuthGuard>
-  )
+  useEffect(() => {
+    if (status === "signed-out") {
+      void navigate("/login", { replace: true })
+    }
+  }, [status, navigate])
+  if (status === "connecting" || status === "signed-out") {
+    return <FullPageSpinner message="Signing in…" />
+  }
+  return <Outlet />
 }
 
 function TenantGuardRoute() {
   const { tenantId } = useParams()
   const navigate = useNavigate()
-  const { resolvedTheme } = useTheme()
-  return (
-    <TenantGuard
-      tenantId={tenantId}
-      onUnauthenticated={() => void navigate("/tenants", { replace: true })}
-      mode={resolvedTheme}
-      loading={<FullPageSpinner message="Opening household…" />}
-    >
-      <Outlet />
-    </TenantGuard>
-  )
+  const status = useStatus()
+  const { active } = useTenant()
+  const app = useFyreDbApp()
+  const requestedRef = useRef<string | null>(null)
+
+  // Open the URL's tenant once per id. We must NOT depend on `active?.id`:
+  // `openTenant` closes the current tenant first (active → undefined mid-open),
+  // which would otherwise re-fire this effect and loop close→open forever.
+  useEffect(() => {
+    if (!tenantId) {
+      void navigate("/tenants", { replace: true })
+      return
+    }
+    if (requestedRef.current !== tenantId) {
+      requestedRef.current = tenantId
+      void app.openTenant(tenantId)
+    }
+  }, [tenantId, app, navigate])
+
+  useEffect(() => {
+    if (status === "error") {
+      void navigate("/tenants", { replace: true })
+    }
+  }, [status, navigate])
+
+  if (status === "unlocking") return <UnlockDialog />
+  if (active?.id === tenantId && status === "ready") return <Outlet />
+  return <FullPageSpinner message="Opening household…" />
 }
 
 function DefaultLayoutRoute() {
@@ -64,17 +81,18 @@ function DefaultLayoutRoute() {
  * landing page only ever shows to signed-out users.
  */
 function RootRoute() {
-  const { status } = useAuth()
+  const status = useStatus()
   const navigate = useNavigate()
+  const signedIn = status !== "connecting" && status !== "signed-out"
 
   useEffect(() => {
-    if (status === "signed-in") {
+    if (signedIn) {
       void navigate("/tenants", { replace: true })
     }
-  }, [status, navigate])
+  }, [signedIn, navigate])
 
-  if (status === "loading") return <FullPageSpinner message="Signing in…" />
-  if (status === "signed-in") return <FullPageSpinner message="Opening Pai…" />
+  if (status === "connecting") return <FullPageSpinner message="Signing in…" />
+  if (signedIn) return <FullPageSpinner message="Opening Pai…" />
   return <LandingPage />
 }
 

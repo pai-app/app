@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Icon } from "@/ui/icon"
-import { useFyreDb } from "@fyre-db/plugins-ui"
+import { useDb } from "@fyre-db/plugins-ui"
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover"
 import { Button } from "@/ui/button"
 import { cn } from "@/lib/utils"
@@ -11,7 +11,7 @@ type SyncStatusProps = {
 }
 
 export function SyncStatus({ className }: SyncStatusProps) {
-  const fyredb = useFyreDb()
+  const fyredb = useDb()
   const [dirty, setDirty] = useState(false)
   const [syncing, setSyncing] = useState(false)
 

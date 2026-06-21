@@ -1,9 +1,9 @@
 import {
   BffClientAdapter,
   ClientAuthService,
-  CloudService,
+  FyreDbApp,
 } from "@fyre-db/plugins"
-import { GoogleDriveProvider, OneDriveProvider, createFyreDbConfig, CloudProviderService } from "@fyre-db/plugins-ui"
+import { GoogleDriveProvider, OneDriveProvider, CloudProviderService } from "@fyre-db/plugins-ui"
 import {
   GOOGLE_AUTH_NAME,
   MICROSOFT_AUTH_NAME,
@@ -40,15 +40,15 @@ export const onedriveProvider = new OneDriveProvider({
   getAccessToken: () => clientAuth.getAccessToken(),
 })
 
-export const cloud = new CloudService([googleProvider, onedriveProvider], clientAuth)
-export const providers = new CloudProviderService([googleProvider, onedriveProvider], cloud)
-
-export const fyredbConfig = createFyreDbConfig({
+export const fyreDbApp = new FyreDbApp({
   appId: APP_ID,
   entities: ENTITIES,
-  cloud,
-  providers,
   auth: clientAuth,
+  providers: [googleProvider, onedriveProvider],
   credentialCacheKey: SESSION_KEY,
-  tenantLabel: 'household',
 })
+
+export const providers = new CloudProviderService(
+  [googleProvider, onedriveProvider],
+  fyreDbApp.provider$,
+)

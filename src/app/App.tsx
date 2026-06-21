@@ -1,6 +1,6 @@
 import { useRef } from "react"
-import { FyreDbProvider, TenantProvider } from "@fyre-db/plugins-ui"
-import { fyredbConfig } from "@/lib/fyredb-config"
+import { FyreDbAppProvider } from "@fyre-db/plugins-ui"
+import { fyreDbApp } from "@/lib/fyredb-config"
 import { AppProvider } from "@/providers/app-provider"
 import { ServicesProvider } from "@/providers/services-provider"
 import { ImportProvider } from "@/providers/import-provider"
@@ -17,21 +17,19 @@ export function App() {
     <ThemeProvider defaultTheme="system">
       <div className="h-full grainy bg-[radial-gradient(ellipse_at_top_left,oklch(0.96_0.025_260),var(--background)_60%)] dark:bg-linear-to-br dark:from-background dark:to-muted/40">
         <div ref={scrollElementRef} className="overflow-auto h-full">
-          <FyreDbProvider config={fyredbConfig}>
-            <TenantProvider>
-              <AppProvider scrollElementRef={scrollElementRef}>
-                <ServicesProvider>
-                  <ImportProvider>
-                    <NotificationProvider>
-                      <BreadcrumbProvider>
-                        <AppRouter />
-                      </BreadcrumbProvider>
-                    </NotificationProvider>
-                  </ImportProvider>
-                </ServicesProvider>
-              </AppProvider>
-            </TenantProvider>
-          </FyreDbProvider>
+          <FyreDbAppProvider app={fyreDbApp} tenantLabel="household">
+            <AppProvider scrollElementRef={scrollElementRef}>
+              <ServicesProvider>
+                <ImportProvider>
+                  <NotificationProvider>
+                    <BreadcrumbProvider>
+                      <AppRouter />
+                    </BreadcrumbProvider>
+                  </NotificationProvider>
+                </ImportProvider>
+              </ServicesProvider>
+            </AppProvider>
+          </FyreDbAppProvider>
         </div>
       </div>
       <Toaster />

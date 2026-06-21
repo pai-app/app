@@ -1,19 +1,20 @@
 import { useEffect } from "react"
 import { useNavigate } from "react-router"
-import { LoginButtons, useAuth } from "@fyre-db/plugins-ui"
+import { LoginButtons, useStatus } from "@fyre-db/plugins-ui"
 import { LobbyTemplate } from "@/templates/lobby-template"
 import { useTheme } from "@/providers/theme-provider"
 
 export function LoginPage() {
   const navigate = useNavigate()
-  const { status, name } = useAuth()
+  const status = useStatus()
   const { resolvedTheme } = useTheme()
+  const signedIn = status !== "connecting" && status !== "signed-out"
 
   useEffect(() => {
-    if (status === "signed-in" && name) {
+    if (signedIn) {
       void navigate("/tenants", { replace: true })
     }
-  }, [status, name, navigate])
+  }, [signedIn, navigate])
 
   return (
     <LobbyTemplate>

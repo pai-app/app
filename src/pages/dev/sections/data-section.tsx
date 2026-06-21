@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router"
-import { useFyreDb } from "@fyre-db/plugins-ui"
+import { useDb } from "@fyre-db/plugins-ui"
 import type { BaseEntity, EntityDefinition } from "@fyre-db/core"
 import { Icon } from "@/ui/icon"
 import { Input } from "@/ui/input"
@@ -123,7 +123,7 @@ function EntityDetail({ entityName, isMobile }: {
   entityName: string
   isMobile: boolean
 }) {
-  const fyredb = useFyreDb()
+  const fyredb = useDb()
   const settings = useObservable(useServices().settings.settings$)
   const kind = entityKind(entityName)
   const isPartitioned = kind === "partitioned"

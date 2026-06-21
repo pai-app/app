@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react"
 import { FyreDbConfigError, type FyreDb } from '@fyre-db/core'
-import { useFyreDb } from "@fyre-db/plugins-ui"
+import { useDb } from "@fyre-db/plugins-ui"
 import { registerMagicWord } from "@/lib/magic-word"
 
 const MOBILE_BREAKPOINT = 768
@@ -31,7 +31,7 @@ type AppProviderProps = {
 export function AppProvider({ children, scrollElementRef: externalRef }: AppProviderProps) {
   const internalRef = useRef<HTMLDivElement | null>(null)
   const scrollElementRef = externalRef ?? internalRef
-  const fyredb = useFyreDb()
+  const fyredb = useDb()
 
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT,
