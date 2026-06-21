@@ -25,8 +25,6 @@ vi.mock("@/lib/fyredb-config", () => ({
   },
 }))
 
-const flush = (): Promise<void> => new Promise((r) => setTimeout(r, 0))
-
 const EMAIL_ACCOUNT: AuthAccount = {
   provider: "google",
   feature: "email",
@@ -72,9 +70,11 @@ describe("ConnectionsService", () => {
     const id = fyredb.repo(authAccountEntity).save(EMAIL_ACCOUNT)
     fyredb.repo(emailImportSettingEntity).save(setting(id))
 
-    await flush() // the global partitions project on the next tick
+    // The global partitions project on a later tick; poll until they settle.
+    await vi.waitFor(() => {
+      expect(svc.connections$.value).toHaveLength(1)
+    })
     const views = svc.connections$.value
-    expect(views).toHaveLength(1)
     expect(views[0].email).toBe("jane@example.com")
     expect(views[0].provider).toBe("google")
     expect(views[0].lastSyncedAt).toBe(1700000000000)
@@ -86,8 +86,9 @@ describe("ConnectionsService", () => {
     await setup()
     fyredb.repo(authAccountEntity).save({ ...EMAIL_ACCOUNT, feature: "drive" })
 
-    await flush()
-    expect(svc.connections$.value).toHaveLength(0)
+    await vi.waitFor(() => {
+      expect(svc.connections$.value).toHaveLength(0)
+    })
   })
 
   it("reveals the full row including the token via the on-demand reader", async () => {
@@ -102,7 +103,10 @@ describe("ConnectionsService", () => {
     const id = fyredb.repo(authAccountEntity).save(EMAIL_ACCOUNT)
     const settingId = fyredb.repo(emailImportSettingEntity).save(setting(id))
 
-    await flush() // let the setting subscription populate before disconnect
+    // Wait for the joined view to populate before disconnecting.
+    await vi.waitFor(() => {
+      expect(svc.connections$.value).toHaveLength(1)
+    })
     svc.disconnect(id)
 
     expect(fyredb.repo(authAccountEntity).get(id)).toBeUndefined()
@@ -140,7 +144,10 @@ describe("ConnectionsService", () => {
     seedCreds("google", { sub: "g-1", email: "g@example.com", name: "G User", picture: "p.png" })
 
     svc = new ConnectionsService(fyredb)
-    await flush()
+    // The userinfo fetch + save is async; wait for the materialised row to surface.
+    await vi.waitFor(() => {
+      expect(svc.connections$.value).toHaveLength(1)
+    })
 
     const rows = fyredb.repo(authAccountEntity).query()
     expect(rows).toHaveLength(1)
@@ -154,7 +161,10 @@ describe("ConnectionsService", () => {
     seedCreds("microsoft", { id: "m-1", userPrincipalName: "m@example.com", displayName: "M User" })
 
     svc = new ConnectionsService(fyredb)
-    await flush()
+    // The userinfo fetch + save is async; wait for the materialised row to surface.
+    await vi.waitFor(() => {
+      expect(svc.connections$.value).toHaveLength(1)
+    })
 
     const rows = fyredb.repo(authAccountEntity).query()
     expect(rows).toHaveLength(1)
@@ -165,8 +175,8 @@ describe("ConnectionsService", () => {
   it("is a no-op when no feature creds are present", async () => {
     fyredb = await createTestFyreDb()
     svc = new ConnectionsService(fyredb)
-    await flush()
 
+    // No creds → the constructor returns synchronously without saving.
     expect(fyredb.repo(authAccountEntity).query()).toHaveLength(0)
   })
 
@@ -175,8 +185,8 @@ describe("ConnectionsService", () => {
     seedCreds("google", { email: "no-id@example.com" }) // no sub/id
 
     svc = new ConnectionsService(fyredb)
-    await flush()
 
+    // Userinfo carries no identity → nothing is ever saved.
     expect(fyredb.repo(authAccountEntity).query()).toHaveLength(0)
   })
 
@@ -185,8 +195,8 @@ describe("ConnectionsService", () => {
     sessionStorage.setItem(FEATURE_CREDS_KEY, "{not json")
 
     svc = new ConnectionsService(fyredb)
-    await flush()
 
+    // Invalid JSON is consumed and rejected synchronously, before any save.
     expect(fyredb.repo(authAccountEntity).query()).toHaveLength(0)
     expect(sessionStorage.getItem(FEATURE_CREDS_KEY)).toBeNull() // still consumed
   })
@@ -201,8 +211,8 @@ describe("ConnectionsService", () => {
     )
 
     svc = new ConnectionsService(fyredb)
-    await flush()
 
+    // The userinfo request fails → no identity, so nothing is saved.
     expect(fyredb.repo(authAccountEntity).query()).toHaveLength(0)
   })
 })
