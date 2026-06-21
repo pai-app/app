@@ -1,7 +1,12 @@
 import { describe, it, expect } from "vitest"
 import { BANK_CATALOG } from "@pai-app/adapters"
 import { ICON_TO_PACK } from "@/lib/icons/generated"
-import { BANK_DISPLAY, KIND_DISPLAY } from "@/services/catalog/bank-display"
+import {
+  BANK_DISPLAY,
+  KIND_DISPLAY,
+  getBankDisplay,
+  getOfferingDisplay,
+} from "@/services/catalog/bank-display"
 
 /**
  * These tests pin `BANK_DISPLAY` to the package's `BANK_CATALOG` so the two
@@ -74,5 +79,29 @@ describe("KIND_DISPLAY", () => {
       expect(display.icon.length, `${kind} icon`).toBeGreaterThan(0)
       expect(ICON_TO_PACK[display.icon], `kind icon ${display.icon} (${kind})`).toBeDefined()
     }
+  })
+})
+
+describe("getBankDisplay", () => {
+  it("returns the display for a known bank", () => {
+    expect(getBankDisplay("hdfc")?.label).toBe("HDFC Bank")
+  })
+
+  it("returns undefined for an unknown bank", () => {
+    expect(getBankDisplay("not-a-bank")).toBeUndefined()
+  })
+})
+
+describe("getOfferingDisplay", () => {
+  it("returns the offering display for a known bank/offering pair", () => {
+    expect(getOfferingDisplay("hdfc", "savings")?.label).toBe("Savings Account")
+  })
+
+  it("returns undefined for a known bank but unknown offering", () => {
+    expect(getOfferingDisplay("hdfc", "no-such-offering")).toBeUndefined()
+  })
+
+  it("returns undefined when the bank itself is unknown", () => {
+    expect(getOfferingDisplay("not-a-bank", "savings")).toBeUndefined()
   })
 })

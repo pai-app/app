@@ -1,0 +1,107 @@
+import { describe, it, expect, afterEach } from "vitest"
+import type { FyreDb } from "@fyre-db/core"
+import { createTestFyreDb } from "../helpers/test-fyredb"
+import { AccountsService } from "@/services/accounts-service"
+import { TagsService } from "@/services/tags-service"
+import {
+  moneyAccountEntity,
+  tagEntity,
+  SYSTEM_TAGS,
+  type MoneyAccount,
+  type Tag,
+} from "@/services/entities"
+
+const flush = (): Promise<void> => new Promise((r) => setTimeout(r, 0))
+
+const ACCOUNT: MoneyAccount = {
+  kind: "bank",
+  name: "Test Bank",
+  currency: "INR",
+  initialBalance: 0,
+  metadata: { accountNumber: ["1234567890"] },
+}
+
+const USER_TAG: Tag = { name: "Groceries", icon: "shopping-cart" }
+
+describe("TagsService", () => {
+  let fyredb: FyreDb
+  let accounts: AccountsService
+  let svc: TagsService
+
+  afterEach(async () => {
+    svc.dispose()
+    accounts.dispose()
+    await fyredb.dispose().catch(() => {})
+  })
+
+  async function setup(): Promise<void> {
+    fyredb = await createTestFyreDb()
+    accounts = new AccountsService(fyredb)
+    svc = new TagsService(fyredb, accounts)
+  }
+
+  it("includes system tags plus saved user tags on displayTags$", async () => {
+    await setup()
+    const id = fyredb.repo(tagEntity).save(USER_TAG)
+
+    await flush() // the global tag partition projects on the next tick
+    const tags = svc.displayTags$.value
+    expect(tags).toHaveLength(SYSTEM_TAGS.length + 1)
+    expect(tags.some((t) => t.id === id && t.name === "Groceries")).toBe(true)
+  })
+
+  it("orders system tags, then user tags, then account tags", async () => {
+    await setup()
+    const userId = fyredb.repo(tagEntity).save(USER_TAG)
+    fyredb.repo(moneyAccountEntity).save(ACCOUNT)
+
+    await flush()
+    const tags = svc.displayTags$.value
+    const last = tags[tags.length - 1]
+    expect(last.accountId).toBeDefined() // synthetic account tag sorts last
+
+    const userIdx = tags.findIndex((t) => t.id === userId)
+    const accountIdx = tags.findIndex((t) => t.accountId !== undefined)
+    const lastSystemIdx = tags.findIndex((t) => t.id === SYSTEM_TAGS[SYSTEM_TAGS.length - 1].id)
+    expect(lastSystemIdx).toBeLessThan(userIdx) // system before user
+    expect(userIdx).toBeLessThan(accountIdx) // user before account
+  })
+
+  it("nests a child tag under its parent in tagTree$", async () => {
+    await setup()
+    const parentId = SYSTEM_TAGS[0].id
+    const childId = fyredb.repo(tagEntity).save({ ...USER_TAG, parent: parentId })
+
+    await flush()
+    const root = svc.tagTree$.value.find((n) => n.id === parentId)
+    expect(root).toBeDefined()
+    expect(root?.children.some((c) => c.id === childId)).toBe(true)
+  })
+
+  it("renames a tag", async () => {
+    await setup()
+    const id = fyredb.repo(tagEntity).save(USER_TAG)
+
+    svc.rename(id, "Food")
+
+    expect(fyredb.repo(tagEntity).get(id)?.name).toBe("Food")
+  })
+
+  it("sets a tag icon", async () => {
+    await setup()
+    const id = fyredb.repo(tagEntity).save(USER_TAG)
+
+    svc.setIcon(id, "carrot")
+
+    expect(fyredb.repo(tagEntity).get(id)?.icon).toBe("carrot")
+  })
+
+  it("deletes a tag", async () => {
+    await setup()
+    const id = fyredb.repo(tagEntity).save(USER_TAG)
+
+    svc.delete(id)
+
+    expect(fyredb.repo(tagEntity).get(id)).toBeUndefined()
+  })
+})

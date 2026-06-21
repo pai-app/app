@@ -1,73 +1,42 @@
-# React + TypeScript + Vite
+# Pai
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[![CI](https://github.com/pai-app/app/actions/workflows/ci.yml/badge.svg)](https://github.com/pai-app/app/actions/workflows/ci.yml)
+[![Deploy](https://github.com/pai-app/app/actions/workflows/deploy.yml/badge.svg)](https://github.com/pai-app/app/actions/workflows/deploy.yml)
+[![codecov](https://codecov.io/gh/pai-app/app/branch/main/graph/badge.svg)](https://codecov.io/gh/pai-app/app)
+![TypeScript](https://img.shields.io/badge/TypeScript-6.0-blue)
 
-Currently, two official plugins are available:
+Personal finance app for **Pai** — an offline-first React SPA on Cloudflare
+Workers, built on the fyre-db reactive store with bank-statement/email import
+and auto-tagging.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Tech stack
 
-## React Compiler
+- **React + Vite** single-page app (TypeScript)
+- **fyre-db** offline-first reactive store (`@fyre-db/core` / `plugins` / `plugins-ui`)
+- **@pai-app/adapters** — bank statement & email parsers
+- **Cloudflare Workers** backend + static assets (Wrangler)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Development
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev            # Vite dev server + Worker (wrangler)
+npm run build          # type-check (tsc -b) + Vite build
+npm run lint           # ESLint
+npm test               # vitest
+npm run test:coverage  # vitest with v8 coverage
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Architecture
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Domain logic lives in per-tenant **services** (`src/services/*-service.ts`) that
+own their fyre-db entities and expose UI-safe view-models; React binds via
+`useServices()` + `useObservable`. Direct `fyredb`/repo access outside the
+service layer is blocked by an ESLint rule.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Testing
+
+Unit tests run against a real in-memory `FyreDb` (`tests/helpers/test-fyredb.ts`),
+so service behaviour is exercised with faithful `deriveId`/partitioning/queries.
+Coverage targets the service/logic layer; UI components and the mail/parse
+integration boundary are excluded from the coverage gate (see `vitest.config.ts`).
