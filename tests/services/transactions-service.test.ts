@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from "vitest"
+import { describe, it, expect, afterEach, vi } from "vitest"
 import { firstValueFrom } from "rxjs"
 import type { FyreDb } from "@fyre-db/core"
 import { createTestFyreDb } from "../helpers/test-fyredb"
@@ -7,7 +7,6 @@ import { transactionEntity, tagRuleEntity, type Transaction } from "@/services/e
 import { importSourceEntity } from "@/services/entities/import-source"
 
 const JAN = "2026-01"
-const flush = (): Promise<void> => new Promise((r) => setTimeout(r, 0))
 
 function tx(over: Partial<Transaction> & { hash: string }): Transaction {
   return {
@@ -68,8 +67,10 @@ describe("TransactionsService", () => {
     svc.tag(repo.save(tx({ hash: "h1" })), "tag-food")
     svc.tag(repo.save(tx({ hash: "h2", transactionAt: Date.UTC(2026, 0, 16) })), "tag-food")
 
-    await flush() // the global tagRule partition projects on the next tick
-    expect(svc.tagRules$.value).toHaveLength(1)
+    // The global tagRule partition projects on a later tick; poll until settled.
+    await vi.waitFor(() => {
+      expect(svc.tagRules$.value).toHaveLength(1)
+    })
   })
 
   it("accumulates votes across like transactions (rule is reused, not reset)", async () => {

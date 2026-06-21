@@ -1,11 +1,9 @@
-import { describe, it, expect, afterEach } from "vitest"
+import { describe, it, expect, afterEach, vi } from "vitest"
 import type { FyreDb } from "@fyre-db/core"
 import { createTestFyreDb } from "../helpers/test-fyredb"
 import { SettingsService } from "@/services/settings-service"
 import { USER_SETTINGS_DEFAULTS } from "@/services/entities"
 import { fiscalYearMonthKeys } from "@/lib/fiscal"
-
-const flush = (): Promise<void> => new Promise((r) => setTimeout(r, 0))
 
 describe("SettingsService", () => {
   let fyredb: FyreDb
@@ -36,8 +34,10 @@ describe("SettingsService", () => {
 
     svc.update({ currency: "USD" })
 
-    await flush() // the singleton observe projects on the next tick
-    expect(svc.settings$.value.currency).toBe("USD")
+    // The singleton observe projects on a later tick; poll until it settles.
+    await vi.waitFor(() => {
+      expect(svc.settings$.value.currency).toBe("USD")
+    })
   })
 
   it("recomputes monthKeys when the selected year changes", async () => {
@@ -57,8 +57,10 @@ describe("SettingsService", () => {
 
     svc.update({ filePasswords: ["s3cret"] })
 
-    await flush()
-    expect(svc.getFilePasswords()).toEqual(["s3cret"])
+    // The vault is read off the async-projected `current`; poll until it lands.
+    await vi.waitFor(() => {
+      expect(svc.getFilePasswords()).toEqual(["s3cret"])
+    })
     // The vault must never surface on the UI-facing view.
     expect(Object.keys(svc.settings$.value)).not.toContain("filePasswords")
     expect(JSON.stringify(svc.settings$.value)).not.toContain("s3cret")

@@ -1,10 +1,8 @@
-import { describe, it, expect, afterEach } from "vitest"
+import { describe, it, expect, afterEach, vi } from "vitest"
 import type { FyreDb } from "@fyre-db/core"
 import { createTestFyreDb } from "../helpers/test-fyredb"
 import { NotificationsService } from "@/services/notifications/notifications-service"
 import type { Notification } from "@/services/entities"
-
-const flush = (): Promise<void> => new Promise((r) => setTimeout(r, 0))
 
 function notification(over: Partial<Notification> = {}): Notification {
   return {
@@ -35,9 +33,11 @@ describe("NotificationsService", () => {
     const id = svc.notify(notification(), { channels: ["inbox"] })
     expect(id).toBeDefined()
 
-    await flush() // the global notification partition projects on the next tick
-    expect(svc.notifications$.value.some((n) => n.id === id)).toBe(true)
-    expect(svc.unreadCount$.value).toBe(1)
+    // The global notification partition projects on a later tick; poll for it.
+    await vi.waitFor(() => {
+      expect(svc.notifications$.value.some((n) => n.id === id)).toBe(true)
+      expect(svc.unreadCount$.value).toBe(1)
+    })
   })
 
   it("drops the unread count when a notification is marked read", async () => {
@@ -47,10 +47,11 @@ describe("NotificationsService", () => {
 
     svc.markRead(id)
 
-    await flush()
-    expect(svc.unreadCount$.value).toBe(0)
-    expect(svc.notifications$.value.some((n) => n.id === id)).toBe(true) // still present
-    expect(svc.notifications$.value.find((n) => n.id === id)?.read).toBe(true)
+    await vi.waitFor(() => {
+      expect(svc.unreadCount$.value).toBe(0)
+      expect(svc.notifications$.value.some((n) => n.id === id)).toBe(true) // still present
+      expect(svc.notifications$.value.find((n) => n.id === id)?.read).toBe(true)
+    })
   })
 
   it("clears the unread count across all notifications", async () => {
@@ -60,8 +61,9 @@ describe("NotificationsService", () => {
 
     svc.markAllRead()
 
-    await flush()
-    expect(svc.unreadCount$.value).toBe(0)
+    await vi.waitFor(() => {
+      expect(svc.unreadCount$.value).toBe(0)
+    })
   })
 
   it("removes a dismissed notification", async () => {
@@ -71,7 +73,8 @@ describe("NotificationsService", () => {
 
     svc.dismiss(id)
 
-    await flush()
-    expect(svc.notifications$.value.some((n) => n.id === id)).toBe(false)
+    await vi.waitFor(() => {
+      expect(svc.notifications$.value.some((n) => n.id === id)).toBe(false)
+    })
   })
 })
