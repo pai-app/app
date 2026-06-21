@@ -3,7 +3,8 @@ import { Button } from "@/ui/button"
 import { Icon } from "@/ui/icon"
 import { TagIcon } from "@/ui/tag-icon"
 import { cn } from "@/lib/utils"
-import { useEntity } from "@/providers/entity-provider"
+import { useObservable } from "@/lib/use-observable"
+import { useServices } from "@/providers/services-provider"
 
 export type TagCellProps = Omit<ComponentProps<typeof Button>, "children"> & {
   readonly tagId: string | null
@@ -19,7 +20,7 @@ export type TagCellProps = Omit<ComponentProps<typeof Button>, "children"> & {
  * `TagPicker` trigger.
  */
 export function TagCell({ tagId, autoTagged, className, ...props }: TagCellProps) {
-  const { tags } = useEntity()
+  const tags = useObservable(useServices().tags.displayTags$)
   const tag = tagId ? tags.find((t) => t.id === tagId) : undefined
 
   return (

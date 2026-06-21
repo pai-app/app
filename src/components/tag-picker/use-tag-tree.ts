@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from "react"
 import { Subject, debounceTime, distinctUntilChanged } from "rxjs"
-import { useEntity, type DisplayTag } from "@/providers/entity-provider"
+import { useObservable } from "@/lib/use-observable"
+import { useServices } from "@/providers/services-provider"
+import type { TagView } from "@/services/tags-service"
 import { REMOVE_TAG, type TagWithChildren } from "./types"
 
 function tokenize(text: string): readonly string[] {
@@ -11,8 +13,8 @@ function tokenize(text: string): readonly string[] {
     .filter((w) => w.length > 0)
 }
 
-function buildTree(tags: readonly DisplayTag[]): readonly TagWithChildren[] {
-  const childrenByParent = new Map<string, DisplayTag[]>()
+function buildTree(tags: readonly TagView[]): readonly TagWithChildren[] {
+  const childrenByParent = new Map<string, TagView[]>()
   for (const t of tags) {
     if (t.parent) {
       const list = childrenByParent.get(t.parent) ?? []
@@ -72,7 +74,7 @@ export type UseTagTreeResult = {
  * - Optional "Remove tag" row injection
  */
 export function useTagTree({ selectedTagId, resetSignal }: UseTagTreeOptions): UseTagTreeResult {
-  const { tags } = useEntity()
+  const tags = useObservable(useServices().tags.displayTags$)
   const tree = useMemo(() => buildTree(tags), [tags])
 
   const [query, setQuery] = useState("")

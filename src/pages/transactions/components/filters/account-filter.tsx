@@ -10,23 +10,15 @@ import {
 } from "@/ui/dropdown-menu"
 import { MoneyAccountIcon } from "@/ui/money-account-icon"
 import { cn } from "@/lib/utils"
-import { useEntity } from "@/providers/entity-provider"
-import type { MoneyAccount } from "@/services/entities"
+import { useObservable } from "@/lib/use-observable"
+import { useServices } from "@/providers/services-provider"
 import type { FilterControlProps } from "./types"
-
-/** Last-4 mask of an account's stored number, when available. */
-function maskAccountNumber(metadata: MoneyAccount["metadata"]): string | undefined {
-  const numbers = metadata["accountNumber"] as readonly string[] | undefined
-  const first = numbers?.[0]
-  if (!first || first.length < 4) return undefined
-  return `****${first.slice(-4)}`
-}
 
 /** Multi-select account filter. Empty selection = all accounts. */
 export function AccountFilter({ state, variant = "bar", className }: FilterControlProps) {
   const { filter, patch } = state
   const selected = filter.accountIds
-  const { accounts } = useEntity()
+  const accounts = useObservable(useServices().accounts.accounts$)
 
   const toggle = (id: string) => {
     patch({ accountIds: selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id] })
@@ -62,7 +54,7 @@ export function AccountFilter({ state, variant = "bar", className }: FilterContr
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         {accounts.map((account) => {
-          const masked = maskAccountNumber(account.metadata)
+          const masked = account.maskedNumber
           return (
             <DropdownMenuCheckboxItem
               key={account.id}

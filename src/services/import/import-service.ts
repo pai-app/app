@@ -29,7 +29,8 @@ import {
   moneyAccountEntity,
   type MoneyAccount,
 } from "@/services/entities/money-account"
-import { TransactionService } from "@/services/transactions/transaction-service"
+import type { TransactionsService } from "@/services/transactions-service"
+import type { Disposable } from "@/services/types"
 import type { AuthAccount } from "@/services/entities/auth-account"
 import { authAccountEntity } from "@/services/entities/auth-account"
 import { ImportContext } from "./import-context"
@@ -60,7 +61,7 @@ type ActiveImport = {
  * - On construction, runs an init sweep to purge stale file-source
  *   `needs_input` rows left over from a previous session.
  */
-export class ImportService {
+export class ImportService implements Disposable {
   private readonly fyredb: FyreDb
   private readonly logRepo: Repository<ImportLog>
   private readonly sourceRepo: Repository<ImportSource>
@@ -68,10 +69,10 @@ export class ImportService {
   private readonly userSettingsRepo: SingletonRepository<UserSettings>
   private readonly txRepo: Repository<Transaction>
   private readonly accountRepo: Repository<MoneyAccount>
-  private readonly txService: TransactionService
+  private readonly txService: TransactionsService
   private readonly active = new Map<string, ActiveImport>()
 
-  constructor(fyredb: FyreDb) {
+  constructor(fyredb: FyreDb, deps: { readonly transactions: TransactionsService }) {
     this.fyredb = fyredb
     this.logRepo = fyredb.repo(importLogEntity)
     this.sourceRepo = fyredb.repo(importSourceEntity)
@@ -79,7 +80,7 @@ export class ImportService {
     this.userSettingsRepo = fyredb.repo(userSettingsEntity)
     this.txRepo = fyredb.repo(transactionEntity)
     this.accountRepo = fyredb.repo(moneyAccountEntity)
-    this.txService = new TransactionService(fyredb)
+    this.txService = deps.transactions
     log.import('service initialised')
     this.initSweep()
   }
@@ -110,7 +111,12 @@ export class ImportService {
    * returns the existing log id instead of spawning a parallel run. Two runs
    * would race on the single shared `EmailImportSetting.importState` cursor and
    * corrupt the high-water mark. */
-  startEmailSync(account: AuthAccount & BaseEntity): string {
+  startEmailSync(accountId: string): string {
+    const account = this.fyredb.repo(authAccountEntity).get(accountId)
+    if (account === undefined) {
+      log.import('email sync: unknown account=%s', accountId)
+      return ""
+    }
     const existing = this.findActiveEmailLog(account.id)
     if (existing) {
       log.import('email sync already active: account=%s logId=%s', account.email, existing)
@@ -173,6 +179,12 @@ export class ImportService {
   /** Number of imports currently running or parked awaiting input. */
   activeImportCount(): number {
     return this.active.size
+  }
+
+  /** Tear down on tenant switch: cancel/detach every live import context. */
+  dispose(): void {
+    for (const entry of this.active.values()) entry.ctx.dispose()
+    this.active.clear()
   }
 
   /**

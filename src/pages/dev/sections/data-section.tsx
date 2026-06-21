@@ -9,7 +9,8 @@ import { Spinner } from "@/ui/spinner"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/ui/sheet"
 import { cn } from "@/lib/utils"
 import { useApp } from "@/providers/app-provider"
-import { useEntity } from "@/providers/entity-provider"
+import { useObservable } from "@/lib/use-observable"
+import { useServices } from "@/providers/services-provider"
 import { useRegisterCrumbs } from "@/providers/breadcrumb-provider"
 import { ENTITIES } from "@/services/entities"
 
@@ -123,7 +124,7 @@ function EntityDetail({ entityName, isMobile }: {
   isMobile: boolean
 }) {
   const fyredb = useFyreDb()
-  const { settings } = useEntity()
+  const settings = useObservable(useServices().settings.settings$)
   const kind = entityKind(entityName)
   const isPartitioned = kind === "partitioned"
 

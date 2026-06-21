@@ -6,12 +6,13 @@ import { Button } from "@/ui/button"
 import { Progress } from "@/ui/progress"
 import { importLogEntity, sweepProgress, type ImportLog } from "@/services/entities/import-log"
 import { useImportService } from "@/providers/import-provider"
-import { useEntity } from "@/providers/entity-provider"
+import { useObservable } from "@/lib/use-observable"
+import { useServices } from "@/providers/services-provider"
 
 export function ImportsSection() {
   const fyredb = useFyreDb()
   const { startFileImport, openSheet } = useImportService()
-  const { monthKeys } = useEntity()
+  const monthKeys = useObservable(useServices().settings.monthKeys$)
   const [logs, setLogs] = useState<ReadonlyArray<ImportLog & BaseEntity>>([])
 
   useEffect(() => {

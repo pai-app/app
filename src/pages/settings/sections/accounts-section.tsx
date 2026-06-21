@@ -1,60 +1,32 @@
-import { useEffect, useState } from "react"
-import { useFyreDb } from "@fyre-db/plugins-ui"
-import type { BaseEntity } from "@fyre-db/core"
 import { Icon } from "@/ui/icon"
 import { Button } from "@/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar"
-import { authAccountEntity, type AuthAccount } from "@/services/entities"
-import { emailImportSettingEntity, type EmailImportSetting } from "@/services/entities/email-import-setting"
-import { clientAuth } from "@/lib/fyredb-config"
-import { GOOGLE_AUTH_NAME, MICROSOFT_AUTH_NAME } from "@shared/providers"
+import { useServices } from "@/providers/services-provider"
+import { useObservable } from "@/lib/use-observable"
+import type { ConnectionView } from "@/services/connections-service"
 import { useImportService } from "@/providers/import-provider"
 
-type AccountRow = AuthAccount & BaseEntity & {
-  readonly setting?: EmailImportSetting & BaseEntity
-}
-
 export function AccountsSection() {
-  const fyredb = useFyreDb()
+  const { connections: connectionsService } = useServices()
+  const connections = useObservable(connectionsService.connections$)
   const { startEmailSync } = useImportService()
-  const [accounts, setAccounts] = useState<ReadonlyArray<AccountRow>>([])
-
-  useEffect(() => {
-    if (!fyredb) return
-    const authRepo = fyredb.repo(authAccountEntity)
-    const settingsRepo = fyredb.repo(emailImportSettingEntity)
-    const sub = authRepo.observeQuery().subscribe((authAccounts) => {
-      const settings = settingsRepo.query()
-      const settingsMap = new Map(settings.map((s) => [s.authAccountId, s]))
-      setAccounts(
-        authAccounts
-          .filter((a) => a.feature === "email")
-          .map((a) => ({ ...a, setting: settingsMap.get(a.id) })),
-      )
-    })
-    return () => { sub.unsubscribe() }
-  }, [fyredb])
 
   const handleAddGoogle = () => {
-    void clientAuth.supportedAuths().find((a) => a.name === GOOGLE_AUTH_NAME)?.login("email")
+    connectionsService.connectGoogle()
   }
 
   const handleAddMicrosoft = () => {
-    void clientAuth.supportedAuths().find((a) => a.name === MICROSOFT_AUTH_NAME)?.login("email")
+    connectionsService.connectMicrosoft()
   }
 
-  const handleSync = (account: AccountRow) => {
+  const handleSync = (connection: ConnectionView) => {
     // Fire-and-forget — the import runs in the background. Progress/errors
     // surface via the import log + notifications.
-    startEmailSync(account)
+    startEmailSync(connection.id)
   }
 
-  const handleRemove = (account: AccountRow) => {
-    if (!fyredb) return
-    fyredb.repo(authAccountEntity).delete(account.id)
-    if (account.setting) {
-      fyredb.repo(emailImportSettingEntity).delete(account.setting.id)
-    }
+  const handleRemove = (connection: ConnectionView) => {
+    connectionsService.disconnect(connection.id)
   }
 
   return (
@@ -70,19 +42,19 @@ export function AccountsSection() {
         </div>
       </div>
 
-      {accounts.length === 0 && (
+      {connections.length === 0 && (
         <p className="text-sm text-muted-foreground">
           No email accounts connected. Connect a Gmail or Outlook account to import bank statements from email.
         </p>
       )}
 
       <div className="flex flex-col gap-3">
-        {accounts.map((account) => (
+        {connections.map((connection) => (
           <AccountCard
-            key={account.id}
-            account={account}
-            onSync={() => { handleSync(account) }}
-            onRemove={() => { handleRemove(account) }}
+            key={connection.id}
+            connection={connection}
+            onSync={() => { handleSync(connection) }}
+            onRemove={() => { handleRemove(connection) }}
           />
         ))}
       </div>
@@ -91,26 +63,26 @@ export function AccountsSection() {
 }
 
 function AccountCard({
-  account,
+  connection,
   onSync,
   onRemove,
 }: {
-  account: AccountRow
+  connection: ConnectionView
   onSync: () => void
   onRemove: () => void
 }) {
-  const lastSynced = account.setting?.importState.lastImportAt
-  const hasError = !!account.setting?.lastErrorLogId
+  const lastSynced = connection.lastSyncedAt
+  const hasError = connection.hasError
 
   return (
     <div className="flex items-center gap-3 rounded-lg border p-4">
       <Avatar className="size-10">
-        <AvatarImage src={account.picture} alt={account.name} />
-        <AvatarFallback>{account.name.charAt(0).toUpperCase()}</AvatarFallback>
+        <AvatarImage src={connection.picture} alt={connection.name} />
+        <AvatarFallback>{connection.name.charAt(0).toUpperCase()}</AvatarFallback>
       </Avatar>
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium">{account.name}</div>
-        <div className="truncate text-xs text-muted-foreground">{account.email}</div>
+        <div className="truncate text-sm font-medium">{connection.name}</div>
+        <div className="truncate text-xs text-muted-foreground">{connection.email}</div>
         {lastSynced && (
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Icon name="clock" className="size-3" />

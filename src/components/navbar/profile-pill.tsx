@@ -12,7 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "@/ui/dropdown-menu"
 import { ThemeSwitcher } from "@/components/theme-switcher"
-import { useNotifications } from "@/providers/notification-provider"
+import { useServices } from "@/providers/services-provider"
+import { useObservable } from "@/lib/use-observable"
 import { useApp } from "@/providers/app-provider"
 import { runNotificationAction } from "@/lib/notification-actions"
 import { resolveDisplay } from "@/services/notifications"
@@ -26,9 +27,11 @@ export function ProfilePill({ className }: ProfilePillProps) {
   const navigate = useNavigate()
   const { tenantId } = useParams()
   const { logout } = useAuth()
-  const { notifications, unacknowledgedCount, acknowledge } = useNotifications()
+  const { notifications: notificationsService } = useServices()
+  const notifications = useObservable(notificationsService.notifications$)
+  const unacknowledgedCount = useObservable(notificationsService.unreadCount$)
   const { devMode } = useApp()
-  const unacknowledged = notifications.filter((n) => !n.acknowledgedAt)
+  const unacknowledged = notifications.filter((n) => !n.read)
 
   return (
     <DropdownMenu>
@@ -62,7 +65,7 @@ export function ProfilePill({ className }: ProfilePillProps) {
                 <DropdownMenuItem
                   key={n.id}
                   className="flex items-start gap-2"
-                  onClick={() => { runNotificationAction(n.ref); acknowledge(n.id) }}
+                  onClick={() => { runNotificationAction(n.ref); notificationsService.markRead(n.id) }}
                 >
                   <Icon name={display.icon} className={cn("mt-0.5 size-3.5 shrink-0", display.color)} />
                   <div className="min-w-0 flex-1">
@@ -73,7 +76,7 @@ export function ProfilePill({ className }: ProfilePillProps) {
                     variant="ghost"
                     size="icon-sm"
                     className="shrink-0"
-                    onClick={(e) => { e.stopPropagation(); acknowledge(n.id) }}
+                    onClick={(e) => { e.stopPropagation(); notificationsService.markRead(n.id) }}
                   >
                     <Icon name="x" className="size-3" />
                   </Button>

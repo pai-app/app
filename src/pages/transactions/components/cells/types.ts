@@ -9,7 +9,8 @@ export type TransactionCellVariant = "table" | "card"
  * row, an optional layout hint, and a `className` passthrough. Cells own their
  * own table-vs-card presentation via `variant` so the row components don't
  * re-specify sizing. Cells that mutate read the single per-tenant
- * `TransactionService` from context (`useTransactionService`), never from props.
+ * `TransactionsService` from the registry (`useServices().transactions`), never
+ * from props.
  */
 export type TransactionCellProps = {
   readonly tx: TransactionRow

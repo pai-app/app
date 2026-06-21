@@ -1,5 +1,6 @@
 import { Minus, Plus } from "lucide-react"
-import { useEntity } from "@/providers/entity-provider"
+import { useObservable } from "@/lib/use-observable"
+import { useServices } from "@/providers/services-provider"
 import { formatMoney, formatNumber, getCurrencyDigits, minorToMajor } from "@/lib/format"
 import { Currency } from "@/ui/currency"
 import { cn } from "@/lib/utils"
@@ -8,9 +9,9 @@ export type MoneyVariant = "default" | "icon"
 
 export type MoneyProps = {
   readonly amount: number
-  /** Override the user's default currency. Falls back to `useEntity().settings.currency`. */
+  /** Override the user's default currency. Falls back to the active user's `settings.currency`. */
   readonly currency?: string
-  /** Override the user's default locale. Falls back to `useEntity().settings.locale`. */
+  /** Override the user's default locale. Falls back to the active user's `settings.locale`. */
   readonly locale?: string
   /**
    * - `default` (recommended) — single locale-aware string from `Intl.NumberFormat({ style: 'currency' })`
@@ -35,7 +36,7 @@ export function Money({
   sign = true,
   className,
 }: MoneyProps) {
-  const { settings } = useEntity()
+  const settings = useObservable(useServices().settings.settings$)
   const code = currency ?? settings.currency
   const loc = locale ?? settings.locale
 

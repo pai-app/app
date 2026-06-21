@@ -2,8 +2,9 @@ import { Icon } from "@/ui/icon"
 import { Money } from "@/ui/money"
 import { MoneyAccountIcon } from "@/ui/money-account-icon"
 import { getBankDisplay, getOfferingDisplay, KIND_DISPLAY } from "@/services/catalog/bank-display"
-import { useEntity } from "@/providers/entity-provider"
-import type { AccountRow } from "@/providers/entity-provider"
+import { useObservable } from "@/lib/use-observable"
+import { useServices } from "@/providers/services-provider"
+import type { AccountDetails } from "@/services/accounts-service"
 
 /**
  * Home dashboard. Until the overview widgets land, this surfaces every money
@@ -11,7 +12,7 @@ import type { AccountRow } from "@/providers/entity-provider"
  * the importer wrote.
  */
 export function HomePage() {
-  const { accounts } = useEntity()
+  const accounts = useObservable(useServices().accounts.accounts$)
 
   if (accounts.length === 0) {
     return (
@@ -32,7 +33,7 @@ export function HomePage() {
       <h1 className="text-lg font-semibold">Accounts</h1>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {accounts.map((account) => (
-          <AccountCard key={account.id} account={account} />
+          <AccountCard key={account.id} accountId={account.id} />
         ))}
       </div>
     </div>
@@ -65,19 +66,25 @@ function maskNumber(value: string): string {
   return `•••• ${visible}`
 }
 
-function AccountCard({ account }: { account: AccountRow }) {
-  const bankDisplay = account.bankId ? getBankDisplay(account.bankId) : undefined
+/** First stored value for a metadata key, or undefined (key may be absent at runtime). */
+function firstMeta(metadata: AccountDetails["metadata"], key: string): string | undefined {
+  return (metadata[key] ?? [])[0]
+}
+
+function AccountCard({ accountId }: { accountId: string }) {
+  const details = useServices().accounts.getAccountDetails(accountId)
+  if (!details) return null
+
+  const bankDisplay = details.bankId ? getBankDisplay(details.bankId) : undefined
   const bankLabel = bankDisplay?.label
   const offeringLabel =
-    (account.bankId && account.offeringId
-      ? getOfferingDisplay(account.bankId, account.offeringId)?.label
-      : undefined) ?? KIND_DISPLAY[account.kind].label
+    (details.bankId && details.offeringId
+      ? getOfferingDisplay(details.bankId, details.offeringId)?.label
+      : undefined) ?? KIND_DISPLAY[details.kind].label
 
-  // Index access on a `Record<string, …>` is typed as always-present, but at
-  // runtime the key may be absent — narrow explicitly.
-  const accountNumber = (account.metadata["accountNumber"] as readonly string[] | undefined)?.[0]
-  const holderName = (account.metadata["accountHolderName"] as readonly string[] | undefined)?.[0]
-  const detailRows = Object.entries(account.metadata).filter(
+  const accountNumber = firstMeta(details.metadata, "accountNumber")
+  const holderName = firstMeta(details.metadata, "accountHolderName")
+  const detailRows = Object.entries(details.metadata).filter(
     ([key, v]) => v.length > 0 && !PROMOTED_KEYS.includes(key as (typeof PROMOTED_KEYS)[number]),
   )
 
@@ -87,7 +94,7 @@ function AccountCard({ account }: { account: AccountRow }) {
           with the bank's brand color when known, else neutral. Sits in the
           right margin of the content band (above the details footer). */}
       <Icon
-        name={KIND_DISPLAY[account.kind].icon}
+        name={KIND_DISPLAY[details.kind].icon}
         aria-hidden
         style={bankDisplay?.color ? { color: bankDisplay.color } : undefined}
         className={`pointer-events-none absolute right-2 top-14 size-28 rotate-[-12deg] ${
@@ -112,18 +119,18 @@ function AccountCard({ account }: { account: AccountRow }) {
       {/* Header: two columns — bank identity (left) + balance (right). */}
       <div className="relative flex items-start justify-between gap-3 p-4 pb-3">
         <div className="flex min-w-0 items-center gap-3">
-          <MoneyAccountIcon account={account} className="size-8 shrink-0" />
+          <MoneyAccountIcon account={details} className="size-8 shrink-0" />
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold">{bankLabel ?? account.name}</div>
+            <div className="truncate text-sm font-semibold">{bankLabel ?? details.name}</div>
             <div className="truncate text-xs text-muted-foreground">{offeringLabel}</div>
           </div>
         </div>
         <div className="shrink-0 text-right">
           <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Balance</div>
           <div className="text-lg font-semibold leading-tight">
-            <Money amount={account.initialBalance} currency={account.currency} sign={false} />
+            <Money amount={details.initialBalance} currency={details.currency} sign={false} />
           </div>
-          {account.archived && (
+          {details.archived && (
             <span className="mt-1 inline-block rounded bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
               Archived
             </span>
@@ -146,12 +153,12 @@ function AccountCard({ account }: { account: AccountRow }) {
       {/* Remaining details — key/value. Pinned to the card bottom so the
           divider aligns across cards of differing content height. */}
       <dl className="relative mt-auto flex flex-col gap-1 border-t px-4 py-3 text-xs">
-        <Row label="Currency" value={account.currency} />
+        <Row label="Currency" value={details.currency} />
         {detailRows.map(([key, values]) => (
           <Row key={key} label={humanizeKey(key)} value={values.join(", ")} />
         ))}
-        {account.icon && <Row label="Icon" value={account.icon} />}
-        <Row label="Entity id" value={<span className="break-all">{account.id}</span>} />
+        {details.icon && <Row label="Icon" value={details.icon} />}
+        <Row label="Entity id" value={<span className="break-all">{details.id}</span>} />
       </dl>
     </div>
   )

@@ -1,7 +1,7 @@
 /**
- * TransactionService — the per-tenant orchestrator for transactions and
- * tagging. One instance per `FyreDb` (the per-tenant rebuild is the provider's
- * job; see decision D5 / task T20).
+ * TransactionsService — the per-tenant orchestrator for transactions and
+ * tagging. One instance per `FyreDb`, constructed and disposed by the service
+ * registry (`ServicesProvider`).
  *
  * It owns the choke point through which all tag mutations and transaction
  * imports flow, constructs the per-tenant `TaggingEngine` with itself as the
@@ -9,16 +9,16 @@
  * (no queue; decision D7). The engine reads live state through the port on
  * every call — there is no snapshot.
  *
- * This file holds the skeleton: the repos, the engine, the three `TaggingData`
- * port reads, and the `resolveAdapterId` provenance helper. The mutation
- * methods (`tag` / `untag` / `tagMany` / `acceptSuggestion` /
- * `importNewTransactions`) land in later tasks (T13/T14).
+ * Alongside the engine port reads and mutations, it exposes curated reactive
+ * reads for the UI (`tagRules$`, `observeMonths`) and keeps the global
+ * `tagRule` partition warm (INV-1) via a constructor subscription.
  *
  * See `docs/tagging-app-integration.md` §1 and `docs/tagging-engine-spec.md`
  * §1.
  */
 
-import type { FyreDb, RepositoryType as Repository } from "@fyre-db/core"
+import { BehaviorSubject, Subscription, type Observable } from "rxjs"
+import type { FyreDb, BaseEntity, RepositoryType as Repository } from "@fyre-db/core"
 
 import {
   transactionEntity,
@@ -41,11 +41,18 @@ import type {
   TagMutationOutcome,
   SimilarFact,
 } from "@/services/tagging/types"
+import type { Disposable, ReadonlySubject } from "@/services/types"
 
 /** The result of a tag action: optional untagged look-alikes the UI MAY prompt. */
 export type TagResult = { readonly similar?: SimilarFact }
 
-export class TransactionService implements TaggingData {
+/** A persisted `TagRule` row (carries the store's `BaseEntity` identity). */
+export type TagRuleRow = TagRule & BaseEntity
+
+/** A persisted `Transaction` row (carries the store's `BaseEntity` identity). */
+export type TransactionRow = Transaction & BaseEntity
+
+export class TransactionsService implements TaggingData, Disposable {
   // ── Repos (synchronous, live over the in-memory store) ──
   private readonly txRepo: Repository<Transaction>
   private readonly tagRuleRepo: Repository<TagRule>
@@ -55,11 +62,49 @@ export class TransactionService implements TaggingData {
   // Read by the mutation methods (`tag` / `untag` / ...).
   private readonly engine: TaggingEngine
 
+  // Subscriptions held for the tenant's lifetime; torn down in `dispose`.
+  private readonly subs = new Subscription()
+
+  // The live, curated view of all rules for the rules UI. Backed by a
+  // `BehaviorSubject` so `useObservable` can bind it with a synchronous
+  // snapshot.
+  private readonly tagRules = new BehaviorSubject<readonly TagRuleRow[]>([])
+
   constructor(fyredb: FyreDb) {
     this.txRepo = fyredb.repo(transactionEntity)
     this.tagRuleRepo = fyredb.repo(tagRuleEntity)
     this.importSourceRepo = fyredb.repo(importSourceEntity)
     this.engine = new TaggingEngine(this)
+    // INV-1: keep the global `tagRule` partition warm before the first engine
+    // op. If `ruleByKey` misses a rule that exists on disk, the engine
+    // materializes a partial rule under the same key and LWW clobbers the rich
+    // on-disk version. This subscription replaces `useLoadTagRules`.
+    this.subs.add(this.tagRuleRepo.observeQuery().subscribe((rows) => { this.tagRules.next(rows) }))
+  }
+
+  // ── Reactive reads (curated view-models) ──
+
+  /** All persisted rules for this tenant, live. */
+  get tagRules$(): ReadonlySubject<readonly TagRuleRow[]> {
+    return this.tagRules
+  }
+
+  /**
+   * The transactions for the given month partition `keys`, live. Subscribing
+   * also drives lazy partition hydration for cold months.
+   */
+  observeMonths(keys: readonly string[]): Observable<readonly TransactionRow[]> {
+    return this.txRepo.observeQuery({ keys })
+  }
+
+  /** Delete a rule by its entity id (rules UI prune/delete). */
+  deleteRule(id: string): void {
+    this.tagRuleRepo.delete(id)
+  }
+
+  /** Tear down the tenant's subscriptions. */
+  dispose(): void {
+    this.subs.unsubscribe()
   }
 
   // ── TaggingData port (synchronous reads over the in-memory store) ──

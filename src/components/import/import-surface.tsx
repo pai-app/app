@@ -7,7 +7,8 @@ import { Icon } from "@/ui/icon"
 import { Spinner } from "@/ui/spinner"
 import { Progress } from "@/ui/progress"
 import { useApp } from "@/providers/app-provider"
-import { useEntity } from "@/providers/entity-provider"
+import { useObservable } from "@/lib/use-observable"
+import { useServices } from "@/providers/services-provider"
 import { useImportService } from "@/providers/import-provider"
 import { useEmailPreview } from "@/components/import/use-email-preview"
 import { PasswordPrompt, AccountSelectionPrompt, ConfirmPrompt } from "@/components/import/import-prompts"
@@ -263,7 +264,7 @@ function useImportSources(log: ImportLog & BaseEntity): readonly (ImportSource &
  * rows, not stored on the log.
  */
 function SweepProgress({ log, live }: { log: ImportLog & BaseEntity; live: boolean }) {
-  const { accounts } = useEntity()
+  const accounts = useObservable(useServices().accounts.accounts$)
   const sources = useImportSources(log)
   const run = log.emailRun
   if (!run) return null
@@ -318,7 +319,7 @@ function SweepProgress({ log, live }: { log: ImportLog & BaseEntity; live: boole
 // ── Detail block ────────────────────────────────────────
 
 function DetailBlock({ log }: { log: ImportLog }) {
-  const { accounts } = useEntity()
+  const accounts = useObservable(useServices().accounts.accounts$)
   const rows: Array<{ label: string; value: string }> = []
   if (log.adapterId) {
     const [bankId, offering] = log.adapterId.split("/")
@@ -359,13 +360,10 @@ function DetailBlock({ log }: { log: ImportLog }) {
 
 // ── Utils ───────────────────────────────────────────────
 
-/** Masked last-4 of an account's number (from `metadata.accountNumber`), or
- *  null when none is known. Uses the last recorded number and trailing digits. */
-function accountLast4(account: { metadata?: Record<string, readonly string[]> } | undefined): string | null {
-  const numbers = account?.metadata?.accountNumber
-  const raw = numbers && numbers.length > 0 ? numbers[numbers.length - 1] : null
-  if (!raw) return null
-  const digits = raw.replace(/\D/g, "")
+/** Masked last-4 of an account's number (from the view's `maskedNumber`), or
+ *  null when none is known. */
+function accountLast4(account: { maskedNumber?: string } | undefined): string | null {
+  const digits = account?.maskedNumber?.replace(/\D/g, "") ?? ""
   return digits.length >= 4 ? digits.slice(-4) : null
 }
 
@@ -374,7 +372,7 @@ function accountLast4(account: { metadata?: Record<string, readonly string[]> } 
 function formatAccountLabel(
   name: string,
   adapterId: string | undefined,
-  account: { metadata?: Record<string, readonly string[]> } | undefined,
+  account: { maskedNumber?: string } | undefined,
 ): string {
   const offering = adapterId && adapterId.includes("/") ? adapterId.split("/")[1] : undefined
   const last4 = accountLast4(account)

@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
-import { useFyreDb } from "@fyre-db/plugins-ui"
 import { Button } from "@/ui/button"
 import { Icon } from "@/ui/icon"
 import {
@@ -11,14 +10,11 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/ui/dropdown-menu"
-import { tagRuleEntity } from "@/services/entities"
 import { isDormant, strengthOf } from "@/services/tagging/strength"
-import {
-  useEntity,
-  useTransactionService,
-  type AccountRow,
-  type TagRuleRow,
-} from "@/providers/entity-provider"
+import { useServices } from "@/providers/services-provider"
+import { useObservable } from "@/lib/use-observable"
+import type { TagRuleRow } from "@/services/transactions-service"
+import type { AccountView } from "@/services/accounts-service"
 import { useTransactionsQuery } from "@/pages/transactions/use-transactions-query"
 import { RuleCard } from "./rules/rule-card"
 
@@ -37,9 +33,11 @@ const SORT_LABELS: Record<SortKey, string> = {
  * transactions.
  */
 export function RulesSection() {
-  const fyredb = useFyreDb()
-  const txService = useTransactionService()
-  const { tagRules, tags, accounts, year } = useEntity()
+  const { transactions: svc, tags: tagsService, accounts: accountsService, settings } = useServices()
+  const tagRules = useObservable(svc.tagRules$)
+  const tags = useObservable(tagsService.displayTags$)
+  const accounts = useObservable(accountsService.accounts$)
+  const year = useObservable(settings.selectedYear$)
   const { transactions } = useTransactionsQuery()
   const [sort, setSort] = useState<SortKey>("lastMatched")
 
@@ -71,13 +69,12 @@ export function RulesSection() {
   )
 
   const deleteRules = (ids: readonly string[]) => {
-    if (!fyredb || ids.length === 0) return
-    const repo = fyredb.repo(tagRuleEntity)
-    for (const id of ids) repo.delete(id)
+    if (ids.length === 0) return
+    for (const id of ids) svc.deleteRule(id)
   }
 
   const autoApplyToYear = () => {
-    const applied = txService.applyRulesToTransactions(transactions)
+    const applied = svc.applyRulesToTransactions(transactions)
     toast(
       applied > 0
         ? `Auto-tagged ${applied} transaction${applied === 1 ? "" : "s"} in ${year}`
@@ -176,7 +173,7 @@ function indexById<T extends { readonly id: string }>(rows: readonly T[]): Reado
  */
 function isFromArchivedAccount(
   rule: TagRuleRow,
-  accountsById: ReadonlyMap<string, AccountRow>,
+  accountsById: ReadonlyMap<string, AccountView>,
 ): boolean {
   if (rule.sourceAccountIds.length === 0) return false
   return rule.sourceAccountIds.every((id) => accountsById.get(id)?.archived === true)

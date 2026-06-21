@@ -7,16 +7,17 @@ import { Money } from "@/ui/money"
 import { MoneyAccountIcon } from "@/ui/money-account-icon"
 import { cn } from "@/lib/utils"
 import { useApp } from "@/providers/app-provider"
-import { useEntity, type DisplayTag } from "@/providers/entity-provider"
+import { type TagView } from "@/services/tags-service"
 import {
   transactionEntity,
   importSourceEntity,
   type ImportSourceDescriptor,
-  type MoneyAccount,
 } from "@/services/entities"
+import { useObservable } from "@/lib/use-observable"
+import { useServices } from "@/providers/services-provider"
 import { TagPicker } from "@/components/tag-picker"
 import { log } from "@/log"
-import { useTagWithSimilar } from "../use-tag-with-similar"
+import { notifyTagSimilar } from "../notify-tag-similar"
 import type { TransactionRow } from "../use-transactions-query"
 import { TagCell } from "./cells/tag-cell"
 
@@ -35,16 +36,6 @@ const SOURCE_DATE_FMT = new Intl.DateTimeFormat(undefined, {
   timeZone: "UTC",
 })
 
-/** Last-4 mask of an account's stored number, when available. */
-function maskAccountNumber(metadata: MoneyAccount["metadata"]): string | undefined {
-  // metadata values may not exist for the "accountNumber" key at runtime
-  // even though the type is Record<string, readonly string[]>
-  const numbers = metadata["accountNumber"] as readonly string[] | undefined
-  const first = numbers?.[0]
-  if (!first || first.length < 4) return undefined
-  return `****${first.slice(-4)}`
-}
-
 export type TransactionDetailProps = {
   readonly tx: TransactionRow
   readonly onClose: () => void
@@ -61,9 +52,9 @@ export type TransactionDetailProps = {
  */
 export function TransactionDetail({ tx, onClose }: TransactionDetailProps) {
   const { isMobile } = useApp()
-  const { accounts } = useEntity()
+  const { accounts: accountsService, transactions: svc } = useServices()
+  const accounts = useObservable(accountsService.accounts$)
   const fyredb = useFyreDb()
-  const { tag, untag } = useTagWithSimilar()
 
   // Local edit buffer for the Notes field, reset (during render, not in an
   // effect) whenever the selected transaction changes.
@@ -91,7 +82,7 @@ export function TransactionDetail({ tx, onClose }: TransactionDetailProps) {
   const source = sourceState.source
 
   const account = accounts.find((a) => a.id === tx.accountId)
-  const masked = account ? maskAccountNumber(account.metadata) : undefined
+  const masked = account?.maskedNumber
   const debited = tx.amount < 0
 
   const saveTitle = () => {
@@ -115,9 +106,13 @@ export function TransactionDetail({ tx, onClose }: TransactionDetailProps) {
 
   const setTitle = (value: string) => { setTitleState({ id: tx.id, value }) }
 
-  const setTag = (selected: DisplayTag | null) => {
-    if (selected) tag(tx.id, selected.id, selected.name)
-    else untag(tx.id)
+  const setTag = (selected: TagView | null) => {
+    if (selected) {
+      const { similar } = svc.tag(tx.id, selected.id)
+      notifyTagSimilar(similar, selected.name, svc)
+    } else {
+      svc.untag(tx.id)
+    }
     setTagPickerOpen(false)
   }
 

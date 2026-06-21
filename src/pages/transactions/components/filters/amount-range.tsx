@@ -3,7 +3,8 @@ import { Icon } from "@/ui/icon"
 import { Input } from "@/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover"
 import { cn } from "@/lib/utils"
-import { useEntity } from "@/providers/entity-provider"
+import { useObservable } from "@/lib/use-observable"
+import { useServices } from "@/providers/services-provider"
 import { getCurrencyMeta } from "@/lib/format"
 import type { FilterControlProps } from "./types"
 
@@ -20,7 +21,7 @@ export function AmountRange({ state, variant = "bar", className }: FilterControl
   const { filter, patch } = state
   const min = filter.amountMin
   const max = filter.amountMax
-  const { settings } = useEntity()
+  const settings = useObservable(useServices().settings.settings$)
   const symbol = getCurrencyMeta(settings.currency)?.symbol ?? ""
   const active = min !== undefined || max !== undefined
 

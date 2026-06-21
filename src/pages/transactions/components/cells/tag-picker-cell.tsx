@@ -1,7 +1,8 @@
 import { useState } from "react"
 import { TagPicker } from "@/components/tag-picker"
-import { type DisplayTag } from "@/providers/entity-provider"
-import { useTagWithSimilar } from "../../use-tag-with-similar"
+import { type TagView } from "@/services/tags-service"
+import { useServices } from "@/providers/services-provider"
+import { notifyTagSimilar } from "../../notify-tag-similar"
 import { TagCell } from "./tag-cell"
 import type { TransactionCellProps } from "./types"
 
@@ -11,12 +12,16 @@ import type { TransactionCellProps } from "./types"
  * tapping the tag doesn't also open the row's detail panel.
  */
 export function TagPickerCell({ tx, className }: TransactionCellProps) {
-  const { tag, untag } = useTagWithSimilar()
+  const { transactions: svc } = useServices()
   const [open, setOpen] = useState(false)
 
-  const setTag = (selected: DisplayTag | null) => {
-    if (selected) tag(tx.id, selected.id, selected.name)
-    else untag(tx.id)
+  const setTag = (selected: TagView | null) => {
+    if (selected) {
+      const { similar } = svc.tag(tx.id, selected.id)
+      notifyTagSimilar(similar, selected.name, svc)
+    } else {
+      svc.untag(tx.id)
+    }
     setOpen(false)
   }
 

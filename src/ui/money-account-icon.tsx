@@ -1,7 +1,7 @@
 import { type SVGProps } from "react"
 import { Icon } from "@/ui/icon"
-import type { MoneyAccount } from "@/services/entities"
 import { getBankDisplay, KIND_DISPLAY } from "@/services/catalog/bank-display"
+import type { AccountIconData } from "@/services/accounts-service"
 
 /**
  * Resolve the icon key for a money account.
@@ -10,7 +10,7 @@ import { getBankDisplay, KIND_DISPLAY } from "@/services/catalog/bank-display"
  *     → bank display icon           // bank brand mark when known
  *     → KIND_DISPLAY[kind].icon     // generic kind icon
  */
-function resolveAccountIcon(account: MoneyAccount): string {
+function resolveAccountIcon(account: AccountIconData): string {
   if (account.icon) return account.icon
   if (account.bankId) {
     const fromBank = getBankDisplay(account.bankId)?.icon
@@ -20,7 +20,7 @@ function resolveAccountIcon(account: MoneyAccount): string {
 }
 
 export type MoneyAccountIconProps = SVGProps<SVGSVGElement> & {
-  readonly account: MoneyAccount
+  readonly account: AccountIconData
 }
 
 /**

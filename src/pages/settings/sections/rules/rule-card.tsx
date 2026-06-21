@@ -3,12 +3,13 @@ import { Icon } from "@/ui/icon"
 import { TagIcon } from "@/ui/tag-icon"
 import { classify, isDormant, strengthOf } from "@/services/tagging/strength"
 import { cn } from "@/lib/utils"
-import type { DisplayTag, TagRuleRow } from "@/providers/entity-provider"
+import type { TagRuleRow } from "@/services/transactions-service"
+import type { TagView } from "@/services/tags-service"
 
 type RuleCardProps = {
   readonly rule: TagRuleRow
   readonly now: number
-  readonly tagsById: ReadonlyMap<string, DisplayTag>
+  readonly tagsById: ReadonlyMap<string, TagView>
   readonly onDelete: () => void
 }
 

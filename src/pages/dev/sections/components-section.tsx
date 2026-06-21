@@ -12,7 +12,7 @@ import { Logo } from "@/components/logo"
 import { SyncStatus } from "@/components/sync-status"
 import { Navbar } from "@/components/navbar/navbar"
 import { TagPicker } from "@/components/tag-picker"
-import type { DisplayTag } from "@/providers/entity-provider"
+import type { TagView } from "@/services/tags-service"
 import { notify } from "@/services/notifications"
 
 function Section({ title, children }: { readonly title: string; readonly children: ReactNode }) {
@@ -176,7 +176,7 @@ function NotificationDemo() {
 
 function TagPickerDemo() {
   const [open, setOpen] = useState(false)
-  const [selected, setSelected] = useState<DisplayTag | null>(null)
+  const [selected, setSelected] = useState<TagView | null>(null)
 
   return (
     <div className="flex flex-col items-start gap-3">
