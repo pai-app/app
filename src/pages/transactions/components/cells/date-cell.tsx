@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils"
+import type { TransactionCellProps } from "./types"
 
 const DATE_FMT = new Intl.DateTimeFormat(undefined, {
   month: "short",
@@ -6,12 +7,7 @@ const DATE_FMT = new Intl.DateTimeFormat(undefined, {
   timeZone: "UTC",
 })
 
-export type DateCellProps = {
-  readonly epochMs: number
-  readonly className?: string
-}
-
 /** Compact transaction date — "MMM DD". UTC to align with monthly partitions. */
-export function DateCell({ epochMs, className }: DateCellProps) {
-  return <span className={cn("text-sm", className)}>{DATE_FMT.format(epochMs)}</span>
+export function DateCell({ tx, className }: TransactionCellProps) {
+  return <span className={cn("text-sm", className)}>{DATE_FMT.format(tx.transactionAt)}</span>
 }

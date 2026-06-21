@@ -4,7 +4,7 @@ import { Icon } from "@/ui/icon"
 import { Input } from "@/ui/input"
 import { Button } from "@/ui/button"
 import { SheetClose } from "@/ui/sheet"
-import type { DisplayTag } from "@/providers/entity-provider"
+import type { TagView } from "@/services/tags-service"
 import { TagItem } from "./tag-item"
 import type { TagWithChildren } from "./types"
 
@@ -12,7 +12,7 @@ export type TagListProps = {
   readonly rows: readonly TagWithChildren[]
   readonly query: string
   readonly onQueryChange: (e: ChangeEvent<HTMLInputElement>) => void
-  readonly onSelect: (tag: DisplayTag) => void
+  readonly onSelect: (tag: TagView) => void
   readonly selectedTagId: string | null
   /** When true, shows a `<SheetClose>` button next to the search input. */
   readonly showCloseButton: boolean

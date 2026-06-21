@@ -1,25 +1,22 @@
-import { useEffect, useState } from "react"
-import { useFyreDb } from "@fyre-db/plugins-ui"
 import type { BaseEntity } from "@fyre-db/core"
 import { Icon } from "@/ui/icon"
 import { Button } from "@/ui/button"
 import { Progress } from "@/ui/progress"
-import { importLogEntity, sweepProgress, type ImportLog } from "@/services/entities/import-log"
+import { sweepProgress, type ImportLog } from "@/services/entities/import-log"
 import { useImportService } from "@/providers/import-provider"
-import { useEntity } from "@/providers/entity-provider"
+import { useObservable } from "@/lib/use-observable"
+import { useObservableQuery } from "@/lib/use-observable-query"
+import { useServices } from "@/providers/services-provider"
 
 export function ImportsSection() {
-  const fyredb = useFyreDb()
   const { startFileImport, openSheet } = useImportService()
-  const { monthKeys } = useEntity()
-  const [logs, setLogs] = useState<ReadonlyArray<ImportLog & BaseEntity>>([])
-
-  useEffect(() => {
-    if (!fyredb) return
-    const repo = fyredb.repo(importLogEntity)
-    const sub = repo.observeQuery({ keys: monthKeys }).subscribe(setLogs)
-    return () => { sub.unsubscribe() }
-  }, [fyredb, monthKeys])
+  const { settings, import: importSvc } = useServices()
+  const monthKeys = useObservable(settings.monthKeys$)
+  const { value: logs } = useObservableQuery(
+    () => importSvc.observeLogs(monthKeys),
+    [importSvc, monthKeys],
+    [] as readonly (ImportLog & BaseEntity)[],
+  )
 
   const sorted = [...logs].sort((a, b) => b.triggeredAt - a.triggeredAt)
 

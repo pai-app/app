@@ -1,7 +1,21 @@
-import { describe, it, expect } from "vitest"
-import type { BaseEntity } from "@fyre-db/core"
-import type { AccountDetails } from "@pai-app/adapters"
-import { accountNumbersMatch, findMatchingAccounts, mergeMetadata, orderByCompleteness } from "@/services/import/import-utils"
+import { describe, it, expect, afterEach } from "vitest"
+import type { BaseEntity, FyreDb } from "@fyre-db/core"
+import type { AccountDetails, ImportData } from "@pai-app/adapters"
+import {
+  accountNumbersMatch,
+  CancelledError,
+  computeHash,
+  EmailPasswordError,
+  findMatchingAccounts,
+  hashAndDedup,
+  mergeMetadata,
+  monthKeyFromEpoch,
+  orderByCompleteness,
+  throwIfCancelled,
+} from "@/services/import/import-utils"
+import { ImportContext } from "@/services/import/import-context"
+import { transactionEntity } from "@/services/entities"
+import { createTestFyreDb } from "../../helpers/test-fyredb"
 import type { MoneyAccount } from "@/services/entities/money-account"
 
 describe("accountNumbersMatch", () => {
@@ -73,6 +87,23 @@ describe("findMatchingAccounts", () => {
     const matches = findMatchingAccounts([full], "jupiter", "bank", details("XXXXX0237"))
     expect(matches).toEqual([])
   })
+
+  it("does not match when the parsed details carry no account number", () => {
+    const full = account({ id: "a1", metadata: { accountNumber: ["77780100250237"] } })
+    const noNumber: AccountDetails = { currency: "INR" }
+    expect(findMatchingAccounts([full], "jupiter", "bank", noNumber)).toEqual([])
+  })
+
+  it("does not match an account that stores no account number", () => {
+    const bare = account({ id: "a1", metadata: {} })
+    expect(findMatchingAccounts([bare], "jupiter", "bank", details("XXXXX0237"))).toEqual([])
+  })
+})
+
+describe("accountNumbersMatch — visible-suffix edge", () => {
+  it("does not match when a masked value exposes no trailing digits", () => {
+    expect(accountNumbersMatch("77780100250237", "XXXX")).toBe(false)
+  })
 })
 
 describe("orderByCompleteness", () => {
@@ -88,6 +119,16 @@ describe("orderByCompleteness", () => {
       "1230237",
       "X0237",
       "XX0237",
+    ])
+  })
+
+  it("breaks an equal-mask tie by descending length, then lexicographically", () => {
+    // All unmasked (mask count 0): longest first, then localeCompare for ties.
+    expect(orderByCompleteness(["bbb", "aa", "cc", "aaaa"])).toEqual([
+      "aaaa",
+      "bbb",
+      "aa",
+      "cc",
     ])
   })
 })
@@ -111,11 +152,108 @@ describe("mergeMetadata", () => {
     expect(metadata["accountNumber"]).toEqual(["77780100250237", "XXXXX0237"])
   })
 
+  it("carries over a key present only in existing (incoming adds nothing)", () => {
+    const existing = { customerId: ["145803935"] }
+    const incoming = { accountNumber: ["77780100250237"] }
+    const { metadata, changed } = mergeMetadata(existing, incoming)
+    expect(changed).toBe(true)
+    expect(metadata["customerId"]).toEqual(["145803935"]) // untouched
+    expect(metadata["accountNumber"]).toEqual(["77780100250237"]) // new key
+  })
+
   it("reorders an existing key when a more complete value arrives", () => {
     const existing = { accountNumber: ["XXXXX0237"] }
     const incoming = { accountNumber: ["77780100250237"] }
     const { metadata, changed } = mergeMetadata(existing, incoming)
     expect(changed).toBe(true)
     expect(metadata["accountNumber"]).toEqual(["77780100250237", "XXXXX0237"])
+  })
+})
+
+describe("computeHash", () => {
+  it("is deterministic for the same inputs", () => {
+    expect(computeHash(1000, -50000, "ZOMATO")).toBe(computeHash(1000, -50000, "ZOMATO"))
+  })
+
+  it("changes when any field changes", () => {
+    const base = computeHash(1000, -50000, "ZOMATO")
+    expect(computeHash(1001, -50000, "ZOMATO")).not.toBe(base)
+    expect(computeHash(1000, -50001, "ZOMATO")).not.toBe(base)
+    expect(computeHash(1000, -50000, "SWIGGY")).not.toBe(base)
+  })
+
+  it("returns a compact base-36 string", () => {
+    expect(computeHash(1000, -50000, "ZOMATO")).toMatch(/^[0-9a-z]+$/)
+  })
+})
+
+describe("monthKeyFromEpoch", () => {
+  it("derives a UTC YYYY-MM key", () => {
+    expect(monthKeyFromEpoch(Date.UTC(2026, 0, 15))).toBe("2026-01")
+    expect(monthKeyFromEpoch(Date.UTC(2026, 11, 1))).toBe("2026-12")
+  })
+})
+
+describe("hashAndDedup", () => {
+  let fyredb: FyreDb
+
+  afterEach(async () => {
+    await fyredb.dispose().catch(() => {})
+  })
+
+  const importData = (txs: ImportData["transactions"]): ImportData => ({
+    bankId: "hdfc",
+    offeringId: "savings",
+    kind: "bank",
+    account: { currency: "INR" },
+    transactions: txs,
+  })
+
+  it("flags rows present in the repo as not-new and absent rows as new", async () => {
+    fyredb = await createTestFyreDb()
+    const repo = fyredb.repo(transactionEntity)
+
+    const seen = { date: Date.UTC(2026, 0, 10), amount: -50000, description: "ZOMATO" }
+    const fresh = { date: Date.UTC(2026, 0, 11), amount: -12000, description: "SWIGGY" }
+
+    // Persist a row whose id matches `seen`'s computed hash so it dedupes.
+    repo.save({
+      accountId: "acc-1",
+      narration: seen.description,
+      transactionAt: seen.date,
+      amount: seen.amount,
+      hash: computeHash(seen.date, seen.amount, seen.description),
+    })
+
+    const result = hashAndDedup(importData([seen, fresh]), repo)
+
+    expect(result).toHaveLength(2)
+    expect(result.find((r) => r.description === "ZOMATO")?.isNew).toBe(false)
+    expect(result.find((r) => r.description === "SWIGGY")?.isNew).toBe(true)
+  })
+})
+
+describe("CancelledError / throwIfCancelled", () => {
+  it("does not throw for a live context", () => {
+    const ctx = new ImportContext()
+    expect(() => { throwIfCancelled(ctx) }).not.toThrow()
+    ctx.dispose()
+  })
+
+  it("throws CancelledError once the context is cancelled", () => {
+    const ctx = new ImportContext()
+    ctx.cancel()
+    expect(() => { throwIfCancelled(ctx) }).toThrow(CancelledError)
+  })
+})
+
+describe("EmailPasswordError", () => {
+  it("wraps a cause and carries the originating email id", () => {
+    const cause = new Error("password required")
+    const err = new EmailPasswordError("email-99", cause)
+    expect(err).toBeInstanceOf(Error)
+    expect(err.emailId).toBe("email-99")
+    expect(err.message).toBe("password required")
+    expect(err.cause).toBe(cause)
   })
 })

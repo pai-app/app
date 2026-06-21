@@ -1,11 +1,11 @@
-import type { DisplayTag } from "@/providers/entity-provider"
+import type { TagView } from "@/services/tags-service"
 import { cn } from "@/lib/utils"
 import { TagIcon } from "@/ui/tag-icon"
 import { REMOVE_TAG_ID, type TagWithChildren } from "./types"
 
 export type TagItemProps = {
   readonly tag: TagWithChildren
-  readonly onSelect: (tag: DisplayTag) => void
+  readonly onSelect: (tag: TagView) => void
   readonly selectedTagId: string | null
 }
 

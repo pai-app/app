@@ -7,7 +7,8 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/ui/dropdown-menu"
-import { useEntity } from "@/providers/entity-provider"
+import { useObservable } from "@/lib/use-observable"
+import { useServices } from "@/providers/services-provider"
 import { cn } from "@/lib/utils"
 
 const MONTH_SHORT = [
@@ -86,7 +87,9 @@ type YearPillProps = {
 }
 
 export function YearPill({ className, variant = "default" }: YearPillProps) {
-  const { settings, year, setYear } = useEntity()
+  const { settings: settingsService } = useServices()
+  const settings = useObservable(settingsService.settings$)
+  const year = useObservable(settingsService.selectedYear$)
   const { firstMonth } = settings
   const compact = variant === "compact"
 
@@ -121,7 +124,7 @@ export function YearPill({ className, variant = "default" }: YearPillProps) {
       <DropdownMenuContent align="end" sideOffset={10} className="min-w-36">
         <DropdownMenuRadioGroup
           value={String(year)}
-          onValueChange={(v) => { setYear(Number(v)); }}
+          onValueChange={(v) => { settingsService.setSelectedYear(Number(v)); }}
         >
           {years.map((y) => (
             <DropdownMenuRadioItem key={y} value={String(y)}>

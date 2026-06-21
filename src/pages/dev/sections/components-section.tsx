@@ -12,8 +12,8 @@ import { Logo } from "@/components/logo"
 import { SyncStatus } from "@/components/sync-status"
 import { Navbar } from "@/components/navbar/navbar"
 import { TagPicker } from "@/components/tag-picker"
-import type { DisplayTag } from "@/providers/entity-provider"
-import { notify } from "@/services/notifications"
+import type { TagView } from "@/services/tags-service"
+import { useServices } from "@/providers/services-provider"
 
 function Section({ title, children }: { readonly title: string; readonly children: ReactNode }) {
   return (
@@ -155,8 +155,9 @@ export function ComponentsSection() {
  * inbox row is written, demonstrating non-persistent delivery.
  */
 function NotificationDemo() {
+  const notificationsService = useServices().notifications
   const fire = (display: "info" | "success" | "warning" | "error") => {
-    notify(null, {
+    notificationsService.notify({
       kind: "showcase-demo",
       display,
       title: `${display[0].toUpperCase()}${display.slice(1)} toast`,
@@ -176,7 +177,7 @@ function NotificationDemo() {
 
 function TagPickerDemo() {
   const [open, setOpen] = useState(false)
-  const [selected, setSelected] = useState<DisplayTag | null>(null)
+  const [selected, setSelected] = useState<TagView | null>(null)
 
   return (
     <div className="flex flex-col items-start gap-3">

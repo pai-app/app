@@ -3,20 +3,24 @@ import { Button } from "@/ui/button"
 import { Icon } from "@/ui/icon"
 import { TagIcon } from "@/ui/tag-icon"
 import { cn } from "@/lib/utils"
-import { useEntity } from "@/providers/entity-provider"
+import { useObservable } from "@/lib/use-observable"
+import { useServices } from "@/providers/services-provider"
 
 export type TagCellProps = Omit<ComponentProps<typeof Button>, "children"> & {
   readonly tagId: string | null
+  readonly autoTagged?: boolean
 }
 
 /**
  * Renders a transaction's tag — icon + name, or an "Add tag" affordance when
- * untagged. All remaining props (including the `ref`, `onClick`, and ARIA
- * attributes injected by a Radix `asChild` trigger) are forwarded to the
- * underlying `Button` so this can serve directly as a `TagPicker` trigger.
+ * untagged. A `sparkles` glyph appears beside the tag name when the tag was
+ * auto-applied (`autoTagged`). All remaining props (including the `ref`,
+ * `onClick`, and ARIA attributes injected by a Radix `asChild` trigger) are
+ * forwarded to the underlying `Button` so this can serve directly as a
+ * `TagPicker` trigger.
  */
-export function TagCell({ tagId, className, ...props }: TagCellProps) {
-  const { tags } = useEntity()
+export function TagCell({ tagId, autoTagged, className, ...props }: TagCellProps) {
+  const tags = useObservable(useServices().tags.displayTags$)
   const tag = tagId ? tags.find((t) => t.id === tagId) : undefined
 
   return (
@@ -25,6 +29,9 @@ export function TagCell({ tagId, className, ...props }: TagCellProps) {
         <>
           <TagIcon tag={tag} />
           <span className="truncate">{tag.name}</span>
+          {autoTagged && (
+            <Icon name="sparkles" aria-hidden className="size-3 text-muted-foreground" />
+          )}
         </>
       ) : (
         <>

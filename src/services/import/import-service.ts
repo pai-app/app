@@ -1,4 +1,5 @@
 import type { FyreDb, BaseEntity, RepositoryType as Repository, SingletonRepositoryType as SingletonRepository } from "@fyre-db/core"
+import type { Observable } from "rxjs"
 import {
   importLogEntity,
   type ImportLog,
@@ -7,6 +8,7 @@ import {
 } from "@/services/entities/import-log"
 import {
   importSourceEntity,
+  importSourceMonthKey,
   type ImportSource,
   type ImportSourceDescriptor,
 } from "@/services/entities/import-source"
@@ -15,7 +17,7 @@ import {
   type EmailImportSetting,
   type EmailImportState,
 } from "@/services/entities/email-import-setting"
-import { notify } from "@/services/notifications"
+import type { NotificationsService } from "@/services/notifications/notifications-service"
 import {
   userSettingsEntity,
   USER_SETTINGS_DEFAULTS,
@@ -29,6 +31,8 @@ import {
   moneyAccountEntity,
   type MoneyAccount,
 } from "@/services/entities/money-account"
+import type { TransactionsService } from "@/services/transactions-service"
+import type { Disposable } from "@/services/types"
 import type { AuthAccount } from "@/services/entities/auth-account"
 import { authAccountEntity } from "@/services/entities/auth-account"
 import { ImportContext } from "./import-context"
@@ -59,7 +63,7 @@ type ActiveImport = {
  * - On construction, runs an init sweep to purge stale file-source
  *   `needs_input` rows left over from a previous session.
  */
-export class ImportService {
+export class ImportService implements Disposable {
   private readonly fyredb: FyreDb
   private readonly logRepo: Repository<ImportLog>
   private readonly sourceRepo: Repository<ImportSource>
@@ -67,9 +71,11 @@ export class ImportService {
   private readonly userSettingsRepo: SingletonRepository<UserSettings>
   private readonly txRepo: Repository<Transaction>
   private readonly accountRepo: Repository<MoneyAccount>
+  private readonly txService: TransactionsService
+  private readonly notifications: NotificationsService
   private readonly active = new Map<string, ActiveImport>()
 
-  constructor(fyredb: FyreDb) {
+  constructor(fyredb: FyreDb, deps: { readonly transactions: TransactionsService; readonly notifications: NotificationsService }) {
     this.fyredb = fyredb
     this.logRepo = fyredb.repo(importLogEntity)
     this.sourceRepo = fyredb.repo(importSourceEntity)
@@ -77,11 +83,32 @@ export class ImportService {
     this.userSettingsRepo = fyredb.repo(userSettingsEntity)
     this.txRepo = fyredb.repo(transactionEntity)
     this.accountRepo = fyredb.repo(moneyAccountEntity)
+    this.txService = deps.transactions
+    this.notifications = deps.notifications
     log.import('service initialised')
     this.initSweep()
   }
 
   // ── Public API ──────────────────────────────────────────
+
+  /** Observe a single import log row, live. */
+  observeLog(logId: string): Observable<(ImportLog & BaseEntity) | undefined> {
+    return this.logRepo.observe(logId)
+  }
+
+  /** Observe the import logs in the given month partitions, live. */
+  observeLogs(keys: readonly string[]): Observable<readonly (ImportLog & BaseEntity)[]> {
+    return this.logRepo.observeQuery({ keys })
+  }
+
+  /**
+   * Observe the `importSource` rows for a run — scoped to the run's month plus
+   * the current month so a sweep that crosses a boundary still resolves.
+   */
+  observeSources(log: ImportLog & BaseEntity): Observable<readonly (ImportSource & BaseEntity)[]> {
+    const keys = [...new Set([importSourceMonthKey(log.triggeredAt), importSourceMonthKey(Date.now())])]
+    return this.sourceRepo.observeQuery({ keys, where: { importLogId: log.id } })
+  }
 
   /** Start a file import. Returns the log id. */
   startFileImport(file: File): string {
@@ -107,7 +134,12 @@ export class ImportService {
    * returns the existing log id instead of spawning a parallel run. Two runs
    * would race on the single shared `EmailImportSetting.importState` cursor and
    * corrupt the high-water mark. */
-  startEmailSync(account: AuthAccount & BaseEntity): string {
+  startEmailSync(accountId: string): string {
+    const account = this.fyredb.repo(authAccountEntity).get(accountId)
+    if (account === undefined) {
+      log.import('email sync: unknown account=%s', accountId)
+      return ""
+    }
     const existing = this.findActiveEmailLog(account.id)
     if (existing) {
       log.import('email sync already active: account=%s logId=%s', account.email, existing)
@@ -170,6 +202,12 @@ export class ImportService {
   /** Number of imports currently running or parked awaiting input. */
   activeImportCount(): number {
     return this.active.size
+  }
+
+  /** Tear down on tenant switch: cancel/detach every live import context. */
+  dispose(): void {
+    for (const entry of this.active.values()) entry.ctx.dispose()
+    this.active.clear()
   }
 
   /**
@@ -258,16 +296,16 @@ export class ImportService {
           duplicate: result.duplicateCount,
         },
       })
-      for (const tx of newTxs) {
-        this.txRepo.save({
+      this.txService.importNewTransactions(
+        newTxs.map((tx) => ({
           accountId,
           narration: tx.description,
           transactionAt: tx.date,
           amount: tx.amount,
           hash: tx.hash,
           sourceId,
-        })
-      }
+        })),
+      )
     }
 
     // Append new passwords to vault
@@ -330,16 +368,16 @@ export class ImportService {
               duplicate: result.duplicateCount,
             },
           })
-          for (const tx of newTxs) {
-            this.txRepo.save({
+          this.txService.importNewTransactions(
+            newTxs.map((tx) => ({
               accountId,
               narration: tx.description,
               transactionAt: tx.date,
               amount: tx.amount,
               hash: tx.hash,
               sourceId,
-            })
-          }
+            })),
+          )
         }
         parsed += result.transactions.length
         newCount += result.newCount
@@ -461,7 +499,7 @@ export class ImportService {
     })
 
     // Spawn notification
-    notify(this.fyredb, {
+    this.notifications.notify({
       kind: "import-error",
       display: "error",
       title: "Import failed",
@@ -472,7 +510,7 @@ export class ImportService {
 
   /** Notify the user that a background email import is parked awaiting input. */
   private notifyNeedsInput(logId: string, account: AuthAccount & BaseEntity): void {
-    notify(this.fyredb, {
+    this.notifications.notify({
       kind: "import-needs-input",
       display: "warning",
       title: "Import needs your input",
