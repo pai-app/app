@@ -32,10 +32,13 @@ jobs:
 
       - run: npm install
 
+      # Build first so the generated icons + SPA bundle exist before tests run
+      # (gen:icons runs via the `prebuild` hook; `npm test` has no such hook, so
+      # running it first would load a missing `src/lib/icons/generated`).
+      - run: npm run build
+
       # Gate the deploy on a green test run — never ship failing code.
       - run: npm test
-
-      - run: npm run build
 
       # Production deploy from main.
       - name: Deploy (production)
