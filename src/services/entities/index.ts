@@ -5,6 +5,7 @@ import { importSourceEntity } from "./import-source"
 import { moneyAccountEntity } from "./money-account"
 import { notificationEntity } from "./notification"
 import { tagEntity } from "./tag"
+import { tagRuleEntity } from "./tag-rule"
 import { transactionEntity } from "./transaction"
 import { userSettingsEntity } from "./user-settings"
 
@@ -33,13 +34,16 @@ export { importSourceEntity, importSourceMonthKey } from "./import-source"
 export type { Money } from "./money"
 
 export type { MoneyAccount, MoneyAccountKind } from "./money-account"
-export { MONEY_ACCOUNT_KINDS, moneyAccountEntity } from "./money-account"
+export { moneyAccountEntity } from "./money-account"
 
 export type { Notification, NotificationRef } from "./notification"
 export { notificationEntity } from "./notification"
 
 export type { Tag } from "./tag"
 export { tagEntity } from "./tag"
+
+export type { TagRule } from "./tag-rule"
+export { tagRuleEntity } from "./tag-rule"
 
 export type { Transaction } from "./transaction"
 export { transactionEntity } from "./transaction"
@@ -53,6 +57,7 @@ export const ENTITIES = [
   userSettingsEntity,
   authAccountEntity,
   tagEntity,
+  tagRuleEntity,
   moneyAccountEntity,
   transactionEntity,
   importLogEntity,

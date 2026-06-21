@@ -111,7 +111,7 @@ async function resolveAccount(
   accountRepo: Repository<MoneyAccount>,
 ): Promise<string> {
   const all = accountRepo.query()
-  const matches = findMatchingAccounts(all, data.bankId, data.account)
+  const matches = findMatchingAccounts(all, data.bankId, data.kind, data.account)
 
   if (matches.length === 0) return ""
   if (matches.length === 1) return matches[0].id

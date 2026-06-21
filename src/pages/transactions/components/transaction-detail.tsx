@@ -1,22 +1,21 @@
 import { useState } from "react"
-import { useFyreDb } from "@fyre-db/plugins-ui"
 import { Icon } from "@/ui/icon"
 import { Separator } from "@/ui/separator"
 import { Textarea } from "@/ui/textarea"
+import { Money } from "@/ui/money"
 import { MoneyAccountIcon } from "@/ui/money-account-icon"
 import { cn } from "@/lib/utils"
 import { useApp } from "@/providers/app-provider"
-import { useEntity, type DisplayTag } from "@/providers/entity-provider"
+import { type TagView } from "@/services/tags-service"
 import {
-  transactionEntity,
-  importSourceEntity,
   type ImportSourceDescriptor,
-  type MoneyAccount,
 } from "@/services/entities"
+import { useObservable } from "@/lib/use-observable"
+import { useServices } from "@/providers/services-provider"
 import { TagPicker } from "@/components/tag-picker"
 import { log } from "@/log"
+import { notifyTagSimilar } from "../notify-tag-similar"
 import type { TransactionRow } from "../use-transactions-query"
-import { AmountCell } from "./cells/amount-cell"
 import { TagCell } from "./cells/tag-cell"
 
 const DETAIL_DATE_FMT = new Intl.DateTimeFormat(undefined, {
@@ -34,16 +33,6 @@ const SOURCE_DATE_FMT = new Intl.DateTimeFormat(undefined, {
   timeZone: "UTC",
 })
 
-/** Last-4 mask of an account's stored number, when available. */
-function maskAccountNumber(metadata: MoneyAccount["metadata"]): string | undefined {
-  // metadata values may not exist for the "accountNumber" key at runtime
-  // even though the type is Record<string, readonly string[]>
-  const numbers = metadata["accountNumber"] as readonly string[] | undefined
-  const first = numbers?.[0]
-  if (!first || first.length < 4) return undefined
-  return `****${first.slice(-4)}`
-}
-
 export type TransactionDetailProps = {
   readonly tx: TransactionRow
   readonly onClose: () => void
@@ -60,8 +49,8 @@ export type TransactionDetailProps = {
  */
 export function TransactionDetail({ tx, onClose }: TransactionDetailProps) {
   const { isMobile } = useApp()
-  const { accounts } = useEntity()
-  const fyredb = useFyreDb()
+  const { accounts: accountsService, transactions: svc } = useServices()
+  const accounts = useObservable(accountsService.accounts$)
 
   // Local edit buffer for the Notes field, reset (during render, not in an
   // effect) whenever the selected transaction changes.
@@ -76,27 +65,23 @@ export function TransactionDetail({ tx, onClose }: TransactionDetailProps) {
   // so a direct in-memory `get` is unambiguous across months. Resolved during
   // render and memoised by (fyredb-ready, sourceId) so it re-runs once the
   // repo becomes available.
-  const resolveKey = `${fyredb ? "1" : "0"}:${tx.sourceId ?? ""}`
+  const resolveKey = tx.sourceId ?? ""
   const [sourceState, setSourceState] = useState<{ key: string; source: ImportSourceDescriptor | null }>(
-    () => ({ key: "", source: null }),
+    () => ({ key: "\u0000", source: null }),
   )
   if (sourceState.key !== resolveKey) {
-    const resolved = fyredb && tx.sourceId
-      ? fyredb.repo(importSourceEntity).get(tx.sourceId)?.descriptor ?? null
-      : null
-    setSourceState({ key: resolveKey, source: resolved })
+    setSourceState({ key: resolveKey, source: svc.sourceDescriptor(tx.sourceId) ?? null })
   }
   const source = sourceState.source
 
   const account = accounts.find((a) => a.id === tx.accountId)
-  const masked = account ? maskAccountNumber(account.metadata) : undefined
+  const masked = account?.maskedNumber
   const debited = tx.amount < 0
 
   const saveTitle = () => {
-    if (!fyredb) return
     const next = title.trim()
     if (next === (tx.title ?? "")) return
-    fyredb.repo(transactionEntity).save({ ...tx, title: next })
+    svc.setTitle(tx.id, next)
     log.home("transaction title updated: %s", tx.id)
   }
 
@@ -113,15 +98,19 @@ export function TransactionDetail({ tx, onClose }: TransactionDetailProps) {
 
   const setTitle = (value: string) => { setTitleState({ id: tx.id, value }) }
 
-  const setTag = (tag: DisplayTag | null) => {
-    if (!fyredb) return
-    fyredb.repo(transactionEntity).save({ ...tx, tagId: tag?.id })
+  const setTag = (selected: TagView | null) => {
+    if (selected) {
+      const { similar } = svc.tag(tx.id, selected.id)
+      notifyTagSimilar(similar, selected.name, svc)
+    } else {
+      svc.untag(tx.id)
+    }
     setTagPickerOpen(false)
   }
 
   const content = (
     <div className="flex flex-col items-center gap-4 pb-4">
-      <div className="text-4xl"><AmountCell amount={tx.amount} /></div>
+      <div className="text-4xl"><Money amount={tx.amount} variant="icon" className="font-light" /></div>
 
       <TagPicker
         open={tagPickerOpen}
@@ -129,7 +118,7 @@ export function TransactionDetail({ tx, onClose }: TransactionDetailProps) {
         selectedTagId={tx.tagId ?? null}
         onSelect={setTag}
       >
-        <TagCell tagId={tx.tagId ?? null} />
+        <TagCell tagId={tx.tagId ?? null} autoTagged={tx.autoTagged} />
       </TagPicker>
 
       <Separator />

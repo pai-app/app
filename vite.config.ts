@@ -18,7 +18,10 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:8788',
-        changeOrigin: true,
+        // Keep the original Host (localhost:5173) so the Worker derives the
+        // frontend origin for the OAuth redirect_uri — otherwise the callback
+        // lands on the Worker's port (8788) instead of the Vite dev server.
+        changeOrigin: false,
         configure: (proxy) => {
           proxy.on('error', (_err, _req, res) => {
             if ('headersSent' in res && !res.headersSent) {

@@ -122,33 +122,33 @@ export class OutlookProvider implements MailProvider {
 
 // ── Query building ──────────────────────────────────────
 
-/** Graph `received<=` is day-granular; add a day so the bound is inclusive. */
-function graphDateParam(epochMs: number): string {
-  const d = new Date(epochMs + 24 * 60 * 60 * 1000)
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`
-}
-
 /**
- * Build the listing params. Graph's `$search` (KQL) cannot combine with
- * `$filter`/`$orderby`, so all criteria go into one KQL string when present;
- * otherwise fall back to a date-ordered listing.
+ * Build the listing params using `$filter` + `$orderby` (not `$search`).
+ * `$search` returns relevance-ordered results and caps pagination (~1000),
+ * which silently truncates a backfill. `$filter` on `receivedDateTime`
+ * paginates the full matching set in strict date order via `@odata.nextLink`.
+ * `receivedDateTime` must appear in `$filter` for it to combine with the
+ * `$orderby` on the same property.
  */
 function buildParams({ query, before }: MailListOptions): string {
   const params = new URLSearchParams({
     $top: PAGE_SIZE,
+    $orderby: "receivedDateTime DESC",
     $select: "id,subject,from,receivedDateTime,bodyPreview,hasAttachments",
   })
 
-  const kql: string[] = []
-  if (query.subject) kql.push(`subject:${query.subject}`)
-  if (query.domains?.length) kql.push(`(${query.domains.map((d) => `from:${d}`).join(" OR ")})`)
-  if (before) kql.push(`received<=${graphDateParam(before.date)}`)
-
-  if (kql.length > 0) {
-    params.set("$search", `"${kql.join(" AND ")}"`)
-  } else {
-    params.set("$orderby", "receivedDateTime DESC")
+  // Graph rejects `$orderby` combined with a `contains()`-only `$filter`, so the
+  // `$orderby` property must also appear in `$filter`. Always bound by
+  // `receivedDateTime` — defaulting to "now" on the first (cursorless) page.
+  const boundMs = before ? before.date : Date.now()
+  const filters: string[] = [`receivedDateTime le ${new Date(boundMs).toISOString()}`]
+  if (query.domains?.length) {
+    filters.push(`(${query.domains.map((d) => `contains(from/emailAddress/address,'${d}')`).join(" or ")})`)
+  } else if (query.subject) {
+    filters.push(`contains(subject,'${query.subject}')`)
   }
+
+  params.set("$filter", filters.join(" and "))
   return params.toString()
 }
 

@@ -17,6 +17,10 @@ import type { Money } from "./money"
 export type Transaction = {
   readonly accountId: string                     // → MoneyAccount.id
   readonly tagId?: string                        // → Tag.id (real or synthetic 'account-<id>')
+  /** `true` ⇒ this row's tag was auto-applied by the engine and is counted in
+   *  the rule's `autoApplied` histogram; cleared on any human tag change/untag.
+   *  Load-bearing discriminator used to rebuild rule strength. */
+  readonly autoTagged?: boolean
   readonly title?: string                        // user-set label; falls back to narration
   readonly narration: string                     // raw imported text
   readonly transactionAt: number                 // ms epoch

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useParams } from "react-router"
 import { minorToMajor } from "@/lib/format"
-import { useEntity } from "@/providers/entity-provider"
+import { useObservable } from "@/lib/use-observable"
+import { useServices } from "@/providers/services-provider"
 import type { TransactionRow } from "./use-transactions-query"
 
 /** Tagged/untagged constraint, or `null` for "no tag filter". */
@@ -69,6 +70,7 @@ export type UseTransactionsFilter = {
   readonly activeCount: number
   readonly dirty: boolean
   readonly filtered: readonly TransactionRow[]
+  readonly untaggedCount: number
 }
 
 /**
@@ -80,7 +82,9 @@ export function useTransactionsFilter(
   transactions: readonly TransactionRow[],
 ): UseTransactionsFilter {
   const { tenantId } = useParams()
-  const { accounts, settings } = useEntity()
+  const { accounts: accountsService, settings: settingsService } = useServices()
+  const accounts = useObservable(accountsService.accounts$)
+  const settings = useObservable(settingsService.settings$)
   const [filter, setFilter] = useState<TransactionFilter>(() => loadFilter(tenantId))
 
   // Persist on change. Writing to storage is a side-effect (not state), so an
@@ -98,6 +102,13 @@ export function useTransactionsFilter(
   }, [])
 
   const clearAll = useCallback(() => { setFilter(EMPTY_FILTER) }, [])
+
+  // Inbox-zero target: count untagged rows over the FULL current-year set
+  // (not the filtered subset), so the badge stays stable as filters change.
+  const untaggedCount = useMemo(
+    () => transactions.filter((t) => !t.tagId).length,
+    [transactions],
+  )
 
   // accountId → currency, for converting minor-unit amounts to major units.
   const currencyByAccount = useMemo(() => {
@@ -147,5 +158,6 @@ export function useTransactionsFilter(
     activeCount: countActiveFilters(filter),
     dirty: isDirty(filter),
     filtered,
+    untaggedCount,
   }
 }

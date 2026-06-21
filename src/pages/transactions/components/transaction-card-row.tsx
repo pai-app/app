@@ -16,15 +16,15 @@ export function TransactionCardRow({ tx, onClick }: TransactionCardRowProps) {
   return (
     <div onClick={onClick} className="mx-4 flex flex-col rounded-xl border">
       <div className="flex flex-row items-center justify-between gap-3 px-3 py-1">
-        <div className="min-w-0 flex-1"><DescriptionCell tx={tx} /></div>
-        <div className="shrink-0"><DateCell epochMs={tx.transactionAt} /></div>
+        <div className="min-w-0 flex-1"><DescriptionCell tx={tx} variant="card" /></div>
+        <div className="shrink-0"><DateCell tx={tx} variant="card" /></div>
       </div>
       <Separator />
       <div className="flex flex-row items-center justify-between gap-3 p-3">
-        <div className="text-3xl"><AmountCell amount={tx.amount} /></div>
+        <AmountCell tx={tx} variant="card" />
         <div className="flex flex-row items-center gap-3">
-          <TagPickerCell tx={tx} />
-          <AccountCell accountId={tx.accountId} />
+          <TagPickerCell tx={tx} variant="card" />
+          <AccountCell tx={tx} variant="card" />
         </div>
       </div>
     </div>

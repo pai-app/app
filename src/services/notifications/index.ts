@@ -1,4 +1,3 @@
-export { notify, acknowledgeNotification, type NotifyOptions } from "./notify"
 export {
   DISPLAY_REGISTRY,
   KIND_REGISTRY,

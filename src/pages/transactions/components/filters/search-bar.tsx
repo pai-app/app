@@ -3,11 +3,9 @@ import { Button } from "@/ui/button"
 import { Icon } from "@/ui/icon"
 import { Input } from "@/ui/input"
 import { cn } from "@/lib/utils"
+import type { FilterControlProps } from "./types"
 
-export type SearchBarProps = {
-  readonly value: string
-  readonly onChange: (value: string) => void
-  readonly className?: string
+export type SearchBarProps = FilterControlProps & {
   readonly autoFocus?: boolean
   /** Mobile: start collapsed to an icon, expand inline on tap. */
   readonly collapsible?: boolean
@@ -17,8 +15,12 @@ export type SearchBarProps = {
  * Search input with a leading icon and a clear affordance. On mobile it can
  * start collapsed (icon-only) and expand inline when tapped.
  */
-export function SearchBar({ value, onChange, className, autoFocus, collapsible }: SearchBarProps) {
+export function SearchBar({ state, variant = "bar", className, autoFocus, collapsible }: SearchBarProps) {
+  const { filter, patch } = state
+  const value = filter.search
+  const onChange = (next: string) => { patch({ search: next }) }
   const [expanded, setExpanded] = useState(!collapsible)
+  const widthClass = variant === "sheet" ? "flex-1" : "w-56"
 
   if (collapsible && !expanded && value === "") {
     return (
@@ -35,7 +37,7 @@ export function SearchBar({ value, onChange, className, autoFocus, collapsible }
   }
 
   return (
-    <div className={cn("glass relative h-9 rounded-full border border-border", collapsible && "min-w-0 flex-1", className)}>
+    <div className={cn("glass relative h-9 rounded-full border border-border", widthClass, collapsible && "min-w-0 flex-1", className)}>
       <Icon
         name="search"
         className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"

@@ -1,11 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
-import { useFyreDb } from "@fyre-db/plugins-ui"
 import { FyreDbConfigError } from "@fyre-db/core"
-import type { BaseEntity } from "@fyre-db/core"
-import { ImportService } from "@/services/import/import-service"
 import type { ImportContext } from "@/services/import/import-context"
-import { type AuthAccount } from "@/services/entities/auth-account"
-import { useTenantReady } from "@/providers/use-tenant-ready"
+import { ServicesContext } from "@/providers/services-provider"
 import { registerNotificationAction } from "@/lib/notification-actions"
 
 // ── Context shape ───────────────────────────────────────
@@ -19,7 +15,7 @@ type ImportContextValue = {
   readonly activeImportCount: number
   // Actions — all delegate to the service
   readonly startFileImport: (files: File[]) => void
-  readonly startEmailSync: (account: AuthAccount & BaseEntity) => void
+  readonly startEmailSync: (accountId: string) => void
   readonly openSheet: (logId: string) => void
   readonly closeSheet: () => void
 }
@@ -38,11 +34,8 @@ type ImportProviderProps = { readonly children: ReactNode }
  * `openLogId`. All real logic lives in `ImportService`.
  */
 export function ImportProvider({ children }: ImportProviderProps) {
-  const fyredb = useFyreDb()
-  const ready = useTenantReady()
-  // Defer service construction until a tenant is open — the constructor's init
-  // sweep queries repositories, which must run with an active tenant.
-  const service = useMemo(() => fyredb && ready ? new ImportService(fyredb) : null, [fyredb, ready])
+  const services = useContext(ServicesContext)
+  const service = services?.import ?? null
 
   const [openLogId, setOpenLogId] = useState<string | null>(null)
 
@@ -53,10 +46,10 @@ export function ImportProvider({ children }: ImportProviderProps) {
     setOpenLogId(logId)
   }, [service])
 
-  const startEmailSync = useCallback((account: AuthAccount & BaseEntity) => {
+  const startEmailSync = useCallback((accountId: string) => {
     if (!service) throw new FyreDbConfigError("Import is unavailable until a household is open")
     // Background — does NOT open the sheet.
-    service.startEmailSync(account)
+    service.startEmailSync(accountId)
   }, [service])
 
   const openSheet = useCallback((logId: string) => {

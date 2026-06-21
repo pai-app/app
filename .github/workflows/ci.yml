@@ -22,9 +22,19 @@ jobs:
 
       - run: npm run lint
 
+      # Run unit tests (vitest) with v8 coverage. Fails CI on any test failure.
+      - run: npm run test:coverage
+
       # Type-check app + worker (composite project) and build the SPA bundle.
       - run: npm run build
 
       # Validate the Worker + assets config compiles and bundles without
       # contacting Cloudflare (no deploy).
       - run: npx wrangler deploy --dry-run
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage/coverage-final.json
+          fail_ci_if_error: false

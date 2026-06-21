@@ -2,7 +2,7 @@ import { useRef } from "react"
 import { FyreDbProvider, TenantProvider } from "@fyre-db/plugins-ui"
 import { fyredbConfig } from "@/lib/fyredb-config"
 import { AppProvider } from "@/providers/app-provider"
-import { EntityProvider } from "@/providers/entity-provider"
+import { ServicesProvider } from "@/providers/services-provider"
 import { ImportProvider } from "@/providers/import-provider"
 import { NotificationProvider } from "@/providers/notification-provider"
 import { BreadcrumbProvider } from "@/providers/breadcrumb-provider"
@@ -20,7 +20,7 @@ export function App() {
           <FyreDbProvider config={fyredbConfig}>
             <TenantProvider>
               <AppProvider scrollElementRef={scrollElementRef}>
-                <EntityProvider>
+                <ServicesProvider>
                   <ImportProvider>
                     <NotificationProvider>
                       <BreadcrumbProvider>
@@ -28,7 +28,7 @@ export function App() {
                       </BreadcrumbProvider>
                     </NotificationProvider>
                   </ImportProvider>
-                </EntityProvider>
+                </ServicesProvider>
               </AppProvider>
             </TenantProvider>
           </FyreDbProvider>

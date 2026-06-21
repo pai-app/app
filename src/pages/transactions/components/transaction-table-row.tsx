@@ -27,12 +27,12 @@ export function TransactionTableRow({ tx, first, last, selected, onClick }: Tran
         selected && "bg-secondary/80",
       )}
     >
-      <div className="w-20"><DateCell epochMs={tx.transactionAt} /></div>
-      <div className="w-40 text-xl"><AmountCell amount={tx.amount} /></div>
-      <div className="min-w-0 flex-1"><DescriptionCell tx={tx} /></div>
-      <div className="w-48"><TagPickerCell tx={tx} /></div>
+      <div className="w-20"><DateCell tx={tx} variant="table" /></div>
+      <div className="w-40"><AmountCell tx={tx} variant="table" /></div>
+      <div className="min-w-0 flex-1"><DescriptionCell tx={tx} variant="table" /></div>
+      <div className="w-48"><TagPickerCell tx={tx} variant="table" /></div>
       <div className="flex w-36 flex-row items-center justify-between">
-        <AccountCell accountId={tx.accountId} />
+        <AccountCell tx={tx} variant="table" />
         {selected && <Icon name="chevron-right" className="mr-4 text-muted-foreground" />}
       </div>
     </div>

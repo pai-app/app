@@ -1,30 +1,26 @@
 import { useState } from "react"
-import { useFyreDb } from "@fyre-db/plugins-ui"
 import { TagPicker } from "@/components/tag-picker"
-import { type DisplayTag } from "@/providers/entity-provider"
-import { transactionEntity } from "@/services/entities"
-import { log } from "@/log"
-import type { TransactionRow } from "../../use-transactions-query"
+import { type TagView } from "@/services/tags-service"
+import { useServices } from "@/providers/services-provider"
+import { notifyTagSimilar } from "../../notify-tag-similar"
 import { TagCell } from "./tag-cell"
-
-export type TagPickerCellProps = {
-  readonly tx: TransactionRow
-  readonly className?: string
-}
+import type { TransactionCellProps } from "./types"
 
 /**
  * Interactive tag cell for list rows — wraps the presentational `TagCell` in a
  * `TagPicker` and persists the selection. Clicks are kept from bubbling so
  * tapping the tag doesn't also open the row's detail panel.
  */
-export function TagPickerCell({ tx, className }: TagPickerCellProps) {
-  const fyredb = useFyreDb()
+export function TagPickerCell({ tx, className }: TransactionCellProps) {
+  const { transactions: svc } = useServices()
   const [open, setOpen] = useState(false)
 
-  const setTag = (tag: DisplayTag | null) => {
-    if (fyredb) {
-      fyredb.repo(transactionEntity).save({ ...tx, tagId: tag?.id })
-      log.home("transaction tag updated: %s -> %s", tx.id, tag?.id ?? "(none)")
+  const setTag = (selected: TagView | null) => {
+    if (selected) {
+      const { similar } = svc.tag(tx.id, selected.id)
+      notifyTagSimilar(similar, selected.name, svc)
+    } else {
+      svc.untag(tx.id)
     }
     setOpen(false)
   }
@@ -33,6 +29,7 @@ export function TagPickerCell({ tx, className }: TagPickerCellProps) {
     <TagPicker open={open} onOpenChange={setOpen} selectedTagId={tx.tagId ?? null} onSelect={setTag}>
       <TagCell
         tagId={tx.tagId ?? null}
+        autoTagged={tx.autoTagged}
         className={className}
         onClick={(e) => { e.stopPropagation() }}
       />
