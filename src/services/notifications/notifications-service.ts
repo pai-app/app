@@ -17,7 +17,14 @@ import {
   type Notification,
   type NotificationRef,
 } from "@/services/entities/notification"
+import { resolveDisplay, resolveKind, type NotificationChannel } from "./registry"
+import { emitToChannel, type NotificationPayload } from "./channels"
 import type { Disposable, ReadonlySubject } from "@/services/types"
+
+/** Per-call overrides. `channels` overrides the kind's default delivery policy. */
+export type NotifyOptions = {
+  readonly channels?: readonly NotificationChannel[]
+}
 
 /** A notification as the UI sees it — never the raw row. */
 export type NotificationView = {
@@ -76,8 +83,32 @@ export class NotificationsService implements Disposable {
   get unreadCount$(): ReadonlySubject<number> { return this.unreadCount }
 
   // ── Ops ──────────────────────────────────────────────────
-  notify(payload: Notification): string {
-    return this.repo.save(payload)
+  /**
+   * Produce a notification — the single fan-out point for every producer.
+   * Resolves the kind's channels + display, persists an `inbox` row when
+   * targeted, and emits to the transient channels (toast, …). Returns the inbox
+   * row id when persisted, else `undefined`.
+   */
+  notify(notification: Notification, options?: NotifyOptions): string | undefined {
+    const channels = options?.channels ?? resolveKind(notification.kind).channels
+    const display = resolveDisplay(notification.display)
+
+    let id: string | undefined
+    if (channels.includes("inbox")) {
+      id = this.repo.save(notification)
+    }
+
+    const payload: NotificationPayload = {
+      id: id ?? crypto.randomUUID(),
+      notification,
+      display,
+      channels,
+    }
+    for (const channel of channels) {
+      if (channel !== "inbox") emitToChannel(channel, payload)
+    }
+
+    return id
   }
 
   dismiss(id: string): void {
@@ -95,7 +126,7 @@ export class NotificationsService implements Disposable {
 
   /** Mark a single notification read (acknowledged), if currently unread. */
   markRead(id: string): void {
-    const row = this.current.find((r) => r.id === id)
+    const row = this.repo.get(id)
     if (row === undefined || row.acknowledgedAt !== undefined) return
     this.repo.save({ ...row, acknowledgedAt: Date.now() })
   }

@@ -1,11 +1,10 @@
-import { useEffect, type ReactNode } from "react"
+import { useContext, useEffect, type ReactNode } from "react"
 import { toast } from "sonner"
-import { useFyreDb } from "@fyre-db/plugins-ui"
 import {
-  acknowledgeNotification,
   registerChannelEmitter,
   type NotificationPayload,
 } from "@/services/notifications"
+import { ServicesContext } from "@/providers/services-provider"
 import { runNotificationAction } from "@/lib/notification-actions"
 
 // ── Provider ────────────────────────────────────────────
@@ -17,7 +16,7 @@ type NotificationProviderProps = { readonly children: ReactNode }
  * out via sonner. The durable inbox read side lives in `NotificationsService`.
  */
 export function NotificationProvider({ children }: NotificationProviderProps) {
-  const fyredb = useFyreDb()
+  const services = useContext(ServicesContext)
 
   // Register the toast channel. Clicking the toast's action runs the ref's
   // registered handler and acknowledges the inbox row (when persisted).
@@ -26,7 +25,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
       const { notification: n, display } = payload
       const run = () => {
         runNotificationAction(n.ref)
-        if (fyredb) acknowledgeNotification(fyredb, payload.id)
+        services?.notifications.markRead(payload.id)
       }
       const action = n.ref
         ? { label: n.actionLabel ?? "View", onClick: run }
@@ -38,7 +37,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
       else if (variant === "success") toast.success(n.title, options)
       else toast.info(n.title, options)
     })
-  }, [fyredb])
+  }, [services])
 
   return <>{children}</>
 }

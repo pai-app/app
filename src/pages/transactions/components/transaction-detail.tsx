@@ -1,5 +1,4 @@
 import { useState } from "react"
-import { useFyreDb } from "@fyre-db/plugins-ui"
 import { Icon } from "@/ui/icon"
 import { Separator } from "@/ui/separator"
 import { Textarea } from "@/ui/textarea"
@@ -9,8 +8,6 @@ import { cn } from "@/lib/utils"
 import { useApp } from "@/providers/app-provider"
 import { type TagView } from "@/services/tags-service"
 import {
-  transactionEntity,
-  importSourceEntity,
   type ImportSourceDescriptor,
 } from "@/services/entities"
 import { useObservable } from "@/lib/use-observable"
@@ -54,7 +51,6 @@ export function TransactionDetail({ tx, onClose }: TransactionDetailProps) {
   const { isMobile } = useApp()
   const { accounts: accountsService, transactions: svc } = useServices()
   const accounts = useObservable(accountsService.accounts$)
-  const fyredb = useFyreDb()
 
   // Local edit buffer for the Notes field, reset (during render, not in an
   // effect) whenever the selected transaction changes.
@@ -69,15 +65,12 @@ export function TransactionDetail({ tx, onClose }: TransactionDetailProps) {
   // so a direct in-memory `get` is unambiguous across months. Resolved during
   // render and memoised by (fyredb-ready, sourceId) so it re-runs once the
   // repo becomes available.
-  const resolveKey = `${fyredb ? "1" : "0"}:${tx.sourceId ?? ""}`
+  const resolveKey = tx.sourceId ?? ""
   const [sourceState, setSourceState] = useState<{ key: string; source: ImportSourceDescriptor | null }>(
-    () => ({ key: "", source: null }),
+    () => ({ key: "\u0000", source: null }),
   )
   if (sourceState.key !== resolveKey) {
-    const resolved = fyredb && tx.sourceId
-      ? fyredb.repo(importSourceEntity).get(tx.sourceId)?.descriptor ?? null
-      : null
-    setSourceState({ key: resolveKey, source: resolved })
+    setSourceState({ key: resolveKey, source: svc.sourceDescriptor(tx.sourceId) ?? null })
   }
   const source = sourceState.source
 
@@ -86,10 +79,9 @@ export function TransactionDetail({ tx, onClose }: TransactionDetailProps) {
   const debited = tx.amount < 0
 
   const saveTitle = () => {
-    if (!fyredb) return
     const next = title.trim()
     if (next === (tx.title ?? "")) return
-    fyredb.repo(transactionEntity).save({ ...tx, title: next })
+    svc.setTitle(tx.id, next)
     log.home("transaction title updated: %s", tx.id)
   }
 

@@ -1,4 +1,5 @@
 import type { FyreDb, BaseEntity, RepositoryType as Repository, SingletonRepositoryType as SingletonRepository } from "@fyre-db/core"
+import type { Observable } from "rxjs"
 import {
   importLogEntity,
   type ImportLog,
@@ -7,6 +8,7 @@ import {
 } from "@/services/entities/import-log"
 import {
   importSourceEntity,
+  importSourceMonthKey,
   type ImportSource,
   type ImportSourceDescriptor,
 } from "@/services/entities/import-source"
@@ -15,7 +17,7 @@ import {
   type EmailImportSetting,
   type EmailImportState,
 } from "@/services/entities/email-import-setting"
-import { notify } from "@/services/notifications"
+import type { NotificationsService } from "@/services/notifications/notifications-service"
 import {
   userSettingsEntity,
   USER_SETTINGS_DEFAULTS,
@@ -70,9 +72,10 @@ export class ImportService implements Disposable {
   private readonly txRepo: Repository<Transaction>
   private readonly accountRepo: Repository<MoneyAccount>
   private readonly txService: TransactionsService
+  private readonly notifications: NotificationsService
   private readonly active = new Map<string, ActiveImport>()
 
-  constructor(fyredb: FyreDb, deps: { readonly transactions: TransactionsService }) {
+  constructor(fyredb: FyreDb, deps: { readonly transactions: TransactionsService; readonly notifications: NotificationsService }) {
     this.fyredb = fyredb
     this.logRepo = fyredb.repo(importLogEntity)
     this.sourceRepo = fyredb.repo(importSourceEntity)
@@ -81,11 +84,31 @@ export class ImportService implements Disposable {
     this.txRepo = fyredb.repo(transactionEntity)
     this.accountRepo = fyredb.repo(moneyAccountEntity)
     this.txService = deps.transactions
+    this.notifications = deps.notifications
     log.import('service initialised')
     this.initSweep()
   }
 
   // ── Public API ──────────────────────────────────────────
+
+  /** Observe a single import log row, live. */
+  observeLog(logId: string): Observable<(ImportLog & BaseEntity) | undefined> {
+    return this.logRepo.observe(logId)
+  }
+
+  /** Observe the import logs in the given month partitions, live. */
+  observeLogs(keys: readonly string[]): Observable<readonly (ImportLog & BaseEntity)[]> {
+    return this.logRepo.observeQuery({ keys })
+  }
+
+  /**
+   * Observe the `importSource` rows for a run — scoped to the run's month plus
+   * the current month so a sweep that crosses a boundary still resolves.
+   */
+  observeSources(log: ImportLog & BaseEntity): Observable<readonly (ImportSource & BaseEntity)[]> {
+    const keys = [...new Set([importSourceMonthKey(log.triggeredAt), importSourceMonthKey(Date.now())])]
+    return this.sourceRepo.observeQuery({ keys, where: { importLogId: log.id } })
+  }
 
   /** Start a file import. Returns the log id. */
   startFileImport(file: File): string {
@@ -476,7 +499,7 @@ export class ImportService implements Disposable {
     })
 
     // Spawn notification
-    notify(this.fyredb, {
+    this.notifications.notify({
       kind: "import-error",
       display: "error",
       title: "Import failed",
@@ -487,7 +510,7 @@ export class ImportService implements Disposable {
 
   /** Notify the user that a background email import is parked awaiting input. */
   private notifyNeedsInput(logId: string, account: AuthAccount & BaseEntity): void {
-    notify(this.fyredb, {
+    this.notifications.notify({
       kind: "import-needs-input",
       display: "warning",
       title: "Import needs your input",

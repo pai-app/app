@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useFyreDb } from "@fyre-db/plugins-ui"
+import { of } from "rxjs"
 import type { BaseEntity } from "@fyre-db/core"
 import { AdaptiveSurface } from "@/components/adaptive-surface"
 import { Button } from "@/ui/button"
@@ -8,15 +8,14 @@ import { Spinner } from "@/ui/spinner"
 import { Progress } from "@/ui/progress"
 import { useApp } from "@/providers/app-provider"
 import { useObservable } from "@/lib/use-observable"
+import { useObservableQuery } from "@/lib/use-observable-query"
 import { useServices } from "@/providers/services-provider"
 import { useImportService } from "@/providers/import-provider"
 import { useEmailPreview } from "@/components/import/use-email-preview"
 import { PasswordPrompt, AccountSelectionPrompt, ConfirmPrompt } from "@/components/import/import-prompts"
 import type { ContextStatus } from "@/services/import/import-context"
-import { importLogEntity, sweepProgress, type ImportLog } from "@/services/entities/import-log"
+import { sweepProgress, type ImportLog } from "@/services/entities/import-log"
 import {
-  importSourceEntity,
-  importSourceMonthKey,
   type ImportSource,
 } from "@/services/entities/import-source"
 import type { EmailPreview } from "@/services/email-types"
@@ -31,19 +30,14 @@ import { cn } from "@/lib/utils"
 export function ImportSurface() {
   const { openLogId, openContext: ctx, closeSheet } = useImportService()
   const { isMobile } = useApp()
-  const fyredb = useFyreDb()
+  const importSvc = useServices().import
 
-  const [log, setLog] = useState<(ImportLog & BaseEntity) | null>(null)
   const [liveStatus, setLiveStatus] = useState<ContextStatus | null>(null)
-
-  // Subscribe to the active log row so status/counts update live.
-  useEffect(() => {
-    if (!fyredb || !openLogId) return
-    const sub = fyredb.repo(importLogEntity).observe(openLogId).subscribe((row) => {
-      setLog(row ?? null)
-    })
-    return () => { sub.unsubscribe() }
-  }, [fyredb, openLogId])
+  const { value: log } = useObservableQuery(
+    () => (openLogId ? importSvc.observeLog(openLogId) : of(undefined)),
+    [importSvc, openLogId],
+    undefined,
+  )
 
   useEffect(() => {
     if (!ctx) return
@@ -51,7 +45,7 @@ export function ImportSurface() {
     return () => { sub.unsubscribe() }
   }, [ctx])
 
-  const { email, loading: emailLoading } = useEmailPreview(openLogId ? log : null)
+  const { email, loading: emailLoading } = useEmailPreview(openLogId ? (log ?? null) : null)
 
   if (!openLogId || !log) {
     return (
@@ -236,22 +230,13 @@ function StatusLine({ status, log, ctxError }: {
  * sweep that crosses a month boundary still resolves).
  */
 function useImportSources(log: ImportLog & BaseEntity): readonly (ImportSource & BaseEntity)[] {
-  const fyredb = useFyreDb()
-  const [sources, setSources] = useState<readonly (ImportSource & BaseEntity)[]>([])
-
-  useEffect(() => {
-    if (!fyredb) return
-    // Sources live in the run's month, plus the current month so a long sweep
-    // that crosses a month boundary still resolves.
-    const keys = [...new Set([importSourceMonthKey(log.triggeredAt), importSourceMonthKey(Date.now())])]
-    const sub = fyredb
-      .repo(importSourceEntity)
-      .observeQuery({ keys, where: { importLogId: log.id } })
-      .subscribe(setSources)
-    return () => { sub.unsubscribe() }
-  }, [fyredb, log.id, log.triggeredAt])
-
-  return sources
+  const importSvc = useServices().import
+  const { value } = useObservableQuery(
+    () => importSvc.observeSources(log),
+    [importSvc, log.id, log.triggeredAt],
+    [] as readonly (ImportSource & BaseEntity)[],
+  )
+  return value
 }
 
 /**

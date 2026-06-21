@@ -47,6 +47,14 @@ export default defineConfig([
           },
         ],
       }],
+      // Direct fyredb/repo access is restricted to the service layer. The
+      // `useFyreDb` hook is the UI's only route to a repo, so banning its import
+      // (outside the allowlist override below) keeps entity access inside the
+      // domain services. Use `useServices()` and a service method instead.
+      'no-restricted-syntax': ['error', {
+        selector: "ImportSpecifier[imported.name='useFyreDb']",
+        message: 'Direct fyredb/repo access is restricted to the service layer — use a domain service via useServices() instead of useFyreDb. (Allowed only in src/services/**, ServicesProvider, and a few infra/dev files; see the eslint allowlist.)',
+      }],
     },
   },
   {
@@ -65,6 +73,22 @@ export default defineConfig([
     files: ['src/ui/**/*.{ts,tsx}', 'src/providers/**/*.{ts,tsx}'],
     rules: {
       'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
+    // `useFyreDb`/repo access belongs to the service layer. These are the only
+    // legitimate fyredb touch-points outside it: the service entry point
+    // (ServicesProvider), the dev debug handle (AppProvider), the store-level
+    // sync status, and the dev entity inspector.
+    files: [
+      'src/services/**/*.{ts,tsx}',
+      'src/providers/services-provider.tsx',
+      'src/providers/app-provider.tsx',
+      'src/components/sync-status.tsx',
+      'src/pages/dev/sections/data-section.tsx',
+    ],
+    rules: {
+      'no-restricted-syntax': 'off',
     },
   },
 ])

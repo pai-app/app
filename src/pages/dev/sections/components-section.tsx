@@ -13,7 +13,7 @@ import { SyncStatus } from "@/components/sync-status"
 import { Navbar } from "@/components/navbar/navbar"
 import { TagPicker } from "@/components/tag-picker"
 import type { TagView } from "@/services/tags-service"
-import { notify } from "@/services/notifications"
+import { useServices } from "@/providers/services-provider"
 
 function Section({ title, children }: { readonly title: string; readonly children: ReactNode }) {
   return (
@@ -155,8 +155,9 @@ export function ComponentsSection() {
  * inbox row is written, demonstrating non-persistent delivery.
  */
 function NotificationDemo() {
+  const notificationsService = useServices().notifications
   const fire = (display: "info" | "success" | "warning" | "error") => {
-    notify(null, {
+    notificationsService.notify({
       kind: "showcase-demo",
       display,
       title: `${display[0].toUpperCase()}${display.slice(1)} toast`,

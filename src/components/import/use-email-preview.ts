@@ -1,9 +1,8 @@
 import { useState } from "react"
-import { useFyreDb } from "@fyre-db/plugins-ui"
 import type { BaseEntity } from "@fyre-db/core"
-import { authAccountEntity } from "@/services/entities/auth-account"
 import type { ImportLog } from "@/services/entities/import-log"
 import { getMailProvider } from "@/services/mail"
+import { useServices } from "@/providers/services-provider"
 import type { EmailPreview } from "@/services/email-types"
 
 export type EmailPreviewState = {
@@ -21,7 +20,7 @@ export type EmailPreviewState = {
  * preview refreshes if the same log moves to a different email.
  */
 export function useEmailPreview(log: (ImportLog & BaseEntity) | null): EmailPreviewState {
-  const fyredb = useFyreDb()
+  const connections = useServices().connections
   const [email, setEmail] = useState<EmailPreview | null>(null)
   const [loading, setLoading] = useState(false)
   const [fetchedFor, setFetchedFor] = useState<string | null>(null)
@@ -30,11 +29,11 @@ export function useEmailPreview(log: (ImportLog & BaseEntity) | null): EmailPrev
   const emailId = source?.kind === "email" ? source.emailId : undefined
   const key = log && emailId ? `${log.id}:${emailId}` : null
 
-  if (key && key !== fetchedFor && fyredb && source?.kind === "email" && source.emailId) {
+  if (key && key !== fetchedFor && source?.kind === "email" && source.emailId) {
     setFetchedFor(key)
     setEmail(null)
     setLoading(true)
-    const account = fyredb.repo(authAccountEntity).get(source.authAccountId)
+    const account = connections.getAuthAccount(source.authAccountId)
     if (account) {
       void getMailProvider(account).fetchPreview(source.emailId)
         .then(setEmail)

@@ -64,7 +64,7 @@ export function ServicesProvider({ children }: ServicesProviderProps) {
     const tags = new TagsService(fyredb, accounts)
     const connections = new ConnectionsService(fyredb)
     const notifications = new NotificationsService(fyredb)
-    const importSvc = new ImportService(fyredb, { transactions })
+    const importSvc = new ImportService(fyredb, { transactions, notifications })
     return { settings, accounts, tags, connections, notifications, transactions, import: importSvc }
   }, [fyredb, ready])
 

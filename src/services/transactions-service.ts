@@ -31,6 +31,7 @@ import {
 import {
   importSourceEntity,
   type ImportSource,
+  type ImportSourceDescriptor,
 } from "@/services/entities/import-source"
 import { TaggingEngine } from "@/services/tagging/engine"
 import { buildSignature, extractUpiId, keyOf } from "@/services/tagging/extract"
@@ -95,6 +96,19 @@ export class TransactionsService implements TaggingData, Disposable {
    */
   observeMonths(keys: readonly string[]): Observable<readonly TransactionRow[]> {
     return this.txRepo.observeQuery({ keys })
+  }
+
+  /** The import-source descriptor for a transaction's `sourceId`, if resolvable. */
+  sourceDescriptor(sourceId: string | undefined): ImportSourceDescriptor | undefined {
+    if (sourceId === undefined) return undefined
+    return this.importSourceRepo.get(sourceId)?.descriptor
+  }
+
+  /** Set a transaction's title (manual note). No-op when the row is missing. */
+  setTitle(txId: string, title: string): void {
+    const tx = this.txRepo.get(txId)
+    if (tx === undefined) return
+    this.txRepo.save({ ...tx, title })
   }
 
   /** Delete a rule by its entity id (rules UI prune/delete). */
