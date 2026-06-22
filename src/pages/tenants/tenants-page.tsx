@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router"
 import { useState } from "react"
 import { Icon } from "@/ui/icon"
-import { useOpRunner, useTenant } from "@fyre-db/plugins-ui"
+import { useOpRunner, useTenant, useFyreDbApp } from "@fyre-db/plugins-ui"
 import type { CloudProvider, ProviderOp } from "@fyre-db/plugins-ui"
 import { LobbyTemplate } from "@/templates/lobby-template"
 import { Avatar, AvatarFallback } from "@/ui/avatar"
@@ -28,7 +28,9 @@ const wizardClassNames = {
 
 export function TenantsPage() {
   const navigate = useNavigate()
-  const { all: tenants, ops, pageActions } = useTenant()
+  const { all: tenants } = useTenant()
+  const app = useFyreDbApp()
+  const pageActions = providers.pageActions()
   const { resolvedTheme } = useTheme()
   const [error, setError] = useState<string | null>(null)
 
@@ -45,7 +47,7 @@ export function TenantsPage() {
 
   const handleRemove = async (id: string) => {
     try {
-      await ops.remove(id)
+      await app.removeTenant(id)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to remove')
       setTimeout(() => { setError(null) }, 5000)

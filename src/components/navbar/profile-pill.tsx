@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from "react-router"
 import { Icon } from "@/ui/icon"
 import { Button } from "@/ui/button"
-import { useAuth } from "@fyre-db/plugins-ui"
+import { useAuthActions } from "@fyre-db/plugins-ui"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +26,7 @@ type ProfilePillProps = {
 export function ProfilePill({ className }: ProfilePillProps) {
   const navigate = useNavigate()
   const { tenantId } = useParams()
-  const { logout } = useAuth()
+  const { signOut } = useAuthActions()
   const { notifications: notificationsService } = useServices()
   const notifications = useObservable(notificationsService.notifications$)
   const unacknowledgedCount = useObservable(notificationsService.unreadCount$)
@@ -107,7 +107,7 @@ export function ProfilePill({ className }: ProfilePillProps) {
         <DropdownMenuItem
           variant="destructive"
           onClick={() => {
-            void logout()
+            void signOut()
           }}
         >
           <Icon name="log-out" className="size-4" />

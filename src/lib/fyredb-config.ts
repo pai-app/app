@@ -1,9 +1,9 @@
 import {
   BffClientAdapter,
   ClientAuthService,
-  CloudService,
+  FyreDbApp,
 } from "@fyre-db/plugins"
-import { GoogleDriveProvider, OneDriveProvider, createFyreDbConfig, CloudProviderService } from "@fyre-db/plugins-ui"
+import { GoogleDriveProvider, OneDriveProvider, CloudProviderService } from "@fyre-db/plugins-ui"
 import {
   GOOGLE_AUTH_NAME,
   MICROSOFT_AUTH_NAME,
@@ -11,12 +11,16 @@ import {
   SESSION_KEY,
   RETURN_URL_KEY,
   FEATURE_CREDS_KEY,
+  DEVICE_ID_KEY,
 } from "@shared/providers"
 import { ENTITIES } from "@/services/entities"
+import { sessionSlot, xorTransform, getOrCreateDeviceId } from "@/lib/web-storage"
 
 export { ENTITIES } from "@/services/entities"
 
 export const APP_ID = "pai"
+
+export const deviceId = getOrCreateDeviceId(DEVICE_ID_KEY)
 
 export const clientAuth = new ClientAuthService(
   [
@@ -29,7 +33,10 @@ export const clientAuth = new ClientAuthService(
       prefix: AUTH_BASE_PREFIX,
     }),
   ],
-  { returnUrlKey: RETURN_URL_KEY, featureCredsKey: FEATURE_CREDS_KEY },
+  {
+    returnUrl: sessionSlot(RETURN_URL_KEY),
+    featureCreds: sessionSlot(FEATURE_CREDS_KEY),
+  },
 )
 
 export const googleProvider = new GoogleDriveProvider({
@@ -40,15 +47,16 @@ export const onedriveProvider = new OneDriveProvider({
   getAccessToken: () => clientAuth.getAccessToken(),
 })
 
-export const cloud = new CloudService([googleProvider, onedriveProvider], clientAuth)
-export const providers = new CloudProviderService([googleProvider, onedriveProvider], cloud)
-
-export const fyredbConfig = createFyreDbConfig({
+export const fyreDbApp = new FyreDbApp({
   appId: APP_ID,
+  deviceId,
   entities: ENTITIES,
-  cloud,
-  providers,
   auth: clientAuth,
-  credentialCacheKey: SESSION_KEY,
-  tenantLabel: 'household',
+  providers: [googleProvider, onedriveProvider],
+  credential: sessionSlot(SESSION_KEY, xorTransform(deviceId)),
 })
+
+export const providers = new CloudProviderService(
+  [googleProvider, onedriveProvider],
+  fyreDbApp.provider$,
+)

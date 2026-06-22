@@ -48,12 +48,12 @@ export default defineConfig([
         ],
       }],
       // Direct fyredb/repo access is restricted to the service layer. The
-      // `useFyreDb` hook is the UI's only route to a repo, so banning its import
+      // `useDb` hook is the UI's only route to a repo, so banning its import
       // (outside the allowlist override below) keeps entity access inside the
       // domain services. Use `useServices()` and a service method instead.
       'no-restricted-syntax': ['error', {
-        selector: "ImportSpecifier[imported.name='useFyreDb']",
-        message: 'Direct fyredb/repo access is restricted to the service layer — use a domain service via useServices() instead of useFyreDb. (Allowed only in src/services/**, ServicesProvider, and a few infra/dev files; see the eslint allowlist.)',
+        selector: "ImportSpecifier[imported.name='useDb']",
+        message: 'Direct fyredb/repo access is restricted to the service layer — use a domain service via useServices() instead of useDb. (Allowed only in src/services/**, ServicesProvider, and a few infra/dev files; see the eslint allowlist.)',
       }],
     },
   },

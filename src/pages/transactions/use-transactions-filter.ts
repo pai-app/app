@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useParams } from "react-router"
+import { TX_FILTER_KEY_PREFIX } from "@shared/providers"
 import { minorToMajor } from "@/lib/format"
 import { useObservable } from "@/lib/use-observable"
 import { useServices } from "@/providers/services-provider"
@@ -29,10 +30,8 @@ export const EMPTY_FILTER: TransactionFilter = {
   search: "",
 }
 
-const STORAGE_PREFIX = "pai:tx-filter:"
-
 function storageKey(tenantId: string | undefined): string {
-  return `${STORAGE_PREFIX}${tenantId ?? "_"}`
+  return `${TX_FILTER_KEY_PREFIX}${tenantId ?? "_"}`
 }
 
 function loadFilter(tenantId: string | undefined): TransactionFilter {

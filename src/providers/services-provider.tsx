@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react"
 import { FyreDbConfigError } from "@fyre-db/core"
-import { useFyreDb } from "@fyre-db/plugins-ui"
-import { useTenantReady } from "@/providers/use-tenant-ready"
+import { useFyreDbApp, useSession } from "@fyre-db/plugins-ui"
 import { SettingsService } from "@/services/settings-service"
 import { AccountsService } from "@/services/accounts-service"
 import { TagsService } from "@/services/tags-service"
@@ -52,11 +51,12 @@ type ServicesProviderProps = { readonly children: ReactNode }
  * outlive its tenant. Services hydrate their own entities in their constructors.
  */
 export function ServicesProvider({ children }: ServicesProviderProps) {
-  const fyredb = useFyreDb()
-  const ready = useTenantReady()
+  const app = useFyreDbApp()
+  const session = useSession()
 
   const services = useMemo<Services | null>(() => {
-    if (!fyredb || !ready) return null
+    if (!session) return null
+    const fyredb = app.db
     // Construct in dependency order — Tags composes Accounts.
     const settings = new SettingsService(fyredb)
     const accounts = new AccountsService(fyredb)
@@ -66,7 +66,7 @@ export function ServicesProvider({ children }: ServicesProviderProps) {
     const notifications = new NotificationsService(fyredb)
     const importSvc = new ImportService(fyredb, { transactions, notifications })
     return { settings, accounts, tags, connections, notifications, transactions, import: importSvc }
-  }, [fyredb, ready])
+  }, [app, session])
 
   useEffect(() => {
     return () => { if (services) disposeAll(services) }
