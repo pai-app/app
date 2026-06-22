@@ -11,12 +11,16 @@ import {
   SESSION_KEY,
   RETURN_URL_KEY,
   FEATURE_CREDS_KEY,
+  DEVICE_ID_KEY,
 } from "@shared/providers"
 import { ENTITIES } from "@/services/entities"
+import { sessionSlot, xorTransform, getOrCreateDeviceId } from "@/lib/web-storage"
 
 export { ENTITIES } from "@/services/entities"
 
 export const APP_ID = "pai"
+
+export const deviceId = getOrCreateDeviceId(DEVICE_ID_KEY)
 
 export const clientAuth = new ClientAuthService(
   [
@@ -29,7 +33,10 @@ export const clientAuth = new ClientAuthService(
       prefix: AUTH_BASE_PREFIX,
     }),
   ],
-  { returnUrlKey: RETURN_URL_KEY, featureCredsKey: FEATURE_CREDS_KEY },
+  {
+    returnUrl: sessionSlot(RETURN_URL_KEY),
+    featureCreds: sessionSlot(FEATURE_CREDS_KEY),
+  },
 )
 
 export const googleProvider = new GoogleDriveProvider({
@@ -42,10 +49,11 @@ export const onedriveProvider = new OneDriveProvider({
 
 export const fyreDbApp = new FyreDbApp({
   appId: APP_ID,
+  deviceId,
   entities: ENTITIES,
   auth: clientAuth,
   providers: [googleProvider, onedriveProvider],
-  credentialCacheKey: SESSION_KEY,
+  credential: sessionSlot(SESSION_KEY, xorTransform(deviceId)),
 })
 
 export const providers = new CloudProviderService(
