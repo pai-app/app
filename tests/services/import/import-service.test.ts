@@ -48,6 +48,10 @@ import { firstValueFrom } from "rxjs"
 const TX_DATE = Date.UTC(2026, 0, 15)
 const TX_MONTH = "2026-01"
 
+// Statement close dates for latest-wins coverage (STMT_OLD < STMT_NEW).
+const STMT_OLD = Date.UTC(2025, 10, 30)
+const STMT_NEW = Date.UTC(2025, 11, 31)
+
 function hashedTx(over: Partial<HashedTransaction> & { hash: string }): HashedTransaction {
   return { date: TX_DATE, description: "ZOMATO ORDER", amount: -50000, isNew: true, ...over }
 }
@@ -191,7 +195,6 @@ describe("ImportService", () => {
       kind: "bank",
       name: "HDFC",
       currency: "INR",
-      initialBalance: 0,
       bankId: "hdfc",
       offeringId: "savings",
       metadata: { accountNumber: ["1234567890"] },
@@ -477,7 +480,6 @@ describe("ImportService", () => {
       kind: "bank",
       name: "HDFC",
       currency: "INR",
-      initialBalance: 0,
       bankId: "hdfc",
       offeringId: "savings",
       metadata: { accountNumber: ["1234567890"] },
@@ -604,5 +606,182 @@ describe("ImportService", () => {
 
     const sources = await firstValueFrom(svc.observeSources(logRow))
     expect(sources.some((s) => s.importLogId === logId)).toBe(true)
+  })
+
+  // ── Statement snapshot (latest-wins) ──────────────────
+
+  it("file import: persists the statement snapshot on a new account", async () => {
+    await setup()
+    runFileImportMock.mockResolvedValue(
+      fileResult({
+        importData: {
+          bankId: "hdfc",
+          offeringId: "credit-card",
+          kind: "credit-card",
+          account: { currency: "INR", accountNumber: ["1234567890"] },
+          transactions: [],
+          statement: {
+            asOf: STMT_NEW,
+            closingBalance: -500000,
+            minimumDue: 25000,
+            dueDate: STMT_NEW,
+            creditLimit: 10000000,
+          },
+        },
+      }),
+    )
+
+    const logId = svc.startFileImport(fakeFile())
+    await waitForStatus(logId, "completed")
+
+    const account = fyredb.repo(moneyAccountEntity).query()[0]
+    expect(account.statement).toEqual({
+      asOf: STMT_NEW,
+      balance: -500000,
+      minimumDue: 25000,
+      dueDate: STMT_NEW,
+      creditLimit: 10000000,
+    })
+  })
+
+  it("email sync: persists the statement snapshot on a newly created account", async () => {
+    await setup()
+    const accountId = seedAuthAccount()
+    runEmailImportMock.mockImplementation(
+      (_ctx: unknown, _account: unknown, _state: unknown, _pwds: unknown, _txRepo: unknown, hooks: EmailRunHooks) => {
+        hooks.commitEmail(emailResult({ statement: { asOf: STMT_NEW, closingBalance: 123456 } }))
+        return Promise.resolve<EmailRunSummary>(SUMMARY)
+      },
+    )
+
+    const logId = svc.startEmailSync(accountId)
+    await waitForStatus(logId, "completed")
+
+    const created = fyredb.repo(moneyAccountEntity).query()
+    expect(created).toHaveLength(1)
+    expect(created[0].statement).toEqual({ asOf: STMT_NEW, balance: 123456 })
+  })
+
+  it("file import latest-wins: a newer snapshot replaces, an older one is ignored", async () => {
+    await setup()
+    const accountId = fyredb.repo(moneyAccountEntity).save({
+      kind: "bank",
+      name: "HDFC",
+      currency: "INR",
+      bankId: "hdfc",
+      offeringId: "savings",
+      metadata: { accountNumber: ["1234567890"] },
+      statement: { asOf: STMT_OLD, balance: 100000 },
+    } satisfies MoneyAccount)
+
+    const reuse = (closingBalance: number, asOf: number): FileImportResult =>
+      fileResult({
+        accountId,
+        newAccount: false,
+        importData: {
+          bankId: "hdfc",
+          offeringId: "savings",
+          kind: "bank",
+          account: { currency: "INR", accountNumber: ["1234567890"] },
+          transactions: [],
+          statement: { asOf, closingBalance },
+        },
+      })
+
+    // Older statement (asOf before the stored one) — ignored.
+    runFileImportMock.mockResolvedValueOnce(reuse(50000, STMT_OLD - 1))
+    let logId = svc.startFileImport(fakeFile())
+    await waitForStatus(logId, "completed")
+    expect(fyredb.repo(moneyAccountEntity).get(accountId)?.statement).toEqual({
+      asOf: STMT_OLD,
+      balance: 100000,
+    })
+
+    // Newer statement — replaces.
+    runFileImportMock.mockResolvedValueOnce(reuse(75000, STMT_NEW))
+    logId = svc.startFileImport(fakeFile())
+    await waitForStatus(logId, "completed")
+    expect(fyredb.repo(moneyAccountEntity).get(accountId)?.statement).toEqual({
+      asOf: STMT_NEW,
+      balance: 75000,
+    })
+  })
+
+  it("email sync out-of-order backfill: an older statement imported later does not regress the balance", async () => {
+    await setup()
+    const accountId = seedAuthAccount()
+    const moneyId = fyredb.repo(moneyAccountEntity).save({
+      kind: "bank",
+      name: "HDFC",
+      currency: "INR",
+      bankId: "hdfc",
+      offeringId: "savings",
+      metadata: { accountNumber: ["1234567890"] },
+      statement: { asOf: STMT_NEW, balance: 75000 },
+    } satisfies MoneyAccount)
+
+    runEmailImportMock.mockImplementation(
+      (_ctx: unknown, _account: unknown, _state: unknown, _pwds: unknown, _txRepo: unknown, hooks: EmailRunHooks) => {
+        hooks.commitEmail(emailResult({ statement: { asOf: STMT_OLD, closingBalance: 50000 } }))
+        return Promise.resolve<EmailRunSummary>(SUMMARY)
+      },
+    )
+
+    const logId = svc.startEmailSync(accountId)
+    await waitForStatus(logId, "completed")
+
+    // Reused, not duplicated; the newer stored snapshot is preserved.
+    expect(fyredb.repo(moneyAccountEntity).query()).toHaveLength(1)
+    expect(fyredb.repo(moneyAccountEntity).get(moneyId)?.statement).toEqual({
+      asOf: STMT_NEW,
+      balance: 75000,
+    })
+  })
+
+  it("statement asOf fallback: uses max(tx.date) when the adapter omits asOf", async () => {
+    await setup()
+    const d1 = Date.UTC(2025, 0, 5)
+    const d2 = Date.UTC(2025, 0, 20) // latest
+    const d3 = Date.UTC(2025, 0, 12)
+    runFileImportMock.mockResolvedValue(
+      fileResult({
+        importData: {
+          bankId: "hdfc",
+          offeringId: "savings",
+          kind: "bank",
+          account: { currency: "INR", accountNumber: ["1234567890"] },
+          transactions: [
+            { date: d1, description: "A", amount: -100 },
+            { date: d2, description: "B", amount: -200 },
+            { date: d3, description: "C", amount: -300 },
+          ],
+          statement: { closingBalance: 90000 },
+        },
+      }),
+    )
+
+    const logId = svc.startFileImport(fakeFile())
+    await waitForStatus(logId, "completed")
+    expect(fyredb.repo(moneyAccountEntity).query()[0].statement).toEqual({ asOf: d2, balance: 90000 })
+  })
+
+  it("no snapshot when the summary lacks a closing balance", async () => {
+    await setup()
+    runFileImportMock.mockResolvedValue(
+      fileResult({
+        importData: {
+          bankId: "hdfc",
+          offeringId: "savings",
+          kind: "bank",
+          account: { currency: "INR", accountNumber: ["1234567890"] },
+          transactions: [{ date: TX_DATE, description: "A", amount: -100 }],
+          statement: { asOf: STMT_NEW },
+        },
+      }),
+    )
+
+    const logId = svc.startFileImport(fakeFile())
+    await waitForStatus(logId, "completed")
+    expect(fyredb.repo(moneyAccountEntity).query()[0].statement).toBeUndefined()
   })
 })

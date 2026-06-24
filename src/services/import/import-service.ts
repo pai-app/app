@@ -29,6 +29,7 @@ import {
 } from "@/services/entities/transaction"
 import {
   moneyAccountEntity,
+  type AccountStatement,
   type MoneyAccount,
 } from "@/services/entities/money-account"
 import type { TransactionsService } from "@/services/transactions-service"
@@ -255,6 +256,7 @@ export class ImportService implements Disposable {
       const result = await runFileImport(
         ctx, file, settings.filePasswords,
         this.accountRepo, this.txRepo,
+        (pw) => { this.appendPasswords([pw]) },
       )
       this.commitFileResult(logId, result)
       ctx.status = "completed"
@@ -276,6 +278,10 @@ export class ImportService implements Disposable {
     const accountId = existingAccountId || this.createAccount(result)
     if (existingAccountId) {
       this.mergeAccountMetadata(existingAccountId, buildMetadata(result.importData.account))
+      this.mergeAccountStatement(
+        existingAccountId,
+        toAccountStatement(result.importData.statement, result.importData.transactions),
+      )
     }
 
     // Write transactions, parented to a per-file source row (only created
@@ -454,6 +460,9 @@ export class ImportService implements Disposable {
             if (ctx.isCancelled()) throw new CancelledError()
             if (answer.kind !== "password") throw new Error("Unexpected answer kind", { cause: innerErr })
             passwords.push(answer.password)
+            // Persist the password as soon as the user supplies it for a locked
+            // email — so it survives even if the rest of the sweep later errors.
+            this.appendPasswords([answer.password])
             ctx.status = "in_progress"
             this.updateLog(logId, { status: "in_progress", prompt: undefined })
             continue
@@ -589,11 +598,15 @@ export class ImportService implements Disposable {
   // ── Account creation ─────────────────────────────────
 
   private createAccount(result: FileImportResult): string {
+    const statement = toAccountStatement(
+      result.importData.statement,
+      result.importData.transactions,
+    )
     return this.accountRepo.save({
       kind: result.importData.kind,
       name: result.importData.bankId,
       currency: result.importData.account.currency,
-      initialBalance: 0,
+      ...(statement && { statement }),
       bankId: result.importData.bankId,
       offeringId: result.importData.offeringId,
       metadata: buildMetadata(result.importData.account),
@@ -605,11 +618,12 @@ export class ImportService implements Disposable {
     account: AuthAccount & BaseEntity,
   ): string {
     const [bankId, offeringId] = emailResult.adapterId.split("/")
+    const statement = toAccountStatement(emailResult.statement, emailResult.transactions)
     return this.accountRepo.save({
       kind: emailResult.kind,
       name: bankId || account.email,
       currency: emailResult.accountDetails.currency,
-      initialBalance: 0,
+      ...(statement && { statement }),
       bankId,
       ...(offeringId && { offeringId }),
       metadata: buildMetadata(emailResult.accountDetails),
@@ -632,6 +646,10 @@ export class ImportService implements Disposable {
     const matches = findMatchingAccounts(this.accountRepo.query(), bankId, emailResult.kind, emailResult.accountDetails)
     if (matches.length > 0) {
       this.mergeAccountMetadata(matches[0].id, buildMetadata(emailResult.accountDetails))
+      this.mergeAccountStatement(
+        matches[0].id,
+        toAccountStatement(emailResult.statement, emailResult.transactions),
+      )
       return matches[0].id
     }
     return this.createAccountFromEmail(emailResult, account)
@@ -649,6 +667,24 @@ export class ImportService implements Disposable {
     if (!account) return
     const { metadata, changed } = mergeMetadata(account.metadata, incoming)
     if (changed) this.accountRepo.save({ ...account, metadata })
+  }
+
+  /**
+   * Latest-wins merge of a statement snapshot onto an existing account: store
+   * `snapshot` only when there is no current snapshot or `snapshot.asOf` is
+   * strictly newer than the stored one. Survives out-of-order email backfill
+   * (an older statement imported later must not regress the balance).
+   */
+  private mergeAccountStatement(
+    accountId: string,
+    snapshot: AccountStatement | undefined,
+  ): void {
+    if (!snapshot) return
+    const account = this.accountRepo.get(accountId)
+    if (!account) return
+    const existing = account.statement
+    if (existing && existing.asOf >= snapshot.asOf) return
+    this.accountRepo.save({ ...account, statement: snapshot })
   }
 
   // ── Settings helpers ──────────────────────────────────
@@ -684,6 +720,37 @@ export class ImportService implements Disposable {
 }
 
 // ── Utilities ───────────────────────────────────────────
+
+/**
+ * Map an adapter `StatementSummary` (integer minor units) to the app's typed
+ * `AccountStatement`, or `undefined` when no snapshot can be stored.
+ *
+ * - `balance` is required, so a snapshot is built only when `closingBalance`
+ *   is defined; the credit-only extras carry through when present.
+ * - `asOf` falls back to `max(tx.date)` of the import's transactions when the
+ *   adapter omits it; with neither an `asOf` nor any transaction, no snapshot
+ *   is stored (latest-wins has no anchor).
+ */
+function toAccountStatement(
+  summary: import("@pai-app/adapters").StatementSummary | undefined,
+  transactions: readonly { readonly date: number }[],
+): AccountStatement | undefined {
+  if (!summary || summary.closingBalance === undefined) return undefined
+  const asOf =
+    summary.asOf ??
+    (transactions.length > 0
+      ? transactions.reduce((max, t) => (t.date > max ? t.date : max), transactions[0].date)
+      : undefined)
+  if (asOf === undefined) return undefined
+  return {
+    asOf,
+    balance: summary.closingBalance,
+    ...(summary.available !== undefined && { available: summary.available }),
+    ...(summary.creditLimit !== undefined && { creditLimit: summary.creditLimit }),
+    ...(summary.minimumDue !== undefined && { minimumDue: summary.minimumDue }),
+    ...(summary.dueDate !== undefined && { dueDate: summary.dueDate }),
+  }
+}
 
 function buildMetadata(
   account: import("@pai-app/adapters").AccountDetails,

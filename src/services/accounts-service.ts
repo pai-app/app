@@ -14,6 +14,7 @@ import { BehaviorSubject, Subscription } from "rxjs"
 import type { BaseEntity, FyreDb, RepositoryType as Repository } from "@fyre-db/core"
 import {
   moneyAccountEntity,
+  type AccountStatement,
   type MoneyAccount,
   type MoneyAccountKind,
 } from "@/services/entities"
@@ -28,6 +29,7 @@ export type AccountView = {
   readonly currency: string
   readonly maskedNumber?: string // "****1234" from metadata.accountNumber, else undefined
   readonly bankId?: string
+  readonly statement?: AccountStatement // latest closing-figure snapshot, if any
   readonly archived: boolean
 }
 
@@ -42,7 +44,7 @@ export type AccountDetails = {
   readonly kind: MoneyAccountKind
   readonly icon?: string
   readonly currency: string
-  readonly initialBalance: number
+  readonly statement?: AccountStatement
   readonly bankId?: string
   readonly offeringId?: string
   readonly archived: boolean
@@ -126,6 +128,7 @@ function toAccountView(row: AccountRow): AccountView {
     currency: row.currency,
     maskedNumber: maskAccountNumber(row),
     bankId: row.bankId,
+    statement: row.statement,
     archived: row.archived ?? false,
   }
 }
@@ -137,7 +140,7 @@ function toAccountDetails(row: AccountRow): AccountDetails {
     kind: row.kind,
     icon: row.icon,
     currency: row.currency,
-    initialBalance: row.initialBalance,
+    statement: row.statement,
     bankId: row.bankId,
     offeringId: row.offeringId,
     archived: row.archived ?? false,

@@ -15,7 +15,6 @@ const ACCOUNT: MoneyAccount = {
   kind: "bank",
   name: "Test Bank",
   currency: "INR",
-  initialBalance: 0,
   metadata: { accountNumber: ["1234567890"] },
 }
 
