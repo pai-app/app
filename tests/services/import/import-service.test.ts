@@ -784,4 +784,221 @@ describe("ImportService", () => {
     await waitForStatus(logId, "completed")
     expect(fyredb.repo(moneyAccountEntity).query()[0].statement).toBeUndefined()
   })
+
+  it("no snapshot when the summary omits asOf and there are no transactions", async () => {
+    await setup()
+    runFileImportMock.mockResolvedValue(
+      fileResult({
+        importData: {
+          bankId: "hdfc",
+          offeringId: "savings",
+          kind: "bank",
+          account: { currency: "INR", accountNumber: ["1234567890"] },
+          transactions: [],
+          statement: { closingBalance: 90000 },
+        },
+      }),
+    )
+
+    const logId = svc.startFileImport(fakeFile())
+    await waitForStatus(logId, "completed")
+    expect(fyredb.repo(moneyAccountEntity).query()[0].statement).toBeUndefined()
+  })
+
+  it("file import: carries the available balance onto the statement snapshot", async () => {
+    await setup()
+    runFileImportMock.mockResolvedValue(
+      fileResult({
+        importData: {
+          bankId: "hdfc",
+          offeringId: "savings",
+          kind: "bank",
+          account: { currency: "INR", accountNumber: ["1234567890"] },
+          transactions: [],
+          statement: { asOf: STMT_NEW, closingBalance: 90000, available: 85000 },
+        },
+      }),
+    )
+
+    const logId = svc.startFileImport(fakeFile())
+    await waitForStatus(logId, "completed")
+    expect(fyredb.repo(moneyAccountEntity).query()[0].statement).toEqual({
+      asOf: STMT_NEW,
+      balance: 90000,
+      available: 85000,
+    })
+  })
+
+  // ── Additional coverage (branches/edges) ──────────────
+
+  it("file import: records an undefined fileType for a typeless file", async () => {
+    await setup()
+    runFileImportMock.mockResolvedValue(fileResult())
+
+    const logId = svc.startFileImport({ name: "statement.pdf", type: "", size: 10 } as unknown as File)
+    await waitForStatus(logId, "completed")
+
+    const logRow = fyredb.repo(importLogEntity).get(logId)
+    expect(logRow?.source.kind === "file" && logRow.source.fileType).toBeUndefined()
+  })
+
+  it("file import: persists a password validated mid-parse (deduping repeats)", async () => {
+    await setup()
+    runFileImportMock.mockImplementation(
+      (_ctx: unknown, _file: unknown, _pwds: unknown, _accRepo: unknown, _txRepo: unknown, onValidated: unknown) => {
+        const validated = onValidated as (pw: string) => void
+        validated("filepw")
+        validated("filepw") // duplicate → appendPasswords no-op
+        return Promise.resolve(fileResult())
+      },
+    )
+
+    const logId = svc.startFileImport(fakeFile())
+    await waitForStatus(logId, "completed")
+
+    expect(fyredb.repo(userSettingsEntity).get()?.filePasswords).toEqual(["filepw"])
+  })
+
+  it("file import: tolerates a stale accountId that no longer resolves", async () => {
+    await setup()
+    runFileImportMock.mockResolvedValue(
+      fileResult({
+        accountId: "money-account._.ghost",
+        newAccount: false,
+        transactions: [],
+        newCount: 0,
+        duplicateCount: 0,
+        importData: {
+          bankId: "hdfc",
+          offeringId: "savings",
+          kind: "bank",
+          account: { currency: "INR", accountNumber: ["1234567890"] },
+          transactions: [],
+          statement: { asOf: STMT_NEW, closingBalance: 12345 },
+        },
+      }),
+    )
+
+    const logId = svc.startFileImport(fakeFile())
+    await waitForStatus(logId, "completed")
+
+    // No account exists for the ghost id, so both merges short-circuit.
+    expect(fyredb.repo(moneyAccountEntity).get("money-account._.ghost")).toBeUndefined()
+  })
+
+  it("import error: coerces a non-Error rejection to a string message", async () => {
+    await setup()
+    runFileImportMock.mockRejectedValue("plain string failure")
+
+    const logId = svc.startFileImport(fakeFile())
+    await waitForStatus(logId, "failed")
+
+    expect(fyredb.repo(importLogEntity).get(logId)?.error?.message).toBe("plain string failure")
+  })
+
+  it("import error: maps a ParseError to its specific kind", async () => {
+    await setup()
+    const parseErr = Object.assign(new Error("bad layout"), { name: "ParseError", kind: "unparseable" })
+    runFileImportMock.mockRejectedValue(parseErr)
+
+    const logId = svc.startFileImport(fakeFile())
+    await waitForStatus(logId, "failed")
+
+    expect(fyredb.repo(importLogEntity).get(logId)?.error?.kind).toBe("unparseable")
+  })
+
+  it("resume: revives a FAILED email log whose error was password-required", async () => {
+    await setup()
+    const accountId = seedAuthAccount()
+    runEmailImportMock.mockReturnValue(new Promise<EmailRunSummary>(() => {})) // keep it parked
+
+    const logId = fyredb.repo(importLogEntity).save({
+      trigger: "manual",
+      triggeredAt: Date.now(),
+      status: "failed",
+      error: { kind: "password-required", message: "locked" },
+      source: { kind: "email", authAccountId: accountId, emailId: "m1", receivedAt: TX_DATE, from: EMAIL_ACCOUNT.email, subject: "s" },
+      touchedAccountIds: [],
+      counts: { parsed: 0, new: 0, duplicate: 0 },
+    } satisfies ImportLog)
+
+    expect(svc.resume(logId)).toBe(logId)
+    expect(runEmailImportMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("email sync: names a new account after the auth email when the adapter has no bank id", async () => {
+    await setup()
+    const accountId = seedAuthAccount()
+    runEmailImportMock.mockImplementation(
+      (_ctx: unknown, _account: unknown, _state: unknown, _pwds: unknown, _txRepo: unknown, hooks: EmailRunHooks) => {
+        hooks.commitEmail(emailResult({ adapterId: "", accountDetails: { currency: "INR" } }))
+        return Promise.resolve<EmailRunSummary>(SUMMARY)
+      },
+    )
+
+    const logId = svc.startEmailSync(accountId)
+    await waitForStatus(logId, "completed")
+
+    const created = fyredb.repo(moneyAccountEntity).query()
+    expect(created).toHaveLength(1)
+    expect(created[0].name).toBe(EMAIL_ACCOUNT.email)
+  })
+
+  it("email sync: cancelling while parked on a password prompt cancels the import", async () => {
+    await setup()
+    const accountId = seedAuthAccount()
+    runEmailImportMock.mockRejectedValue(new EmailPasswordError("msg-locked", new Error("password required")))
+
+    const logId = svc.startEmailSync(accountId)
+    await waitForStatus(logId, "needs_input")
+
+    svc.cancel(logId)
+    await waitForStatus(logId, "cancelled")
+
+    expect(fyredb.repo(importLogEntity).get(logId)?.error).toBeUndefined()
+  })
+
+  it("email sync: a non-password answer to a password prompt fails the import", async () => {
+    await setup()
+    const accountId = seedAuthAccount()
+    runEmailImportMock.mockRejectedValue(new EmailPasswordError("msg-locked", new Error("password required")))
+
+    const logId = svc.startEmailSync(accountId)
+    await waitForStatus(logId, "needs_input")
+
+    svc.answer(logId, { kind: "confirm", confirmed: true })
+    await waitForStatus(logId, "failed")
+
+    expect(fyredb.repo(importLogEntity).get(logId)?.error?.message).toContain("Unexpected answer kind")
+  })
+
+  it("startEmailSync: ignores an unrelated active file import when checking for a live sweep", async () => {
+    await setup()
+    const accountId = seedAuthAccount()
+    runFileImportMock.mockReturnValue(new Promise<FileImportResult>(() => {})) // file stays in flight
+    runEmailImportMock.mockReturnValue(new Promise<EmailRunSummary>(() => {}))
+
+    svc.startFileImport(fakeFile())            // active, source kind "file"
+    const emailLog = svc.startEmailSync(accountId)
+
+    expect(emailLog).not.toBe("")              // a fresh email log, not the file one
+    expect(svc.activeImportCount()).toBe(2)
+  })
+
+  it("email sync: an email yielding zero new transactions writes no source row", async () => {
+    await setup()
+    const accountId = seedAuthAccount()
+    runEmailImportMock.mockImplementation(
+      (_ctx: unknown, _account: unknown, _state: unknown, _pwds: unknown, _txRepo: unknown, hooks: EmailRunHooks) => {
+        hooks.commitEmail(emailResult({ transactions: [hashedTx({ hash: "dup", isNew: false })], newCount: 0, duplicateCount: 1 }))
+        return Promise.resolve<EmailRunSummary>(SUMMARY)
+      },
+    )
+
+    const logId = svc.startEmailSync(accountId)
+    await waitForStatus(logId, "completed")
+
+    const sources = fyredb.repo(importSourceEntity).query({ keys: [SOURCE_KEY()] })
+    expect(sources.filter((s) => s.importLogId === logId)).toHaveLength(0)
+  })
 })

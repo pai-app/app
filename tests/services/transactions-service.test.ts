@@ -290,4 +290,56 @@ describe("TransactionsService", () => {
     await setup()
     expect(() => { svc.setTitle("missing", "x") }).not.toThrow()
   })
+
+  it("applyRulesToTransactions skips untagged rows that match no rule", async () => {
+    await setup()
+    establishUpiRule()
+    const repo = fyredb.repo(transactionEntity)
+    repo.save(tx({ hash: "nomatch", narration: "ENTIRELY UNSEEN NARRATION", transactionAt: Date.UTC(2026, 0, 25) }))
+
+    // The established UPI rows are already tagged (skip), and the random row
+    // matches nothing (verdict none → skip), so nothing new is applied.
+    const applied = svc.applyRulesToTransactions(repo.query({ keys: [JAN] }))
+    expect(applied).toBe(0)
+  })
+
+  it("tag is a no-op for a missing row or one already carrying that exact tag", async () => {
+    await setup()
+    const repo = fyredb.repo(transactionEntity)
+    const id = repo.save(tx({ hash: "h1", tagId: "tag-food" }))
+
+    expect(svc.tag("missing", "tag-food")).toEqual({})
+    expect(svc.tag(id, "tag-food")).toEqual({}) // same tag → unchanged
+  })
+
+  it("retags a row already carrying a different tag (a vote, not an auto-apply)", async () => {
+    await setup()
+    const repo = fyredb.repo(transactionEntity)
+    // No autoTagged flag → exercises the retag branch and the nullish fallback.
+    const id = repo.save(tx({ hash: "r1", narration: UPI, tagId: "tag-old" }))
+
+    svc.tag(id, "tag-new")
+
+    expect(repo.get(id)?.tagId).toBe("tag-new")
+  })
+
+  it("retags an auto-tagged row (autoTagged flag present)", async () => {
+    await setup()
+    const repo = fyredb.repo(transactionEntity)
+    const id = repo.save(tx({ hash: "r2", narration: UPI, tagId: "tag-old", autoTagged: true }))
+
+    svc.tag(id, "tag-new")
+
+    expect(repo.get(id)?.tagId).toBe("tag-new")
+  })
+
+  it("untags a row carrying a tag but no autoTagged flag", async () => {
+    await setup()
+    const repo = fyredb.repo(transactionEntity)
+    const id = repo.save(tx({ hash: "u9", narration: UPI, tagId: "tag-x" }))
+
+    svc.untag(id)
+
+    expect(repo.get(id)?.tagId).toBeUndefined()
+  })
 })

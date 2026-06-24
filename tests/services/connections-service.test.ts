@@ -172,6 +172,39 @@ describe("ConnectionsService", () => {
     expect(rows[0].name).toBe("M User")
   })
 
+  it("falls back to `mail` for the email when userinfo omits `email`", async () => {
+    fyredb = await createTestFyreDb()
+    seedCreds("microsoft", { id: "m-3", mail: "viamail@example.com", displayName: "Mail User" })
+
+    svc = new ConnectionsService(fyredb)
+    await vi.waitFor(() => {
+      expect(svc.connections$.value).toHaveLength(1)
+    })
+
+    expect(fyredb.repo(authAccountEntity).query()[0].email).toBe("viamail@example.com")
+  })
+
+  it("stores an empty email when userinfo carries an identity but no address", async () => {
+    fyredb = await createTestFyreDb()
+    seedCreds("google", { sub: "g-9", name: "No Email User" })
+
+    svc = new ConnectionsService(fyredb)
+    await vi.waitFor(() => {
+      expect(svc.connections$.value).toHaveLength(1)
+    })
+
+    expect(fyredb.repo(authAccountEntity).query()[0].email).toBe("")
+  })
+
+  it("disconnect removes the auth account even when no import setting exists", async () => {
+    await setup()
+    const id = fyredb.repo(authAccountEntity).save(EMAIL_ACCOUNT)
+
+    svc.disconnect(id) // no email-import-setting was ever saved for this account
+
+    expect(fyredb.repo(authAccountEntity).get(id)).toBeUndefined()
+  })
+
   it("is a no-op when no feature creds are present", async () => {
     fyredb = await createTestFyreDb()
     svc = new ConnectionsService(fyredb)

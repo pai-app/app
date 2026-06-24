@@ -150,10 +150,14 @@ function toAccountDetails(row: AccountRow): AccountDetails {
 
 function toAccountTagData(row: AccountRow): AccountTagData {
   const masked = maskAccountNumber(row)
+  // Only invoked for rows passing `hasFullDetails`, so `masked` is always
+  // defined here; the bare-name fallback is unreachable.
+  /* v8 ignore next */
+  const name = masked ? `${row.name} ${masked}` : row.name
   return {
     id: `account-${row.id}`,
     accountId: row.id,
-    name: masked ? `${row.name} ${masked}` : row.name,
+    name,
     icon: row.icon,
     kind: row.kind,
     bankId: row.bankId,

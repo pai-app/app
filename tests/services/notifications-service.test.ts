@@ -77,4 +77,38 @@ describe("NotificationsService", () => {
       expect(svc.notifications$.value.some((n) => n.id === id)).toBe(false)
     })
   })
+
+  it("returns a transient id (nothing persisted) for a non-inbox notification", async () => {
+    await setup()
+    const id = svc.notify(notification(), { channels: ["toast"] })
+    expect(id).toBeUndefined() // never written to the inbox
+    expect(svc.notifications$.value).toHaveLength(0)
+  })
+
+  it("markRead is a no-op for a missing id or an already-read row", async () => {
+    await setup()
+    expect(() => { svc.markRead("missing") }).not.toThrow()
+
+    const id = svc.notify(notification(), { channels: ["inbox"] })
+    if (id === undefined) throw new Error("expected an inbox id")
+    svc.markRead(id)
+    await vi.waitFor(() => {
+      expect(svc.notifications$.value.find((n) => n.id === id)?.read).toBe(true)
+    })
+    expect(() => { svc.markRead(id) }).not.toThrow() // already read → no-op
+  })
+
+  it("markAllRead skips rows that are already acknowledged", async () => {
+    await setup()
+    const first = svc.notify(notification({ title: "One" }), { channels: ["inbox"] })
+    svc.notify(notification({ title: "Two" }), { channels: ["inbox"] })
+    if (first === undefined) throw new Error("expected an inbox id")
+
+    svc.markRead(first) // pre-acknowledge one row
+    await vi.waitFor(() => { expect(svc.unreadCount$.value).toBe(1) })
+
+    svc.markAllRead() // the already-read row is skipped, the other is acknowledged
+
+    await vi.waitFor(() => { expect(svc.unreadCount$.value).toBe(0) })
+  })
 })
