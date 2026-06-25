@@ -1,16 +1,23 @@
-import { useParams } from "react-router"
+import type { ReactNode } from "react"
+import { Navigate, useLocation, useNavigate, useParams } from "react-router"
 import { SectionPage, type Section } from "@/components/section-page"
 import { LoggingSection } from "@/features/dev/sections/logging-section"
 import { ComponentsSection } from "@/features/dev/sections/components-section"
 import { DataSection } from "@/features/dev/sections/data-section"
 
 /** A dev-tools section, optionally gated behind an open tenant. */
-type DevSection = Section & { readonly requiresTenant?: boolean }
+type DevSection = {
+  readonly key: string
+  readonly label: string
+  readonly icon: string
+  readonly element: ReactNode
+  readonly requiresTenant?: boolean
+}
 
 const SECTIONS: DevSection[] = [
-  { key: "logging", label: "Logging", icon: "terminal", path: "logging", element: <LoggingSection /> },
-  { key: "components", label: "Components", icon: "palette", path: "components", element: <ComponentsSection /> },
-  { key: "data", label: "Data browser", icon: "database", path: "data/*", element: <DataSection />, requiresTenant: true },
+  { key: "logging", label: "Logging", icon: "terminal", element: <LoggingSection /> },
+  { key: "components", label: "Components", icon: "palette", element: <ComponentsSection /> },
+  { key: "data", label: "Data browser", icon: "database", element: <DataSection />, requiresTenant: true },
 ]
 
 /**
@@ -21,7 +28,24 @@ const SECTIONS: DevSection[] = [
  */
 export function DevHubPage() {
   const { tenantId } = useParams()
-  const sections = SECTIONS.filter((s) => !s.requiresTenant || Boolean(tenantId))
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const base = tenantId ? `/t/${tenantId}/dev` : "/dev"
+  const available = SECTIONS.filter((s) => !s.requiresTenant || Boolean(tenantId))
 
-  return <SectionPage title="Dev" sections={sections} />
+  const activeKey = pathname.slice(base.length).split("/").filter(Boolean)[0] ?? ""
+
+  if (!available.some((s) => s.key === activeKey)) {
+    return <Navigate to={`${base}/${available[0].key}`} replace />
+  }
+
+  const sections: Section[] = available.map((s) => ({
+    key: s.key,
+    label: s.label,
+    icon: s.icon,
+    onClick: () => { void navigate(`${base}/${s.key}`) },
+    element: s.element,
+  }))
+
+  return <SectionPage title="Dev" sections={sections} active={activeKey} />
 }

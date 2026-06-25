@@ -1,19 +1,9 @@
 import type { ReactNode } from "react"
-import {
-  NavLink,
-  Navigate,
-  Route,
-  Routes,
-  matchPath,
-  useLocation,
-  useResolvedPath,
-} from "react-router"
 import { Icon } from "@/ui/icon"
 import { OverflowBar } from "@/ui/overflow-bar"
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
@@ -21,67 +11,60 @@ import {
 
 export type Section = {
   readonly key: string
-  readonly label: string
+  /** Tab label. A plain string, or a node (e.g. a router `<Link>`). */
+  readonly label: ReactNode
   /** `<Icon>` name. */
   readonly icon: string
-  /** Relative segment, e.g. `"general"` or `"data/*"`. */
-  readonly path: string
+  /** Invoked when the tab is clicked — e.g. to navigate. */
+  readonly onClick?: () => void
   readonly element: ReactNode
 }
 
 type SectionPageProps = {
   readonly title: string
   readonly sections: readonly Section[]
-}
-
-/** Join the section base pathname with a relative section path into a pattern. */
-function fullPattern(base: string, path: string): string {
-  return `${base.replace(/\/$/, "")}/${path}`
+  /** `key` of the active section. The caller derives it from the route. */
+  readonly active: string
 }
 
 /**
- * Self-contained, declarative section surface shared by Settings and the dev
- * hub. Give it a `title` and `sections` (each a relative `path`, label, icon
- * and `element`); it owns the segmented nav, default selection, routing and
- * the mobile breadcrumb. Responsiveness is 100% Tailwind — no `isMobile`, no
- * breadcrumb provider. Mobile and desktop share one routing model.
+ * Presentational section surface shared by Settings and the dev hub. It lays
+ * out the segmented nav (one tab per section), the mobile breadcrumb, and the
+ * active section's content — nothing more. **Routing is the caller's concern:**
+ * pass which section is `active` and an `onClick` (or a `<Link>` in `label`)
+ * per section. No react-router, no `isMobile` — responsiveness is 100% Tailwind.
  *
  * Designed to live inside the app's single global scroll container — it adds
  * no inner scrollbar; tall content scrolls behind the floating chrome.
  */
-export function SectionPage({ title, sections }: SectionPageProps): ReactNode {
-  const base = useResolvedPath(".")
-  const { pathname } = useLocation()
-
-  const active = sections.find((s) =>
-    matchPath({ path: fullPattern(base.pathname, s.path), end: false }, pathname),
-  )
+export function SectionPage({ title, sections, active }: SectionPageProps): ReactNode {
+  const activeSection = sections.find((s) => s.key === active)
 
   const items = sections.map((s) => ({
     key: s.key,
-    active: s === active,
+    active: s.key === active,
     element: (
-      <NavLink to={s.path} className="relative z-10 flex items-center gap-1.5">
+      <button
+        type="button"
+        onClick={s.onClick}
+        className="relative z-10 flex cursor-pointer items-center gap-1.5"
+      >
         <Icon name={s.icon} className="size-4" />
         {s.label}
-      </NavLink>
+      </button>
     ),
   }))
 
   return (
     <div className="flex flex-col">
-      {active && (
+      {activeSection && (
         <div className="px-1 pb-3 lg:hidden">
           <Breadcrumb>
             <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <NavLink to=".">{title}</NavLink>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
+              <BreadcrumbItem>{title}</BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>{active.label}</BreadcrumbPage>
+                <BreadcrumbPage>{activeSection.label}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -92,12 +75,7 @@ export function SectionPage({ title, sections }: SectionPageProps): ReactNode {
         <OverflowBar items={items} className="glass h-11 w-full rounded-full px-1.5 lg:w-max" />
       </div>
 
-      <Routes>
-        <Route index element={<Navigate to={sections[0]?.path ?? "."} replace />} />
-        {sections.map((s) => (
-          <Route key={s.key} path={s.path} element={s.element} />
-        ))}
-      </Routes>
+      {activeSection?.element}
     </div>
   )
 }
