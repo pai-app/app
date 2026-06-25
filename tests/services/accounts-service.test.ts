@@ -8,7 +8,6 @@ const SAMPLE: MoneyAccount = {
   kind: "bank",
   name: "Test Bank",
   currency: "INR",
-  initialBalance: 0,
   metadata: { accountNumber: ["1234567890"] },
 }
 
@@ -137,5 +136,17 @@ describe("AccountsService", () => {
     expect(view.maskedNumber).toBeUndefined()
     expect(svc.accountTags$.value).toHaveLength(0)
     expect(svc.getAccountDetails(view.id)?.metadata).toEqual({})
+  })
+
+  it("returns undefined from the on-demand readers for an unknown id", async () => {
+    await setup()
+    expect(svc.revealAccountNumber("missing")).toBeUndefined()
+    expect(svc.getAccountDetails("missing")).toBeUndefined()
+  })
+
+  it("defaults metadata to an empty bag for a legacy row that lacks it entirely", async () => {
+    await setup()
+    const id = fyredb.repo(moneyAccountEntity).save({ ...SAMPLE, metadata: undefined } as unknown as MoneyAccount)
+    expect(svc.getAccountDetails(id)?.metadata).toEqual({})
   })
 })

@@ -28,6 +28,12 @@ describe("strengthOf", () => {
     expect(result.majority).toBe(0)
     expect(result.total).toBe(0)
   })
+
+  it("sums an auto-applied tag that has no human votes", () => {
+    const result = strengthOf(makeRule({ votes: { food: 2 }, autoApplied: { trip: 5 } }))
+    expect(result.winner).toBe("trip") // 5 > 2
+    expect(result.total).toBe(7)
+  })
 })
 
 describe("classify (§7.3 gate table)", () => {
@@ -57,6 +63,10 @@ describe("isWeakSignature (cap)", () => {
 
   it("never flags a UPI-keyed rule, even with no signature", () => {
     expect(isWeakSignature(makeRule({ upiId: "rajesh@ybl", key: "upi:rajesh@ybl" }))).toBe(false)
+  })
+
+  it("flags a rule with no signature at all as weak", () => {
+    expect(isWeakSignature(makeRule())).toBe(true)
   })
 })
 

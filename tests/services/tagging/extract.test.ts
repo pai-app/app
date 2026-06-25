@@ -103,4 +103,8 @@ describe("keyOf", () => {
   it("produces distinct keys for distinct signatures", () => {
     expect(keyOf(undefined, "broking zerodha")).not.toBe(keyOf(undefined, "food order swiggy"))
   })
+
+  it("treats an omitted signature as the empty signature", () => {
+    expect(keyOf(undefined, undefined)).toBe(keyOf(undefined, ""))
+  })
 })

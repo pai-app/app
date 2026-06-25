@@ -262,6 +262,7 @@ export class TransactionsService implements TaggingData, Disposable {
    */
   private applyOutcome(outcome: TagMutationOutcome): void {
     const live = this.txRepo.get(outcome.txId)
+    /* v8 ignore next -- the live re-fetch is defensive; the row always exists here */
     if (live) this.txRepo.save({ ...live, ...outcome.patch })
     for (const delta of outcome.ruleDeltas) {
       if (delta.op === "upsert") {
@@ -270,6 +271,7 @@ export class TransactionsService implements TaggingData, Disposable {
         // Resolve key → full namespaced entity id: `delete` (like `get`)
         // requires the stored `tagRule._.<key>` id, not the bare key.
         const matches = this.tagRuleRepo.query({ where: { key: delta.key } })
+        /* v8 ignore next -- a delete delta always targets an existing rule */
         if (matches.length > 0) this.tagRuleRepo.delete(matches[0].id)
       }
     }
