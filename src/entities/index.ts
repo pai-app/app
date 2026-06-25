@@ -19,7 +19,7 @@ export type { ImportSource, ImportSourceDescriptor } from "./import-source"
 
 export type { Money } from "./money"
 
-export type { MoneyAccount, MoneyAccountKind } from "./money-account"
+export type { AccountStatement, MoneyAccount, MoneyAccountKind } from "./money-account"
 
 export type { Notification, NotificationRef } from "./notification"
 

@@ -69,6 +69,22 @@ describe("matchTransaction", () => {
     if (verdict.kind !== "none") expect(verdict.rule.key).toBe("upi:rajesh@ybl")
   })
 
+  it("ignores a rule with no winning tag (empty votes)", () => {
+    const rule = makeRule({ key: "upi:rajesh@ybl", upiId: "rajesh@ybl", votes: {} })
+    const verdict = engineOver([rule]).matchTransaction(makeTx({ narration: "UPI-RAJESH@YBL" }), FRESH)
+    expect(verdict.kind).toBe("none")
+  })
+
+  it("keeps the stronger earlier candidate when a later rule scores lower", () => {
+    const upiRule = makeRule({ key: "upi:rajesh@ybl", upiId: "rajesh@ybl", votes: { food: 3 } })
+    const sigRule = makeRule({ key: "sig:weak", signature: "swiggy zomato dinner cafe", votes: { trip: 3 } })
+    // tx carries the UPI handle (→ upiRule exact 1.0) plus only a partial of the
+    // signature (→ sigRule dice < 1.0); the earlier, stronger UPI rule must win.
+    const tx = makeTx({ narration: "RAJESH@YBL SWIGGY" })
+    const verdict = engineOver([upiRule, sigRule]).matchTransaction(tx, FRESH)
+    expect(verdict).toMatchObject({ kind: "auto", tagId: "food" })
+  })
+
   it("keeps Food after 6 Trip corrections — large autoApplied holds the majority", () => {
     const rule = makeRule({
       key: "upi:rajesh@ybl",

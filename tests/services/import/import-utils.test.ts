@@ -57,7 +57,6 @@ function account(over: Partial<MoneyAccount> & { id: string }): MoneyAccount & B
     kind: "bank",
     name: "jupiter",
     currency: "INR",
-    initialBalance: 0,
     bankId: "jupiter",
     metadata: {},
     ...over,

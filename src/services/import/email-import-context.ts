@@ -1,5 +1,5 @@
 import { parseEmail, ParseError, statementEmailDomains } from "@pai-app/adapters"
-import type { AccountDetails, AccountKind } from "@pai-app/adapters"
+import type { AccountDetails, AccountKind, StatementSummary } from "@pai-app/adapters"
 import type { BaseEntity } from "@fyre-db/core"
 import type { RepositoryType as Repository } from "@fyre-db/core"
 import { getMailProvider } from "@/services/mail"
@@ -36,6 +36,7 @@ export type EmailResult = {
   readonly adapterId: string
   readonly kind: AccountKind
   readonly accountDetails: AccountDetails
+  readonly statement?: StatementSummary
   readonly transactions: ReadonlyArray<HashedTransaction>
   readonly newCount: number
   readonly duplicateCount: number
@@ -209,6 +210,7 @@ async function buildEmailResult(
     adapterId: `${data.bankId}/${data.offeringId}`,
     kind: data.kind,
     accountDetails: data.account,
+    statement: data.statement,
     transactions: hashed,
     newCount,
     duplicateCount: hashed.length - newCount,

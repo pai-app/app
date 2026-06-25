@@ -10,7 +10,6 @@ const ACCOUNT: MoneyAccount = {
   kind: "bank",
   name: "Test Bank",
   currency: "INR",
-  initialBalance: 0,
   metadata: { accountNumber: ["1234567890"] },
 }
 
@@ -100,5 +99,31 @@ describe("TagsService", () => {
     svc.delete(id)
 
     expect(fyredb.repo(tagEntity).get(id)).toBeUndefined()
+  })
+
+  it("create returns the new tag id", async () => {
+    await setup()
+    const id = svc.create(USER_TAG)
+    expect(fyredb.repo(tagEntity).get(id)?.name).toBe("Groceries")
+  })
+
+  it("rename and setIcon are no-ops for an unknown id", async () => {
+    await setup()
+    expect(() => { svc.rename("missing", "X") }).not.toThrow()
+    expect(() => { svc.setIcon("missing", "X") }).not.toThrow()
+  })
+
+  it("orders multiple user tags alphabetically by name", async () => {
+    await setup()
+    fyredb.repo(tagEntity).save({ name: "Zebra", icon: "z" })
+    fyredb.repo(tagEntity).save({ name: "Apple", icon: "a" })
+
+    await vi.waitFor(() => {
+      const tags = svc.displayTags$.value
+      const apple = tags.findIndex((t) => t.name === "Apple")
+      const zebra = tags.findIndex((t) => t.name === "Zebra")
+      expect(apple).toBeGreaterThan(-1)
+      expect(apple).toBeLessThan(zebra) // sorted ascending
+    })
   })
 })

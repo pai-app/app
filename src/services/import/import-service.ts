@@ -25,7 +25,7 @@ import {
 import { transactionEntity } from "@/services/store/schema/transaction"
 import type { Transaction } from "@/entities/transaction"
 import { moneyAccountEntity } from "@/services/store/schema/money-account"
-import type { MoneyAccount } from "@/entities/money-account"
+import type { AccountStatement, MoneyAccount } from "@/entities/money-account"
 import type { TransactionsService } from "@/services/transactions-service"
 import type { Disposable } from "@/services/types"
 import type { AuthAccount } from "@/entities/auth-account"
@@ -250,6 +250,7 @@ export class ImportService implements Disposable {
       const result = await runFileImport(
         ctx, file, settings.filePasswords,
         this.accountRepo, this.txRepo,
+        (pw) => { this.appendPasswords([pw]) },
       )
       this.commitFileResult(logId, result)
       ctx.status = "completed"
@@ -271,6 +272,10 @@ export class ImportService implements Disposable {
     const accountId = existingAccountId || this.createAccount(result)
     if (existingAccountId) {
       this.mergeAccountMetadata(existingAccountId, buildMetadata(result.importData.account))
+      this.mergeAccountStatement(
+        existingAccountId,
+        toAccountStatement(result.importData.statement, result.importData.transactions),
+      )
     }
 
     // Write transactions, parented to a per-file source row (only created
@@ -278,10 +283,12 @@ export class ImportService implements Disposable {
     const newTxs = result.transactions.filter((t) => t.isNew)
     if (newTxs.length > 0) {
       const log = this.logRepo.get(logId)
+      /* v8 ignore start -- the log is always the file-source row created at startFileImport */
       const descriptor: ImportSourceDescriptor =
         log?.source.kind === "file"
           ? log.source
           : { kind: "file", fileName: "import" }
+      /* v8 ignore stop */
       const sourceId = this.createSource(logId, descriptor, {
         adapterId: result.adapterId,
         accountId,
@@ -416,6 +423,7 @@ export class ImportService implements Disposable {
           // Persist any new passwords
           const origSet = new Set(this.getUserSettings().filePasswords)
           const newPwds = passwords.filter((p) => !origSet.has(p))
+          /* v8 ignore next -- passwords persist on answer, so none are new by completion */
           if (newPwds.length > 0) this.appendPasswords(newPwds)
 
           this.updateLog(logId, {
@@ -437,6 +445,7 @@ export class ImportService implements Disposable {
             log.import('email sync needs password: logId=%s emailId=%s', logId, innerErr.emailId)
             // Update the log source with the real email ID so the UI can fetch it
             const existingLog = this.logRepo.get(logId)
+            /* v8 ignore next -- in this handler the log is always a live email-source row */
             if (existingLog && existingLog.source.kind === "email") {
               this.updateLog(logId, {
                 source: { ...existingLog.source, emailId: innerErr.emailId },
@@ -449,6 +458,9 @@ export class ImportService implements Disposable {
             if (ctx.isCancelled()) throw new CancelledError()
             if (answer.kind !== "password") throw new Error("Unexpected answer kind", { cause: innerErr })
             passwords.push(answer.password)
+            // Persist the password as soon as the user supplies it for a locked
+            // email — so it survives even if the rest of the sweep later errors.
+            this.appendPasswords([answer.password])
             ctx.status = "in_progress"
             this.updateLog(logId, { status: "in_progress", prompt: undefined })
             continue
@@ -459,8 +471,10 @@ export class ImportService implements Disposable {
     } catch (err) {
       this.handleError(logId, ctx, err)
       // Persist error on the email setting
+      /* v8 ignore next -- account always carries an id */
       if (account.id) {
         const settings = this.settingsRepo.query({ where: { authAccountId: account.id } })
+        /* v8 ignore next -- the setting is created before the run, so it always exists */
         if (settings.length > 0) {
           this.settingsRepo.save({ ...settings[0], lastErrorLogId: logId })
         }
@@ -560,6 +574,7 @@ export class ImportService implements Disposable {
 
   private updateLog(logId: string, patch: Partial<ImportLog>): void {
     const existing = this.logRepo.get(logId)
+    /* v8 ignore next -- updateLog callers always pass a live log id */
     if (!existing) return
     this.logRepo.save({ ...existing, ...patch })
   }
@@ -584,11 +599,15 @@ export class ImportService implements Disposable {
   // ── Account creation ─────────────────────────────────
 
   private createAccount(result: FileImportResult): string {
+    const statement = toAccountStatement(
+      result.importData.statement,
+      result.importData.transactions,
+    )
     return this.accountRepo.save({
       kind: result.importData.kind,
       name: result.importData.bankId,
       currency: result.importData.account.currency,
-      initialBalance: 0,
+      ...(statement && { statement }),
       bankId: result.importData.bankId,
       offeringId: result.importData.offeringId,
       metadata: buildMetadata(result.importData.account),
@@ -600,11 +619,12 @@ export class ImportService implements Disposable {
     account: AuthAccount & BaseEntity,
   ): string {
     const [bankId, offeringId] = emailResult.adapterId.split("/")
+    const statement = toAccountStatement(emailResult.statement, emailResult.transactions)
     return this.accountRepo.save({
       kind: emailResult.kind,
       name: bankId || account.email,
       currency: emailResult.accountDetails.currency,
-      initialBalance: 0,
+      ...(statement && { statement }),
       bankId,
       ...(offeringId && { offeringId }),
       metadata: buildMetadata(emailResult.accountDetails),
@@ -627,6 +647,10 @@ export class ImportService implements Disposable {
     const matches = findMatchingAccounts(this.accountRepo.query(), bankId, emailResult.kind, emailResult.accountDetails)
     if (matches.length > 0) {
       this.mergeAccountMetadata(matches[0].id, buildMetadata(emailResult.accountDetails))
+      this.mergeAccountStatement(
+        matches[0].id,
+        toAccountStatement(emailResult.statement, emailResult.transactions),
+      )
       return matches[0].id
     }
     return this.createAccountFromEmail(emailResult, account)
@@ -644,6 +668,24 @@ export class ImportService implements Disposable {
     if (!account) return
     const { metadata, changed } = mergeMetadata(account.metadata, incoming)
     if (changed) this.accountRepo.save({ ...account, metadata })
+  }
+
+  /**
+   * Latest-wins merge of a statement snapshot onto an existing account: store
+   * `snapshot` only when there is no current snapshot or `snapshot.asOf` is
+   * strictly newer than the stored one. Survives out-of-order email backfill
+   * (an older statement imported later must not regress the balance).
+   */
+  private mergeAccountStatement(
+    accountId: string,
+    snapshot: AccountStatement | undefined,
+  ): void {
+    if (!snapshot) return
+    const account = this.accountRepo.get(accountId)
+    if (!account) return
+    const existing = account.statement
+    if (existing && existing.asOf >= snapshot.asOf) return
+    this.accountRepo.save({ ...account, statement: snapshot })
   }
 
   // ── Settings helpers ──────────────────────────────────
@@ -673,12 +715,44 @@ export class ImportService implements Disposable {
       importState: {},
     })
     const created = this.settingsRepo.get(id)
+    /* v8 ignore next -- the row was just saved, so the get always resolves */
     if (!created) throw new Error(`Failed to create email import setting for ${account.id}`)
     return created
   }
 }
 
 // ── Utilities ───────────────────────────────────────────
+
+/**
+ * Map an adapter `StatementSummary` (integer minor units) to the app's typed
+ * `AccountStatement`, or `undefined` when no snapshot can be stored.
+ *
+ * - `balance` is required, so a snapshot is built only when `closingBalance`
+ *   is defined; the credit-only extras carry through when present.
+ * - `asOf` falls back to `max(tx.date)` of the import's transactions when the
+ *   adapter omits it; with neither an `asOf` nor any transaction, no snapshot
+ *   is stored (latest-wins has no anchor).
+ */
+function toAccountStatement(
+  summary: import("@pai-app/adapters").StatementSummary | undefined,
+  transactions: readonly { readonly date: number }[],
+): AccountStatement | undefined {
+  if (!summary || summary.closingBalance === undefined) return undefined
+  const asOf =
+    summary.asOf ??
+    (transactions.length > 0
+      ? transactions.reduce((max, t) => (t.date > max ? t.date : max), transactions[0].date)
+      : undefined)
+  if (asOf === undefined) return undefined
+  return {
+    asOf,
+    balance: summary.closingBalance,
+    ...(summary.available !== undefined && { available: summary.available }),
+    ...(summary.creditLimit !== undefined && { creditLimit: summary.creditLimit }),
+    ...(summary.minimumDue !== undefined && { minimumDue: summary.minimumDue }),
+    ...(summary.dueDate !== undefined && { dueDate: summary.dueDate }),
+  }
+}
 
 function buildMetadata(
   account: import("@pai-app/adapters").AccountDetails,

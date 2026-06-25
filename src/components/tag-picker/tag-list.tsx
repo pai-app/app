@@ -33,6 +33,7 @@ export function TagList({
 }: TagListProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual mutates refs internally; the React Compiler intentionally skips this component.
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollRef.current,

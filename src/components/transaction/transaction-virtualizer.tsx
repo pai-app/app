@@ -100,6 +100,7 @@ export function TransactionVirtualizer({
   const isLastRow = (index: number) =>
     stickyIndices.includes(index + 1) || index === items.length - 1
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual mutates refs internally; the React Compiler intentionally skips this component.
   const virtualizer = useVirtualizer({
     count: items.length,
     overscan: 4,
