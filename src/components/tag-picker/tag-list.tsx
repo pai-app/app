@@ -4,7 +4,7 @@ import { Icon } from "@/ui/icon"
 import { Input } from "@/ui/input"
 import { Button } from "@/ui/button"
 import { SheetClose } from "@/ui/sheet"
-import type { TagView } from "@/services/tags-service"
+import type { TagView } from "@/views/tag-view"
 import { TagItem } from "./tag-item"
 import type { TagWithChildren } from "./types"
 

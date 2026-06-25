@@ -1,4 +1,4 @@
-import type { TagView } from "@/services/tags-service"
+import type { TagView } from "@/views/tag-view"
 
 /** Synthetic id for the "Remove tag" row, surfaced when a tag is currently set. */
 export const REMOVE_TAG_ID = "__remove-tag"

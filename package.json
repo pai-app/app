@@ -36,6 +36,8 @@
     "clsx": "^2.1.1",
     "concurrently": "^9.2.1",
     "eslint": "^10.2.1",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-boundaries": "^6.0.2",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "fast-xml-parser": "^5.7.2",
@@ -60,7 +62,7 @@
     "wrangler": "^4.81.0"
   },
   "dependencies": {
-    "@pai-app/adapters": "^0.1.0",
+    "@pai-app/adapters": "^0.1.3",
     "@tanstack/react-virtual": "^3.13.24",
     "debug": "^4.4.3",
     "sonner": "^2.0.7",

@@ -4,8 +4,8 @@ import type { RepositoryType as Repository } from "@fyre-db/core"
 import { ImportContext } from "./import-context"
 import { CancelledError, throwIfCancelled, findMatchingAccounts, hashAndDedup } from "./import-utils"
 import type { HashedTransaction } from "./import-utils"
-import type { MoneyAccount } from "@/services/entities/money-account"
-import type { Transaction } from "@/services/entities/transaction"
+import type { Account } from "@/entities/account"
+import type { Transaction } from "@/entities/transaction"
 
 // ── Result ──────────────────────────────────────────────
 
@@ -32,7 +32,7 @@ export async function runFileImport(
   ctx: ImportContext,
   file: File,
   filePasswords: readonly string[],
-  accountRepo: Repository<MoneyAccount>,
+  accountRepo: Repository<Account>,
   transactionRepo: Repository<Transaction>,
   onPasswordValidated?: (password: string) => void,
 ): Promise<FileImportResult> {
@@ -114,7 +114,7 @@ export async function runFileImport(
 async function resolveAccount(
   ctx: ImportContext,
   data: ImportData,
-  accountRepo: Repository<MoneyAccount>,
+  accountRepo: Repository<Account>,
 ): Promise<string> {
   const all = accountRepo.query()
   const matches = findMatchingAccounts(all, data.bankId, data.kind, data.account)

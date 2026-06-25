@@ -2,9 +2,10 @@ import { describe, it, expect, afterEach } from "vitest"
 import type { FyreDb } from "@fyre-db/core"
 import { createTestFyreDb } from "../helpers/test-fyredb"
 import { AccountsService } from "@/services/accounts-service"
-import { moneyAccountEntity, type MoneyAccount } from "@/services/entities"
+import { accountEntity } from "@/entities"
+import type { Account } from "@/entities"
 
-const SAMPLE: MoneyAccount = {
+const SAMPLE: Account = {
   kind: "bank",
   name: "Test Bank",
   currency: "INR",
@@ -27,7 +28,7 @@ describe("AccountsService", () => {
 
   it("projects a masked account view exposing only the last 4 digits", async () => {
     await setup()
-    fyredb.repo(moneyAccountEntity).save(SAMPLE)
+    fyredb.repo(accountEntity).save(SAMPLE)
 
     const accounts = svc.accounts$.value
     expect(accounts).toHaveLength(1)
@@ -39,7 +40,7 @@ describe("AccountsService", () => {
 
   it("reveals the full number + metadata only via the on-demand readers", async () => {
     await setup()
-    const id = fyredb.repo(moneyAccountEntity).save(SAMPLE)
+    const id = fyredb.repo(accountEntity).save(SAMPLE)
 
     expect(svc.revealAccountNumber(id)).toBe("1234567890")
     expect(svc.getAccountDetails(id)?.metadata.accountNumber).toEqual(["1234567890"])
@@ -47,7 +48,7 @@ describe("AccountsService", () => {
 
   it("synthesises a self-transfer account tag for accounts carrying a number", async () => {
     await setup()
-    fyredb.repo(moneyAccountEntity).save(SAMPLE)
+    fyredb.repo(accountEntity).save(SAMPLE)
 
     const tags = svc.accountTags$.value
     expect(tags).toHaveLength(1)
@@ -57,7 +58,7 @@ describe("AccountsService", () => {
 
   it("omits the synthetic tag for archived accounts", async () => {
     await setup()
-    fyredb.repo(moneyAccountEntity).save({ ...SAMPLE, archived: true })
+    fyredb.repo(accountEntity).save({ ...SAMPLE, archived: true })
 
     expect(svc.accountTags$.value).toHaveLength(0)
     expect(svc.accounts$.value).toHaveLength(1) // still listed, just not tag-worthy
@@ -65,7 +66,7 @@ describe("AccountsService", () => {
 
   it("merges metadata with per-key dedupe", async () => {
     await setup()
-    const id = fyredb.repo(moneyAccountEntity).save(SAMPLE)
+    const id = fyredb.repo(accountEntity).save(SAMPLE)
 
     svc.mergeMetadata(id, { accountNumber: ["1234567890"], ifscCode: ["HDFC0001"] })
 
@@ -77,7 +78,7 @@ describe("AccountsService", () => {
   it("creates an account and returns its id", async () => {
     await setup()
     const id = svc.create(SAMPLE)
-    expect(fyredb.repo(moneyAccountEntity).get(id)?.name).toBe("Test Bank")
+    expect(fyredb.repo(accountEntity).get(id)?.name).toBe("Test Bank")
   })
 
   it("updates a live account, leaving untouched fields intact", async () => {
@@ -86,7 +87,7 @@ describe("AccountsService", () => {
 
     svc.update(id, { name: "Renamed" })
 
-    const row = fyredb.repo(moneyAccountEntity).get(id)
+    const row = fyredb.repo(accountEntity).get(id)
     expect(row?.name).toBe("Renamed")
     expect(row?.currency).toBe("INR") // carried over from the original
   })
@@ -101,15 +102,15 @@ describe("AccountsService", () => {
     const id = svc.create(SAMPLE)
 
     svc.archive(id)
-    expect(fyredb.repo(moneyAccountEntity).get(id)?.archived).toBe(true)
+    expect(fyredb.repo(accountEntity).get(id)?.archived).toBe(true)
 
     svc.restore(id)
-    expect(fyredb.repo(moneyAccountEntity).get(id)?.archived).toBe(false)
+    expect(fyredb.repo(accountEntity).get(id)?.archived).toBe(false)
   })
 
   it("currencyOf returns the live account's currency, else undefined", async () => {
     await setup()
-    const id = fyredb.repo(moneyAccountEntity).save({ ...SAMPLE, currency: "USD" })
+    const id = fyredb.repo(accountEntity).save({ ...SAMPLE, currency: "USD" })
 
     expect(svc.currencyOf(id)).toBe("USD")
     expect(svc.currencyOf("missing")).toBeUndefined()
@@ -122,7 +123,7 @@ describe("AccountsService", () => {
 
   it("omits the mask and the synthetic tag for a too-short account number", async () => {
     await setup()
-    fyredb.repo(moneyAccountEntity).save({ ...SAMPLE, metadata: { accountNumber: ["123"] } })
+    fyredb.repo(accountEntity).save({ ...SAMPLE, metadata: { accountNumber: ["123"] } })
 
     expect(svc.accounts$.value[0].maskedNumber).toBeUndefined()
     expect(svc.accountTags$.value).toHaveLength(0)
@@ -130,7 +131,7 @@ describe("AccountsService", () => {
 
   it("tolerates an account row carrying no metadata at all", async () => {
     await setup()
-    fyredb.repo(moneyAccountEntity).save({ ...SAMPLE, metadata: {} })
+    fyredb.repo(accountEntity).save({ ...SAMPLE, metadata: {} })
 
     const view = svc.accounts$.value[0]
     expect(view.maskedNumber).toBeUndefined()
@@ -146,7 +147,7 @@ describe("AccountsService", () => {
 
   it("defaults metadata to an empty bag for a legacy row that lacks it entirely", async () => {
     await setup()
-    const id = fyredb.repo(moneyAccountEntity).save({ ...SAMPLE, metadata: undefined } as unknown as MoneyAccount)
+    const id = fyredb.repo(accountEntity).save({ ...SAMPLE, metadata: undefined } as unknown as Account)
     expect(svc.getAccountDetails(id)?.metadata).toEqual({})
   })
 })

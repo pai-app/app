@@ -5,7 +5,7 @@ import {
   type NotificationPayload,
 } from "@/services/notifications"
 import { ServicesContext } from "@/providers/services-provider"
-import { runNotificationAction } from "@/lib/notification-actions"
+import { runNotificationAction } from "@/providers/notification-actions"
 
 // ── Provider ────────────────────────────────────────────
 

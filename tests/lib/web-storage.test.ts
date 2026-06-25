@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
-import { sessionSlot, localSlot, xorTransform, getOrCreateDeviceId } from "@/lib/web-storage"
+import { sessionSlot, localSlot, xorTransform, getOrCreateDeviceId } from "@/providers/web-storage"
 
 class Mem {
   private m = new Map<string, string>()

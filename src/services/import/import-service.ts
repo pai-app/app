@@ -1,47 +1,41 @@
 import type { FyreDb, BaseEntity, RepositoryType as Repository, SingletonRepositoryType as SingletonRepository } from "@fyre-db/core"
 import type { Observable } from "rxjs"
-import {
-  importLogEntity,
-  type ImportLog,
-  type ImportLogFileSource,
-  type ImportLogEmailSource,
-} from "@/services/entities/import-log"
-import {
-  importSourceEntity,
-  importSourceMonthKey,
-  type ImportSource,
-  type ImportSourceDescriptor,
-} from "@/services/entities/import-source"
-import {
-  emailImportSettingEntity,
-  type EmailImportSetting,
-  type EmailImportState,
-} from "@/services/entities/email-import-setting"
+import { importLogEntity } from "@/entities/import-log"
+import type {
+  ImportLog,
+  ImportLogFileSource,
+  ImportLogEmailSource,
+} from "@/entities/import-log"
+import { importSourceEntity, importSourceMonthKey } from "@/entities/import-source"
+import type {
+  ImportSource,
+  ImportSourceDescriptor,
+} from "@/entities/import-source"
+import { emailImportSettingEntity } from "@/entities/email-import-setting"
+import type {
+  EmailImportSetting,
+  EmailImportState,
+} from "@/entities/email-import-setting"
 import type { NotificationsService } from "@/services/notifications/notifications-service"
+import { userSettingsEntity } from "@/entities/user-settings"
 import {
-  userSettingsEntity,
   USER_SETTINGS_DEFAULTS,
   type UserSettings,
-} from "@/services/entities/user-settings"
-import {
-  transactionEntity,
-  type Transaction,
-} from "@/services/entities/transaction"
-import {
-  moneyAccountEntity,
-  type AccountStatement,
-  type MoneyAccount,
-} from "@/services/entities/money-account"
+} from "@/entities/user-settings"
+import { transactionEntity } from "@/entities/transaction"
+import type { Transaction } from "@/entities/transaction"
+import { accountEntity } from "@/entities/account"
+import type { AccountStatement, Account } from "@/entities/account"
 import type { TransactionsService } from "@/services/transactions-service"
 import type { Disposable } from "@/services/types"
-import type { AuthAccount } from "@/services/entities/auth-account"
-import { authAccountEntity } from "@/services/entities/auth-account"
+import type { Connection } from "@/entities/connection"
+import { connectionEntity } from "@/entities/connection"
 import { ImportContext } from "./import-context"
 import type { PromptAnswer } from "./import-context"
 import { runFileImport, type FileImportResult } from "./file-import-context"
 import { runEmailImport, type EmailResult, type EmailRunProgress } from "./email-import-context"
 import { CancelledError, EmailPasswordError, findMatchingAccounts, mergeMetadata } from "./import-utils"
-import { log } from "@/log"
+import { log } from "@/lib/log"
 
 // ── Active context entry ────────────────────────────────
 
@@ -71,7 +65,7 @@ export class ImportService implements Disposable {
   private readonly settingsRepo: Repository<EmailImportSetting>
   private readonly userSettingsRepo: SingletonRepository<UserSettings>
   private readonly txRepo: Repository<Transaction>
-  private readonly accountRepo: Repository<MoneyAccount>
+  private readonly accountRepo: Repository<Account>
   private readonly txService: TransactionsService
   private readonly notifications: NotificationsService
   private readonly active = new Map<string, ActiveImport>()
@@ -83,7 +77,7 @@ export class ImportService implements Disposable {
     this.settingsRepo = fyredb.repo(emailImportSettingEntity)
     this.userSettingsRepo = fyredb.repo(userSettingsEntity)
     this.txRepo = fyredb.repo(transactionEntity)
-    this.accountRepo = fyredb.repo(moneyAccountEntity)
+    this.accountRepo = fyredb.repo(accountEntity)
     this.txService = deps.transactions
     this.notifications = deps.notifications
     log.import('service initialised')
@@ -136,7 +130,7 @@ export class ImportService implements Disposable {
    * would race on the single shared `EmailImportSetting.importState` cursor and
    * corrupt the high-water mark. */
   startEmailSync(accountId: string): string {
-    const account = this.fyredb.repo(authAccountEntity).get(accountId)
+    const account = this.fyredb.repo(connectionEntity).get(accountId)
     if (account === undefined) {
       log.import('email sync: unknown account=%s', accountId)
       return ""
@@ -149,7 +143,7 @@ export class ImportService implements Disposable {
 
     const source: ImportLogEmailSource = {
       kind: "email",
-      authAccountId: account.id,
+      connectionId: account.id,
       emailId: "",          // filled per-email during the sweep
       receivedAt: 0,
       from: account.email,
@@ -166,10 +160,10 @@ export class ImportService implements Disposable {
 
   /** The live (`in_progress` / `needs_input`) email-sweep log id for an
    *  account, if one is currently active. */
-  private findActiveEmailLog(authAccountId: string): string | null {
+  private findActiveEmailLog(connectionId: string): string | null {
     for (const logId of this.active.keys()) {
       const row = this.logRepo.get(logId)
-      if (row?.source.kind === "email" && row.source.authAccountId === authAccountId) {
+      if (row?.source.kind === "email" && row.source.connectionId === connectionId) {
         return logId
       }
     }
@@ -227,10 +221,10 @@ export class ImportService implements Disposable {
     if (!canResume) return null
 
     // Look up the auth account
-    const authRepo = this.fyredb.repo(authAccountEntity)
-    const account = authRepo.get(existingLog.source.authAccountId)
+    const authRepo = this.fyredb.repo(connectionEntity)
+    const account = authRepo.get(existingLog.source.connectionId)
     if (!account) {
-      log.import.error('resume failed: auth account %s not found', existingLog.source.authAccountId)
+      log.import.error('resume failed: auth account %s not found', existingLog.source.connectionId)
       return null
     }
 
@@ -340,7 +334,7 @@ export class ImportService implements Disposable {
   private async executeEmailImport(
     logId: string,
     ctx: ImportContext,
-    account: AuthAccount & BaseEntity,
+    account: Connection & BaseEntity,
   ): Promise<void> {
     try {
       const passwords = [...this.getUserSettings().filePasswords]
@@ -361,7 +355,7 @@ export class ImportService implements Disposable {
         if (newTxs.length > 0) {
           const descriptor: ImportSourceDescriptor = {
             kind: "email",
-            authAccountId: account.id,
+            connectionId: account.id,
             emailId: result.emailId,
             receivedAt: result.date,
             from: result.from,
@@ -479,7 +473,7 @@ export class ImportService implements Disposable {
       // Persist error on the email setting
       /* v8 ignore next -- account always carries an id */
       if (account.id) {
-        const settings = this.settingsRepo.query({ where: { authAccountId: account.id } })
+        const settings = this.settingsRepo.query({ where: { connectionId: account.id } })
         /* v8 ignore next -- the setting is created before the run, so it always exists */
         if (settings.length > 0) {
           this.settingsRepo.save({ ...settings[0], lastErrorLogId: logId })
@@ -524,7 +518,7 @@ export class ImportService implements Disposable {
   }
 
   /** Notify the user that a background email import is parked awaiting input. */
-  private notifyNeedsInput(logId: string, account: AuthAccount & BaseEntity): void {
+  private notifyNeedsInput(logId: string, account: Connection & BaseEntity): void {
     this.notifications.notify({
       kind: "import-needs-input",
       display: "warning",
@@ -622,7 +616,7 @@ export class ImportService implements Disposable {
 
   private createAccountFromEmail(
     emailResult: EmailResult,
-    account: AuthAccount & BaseEntity,
+    account: Connection & BaseEntity,
   ): string {
     const [bankId, offeringId] = emailResult.adapterId.split("/")
     const statement = toAccountStatement(emailResult.statement, emailResult.transactions)
@@ -638,7 +632,7 @@ export class ImportService implements Disposable {
   }
 
   /**
-   * Resolve the MoneyAccount for an email result, creating it only when no
+   * Resolve the Account for an email result, creating it only when no
    * match exists. Accounts are created lazily at commit time, so two emails
    * from the same account both arrive with `accountId: ""`; re-querying here
    * (the repo's in-memory store reflects a `save` synchronously) lets the
@@ -647,7 +641,7 @@ export class ImportService implements Disposable {
    */
   private resolveOrCreateEmailAccount(
     emailResult: EmailResult,
-    account: AuthAccount & BaseEntity,
+    account: Connection & BaseEntity,
   ): string {
     const [bankId] = emailResult.adapterId.split("/")
     const matches = findMatchingAccounts(this.accountRepo.query(), bankId, emailResult.kind, emailResult.accountDetails)
@@ -711,12 +705,12 @@ export class ImportService implements Disposable {
     })
   }
 
-  private getOrCreateEmailSetting(account: AuthAccount & BaseEntity): EmailImportSetting & BaseEntity {
-    const existing = this.settingsRepo.query({ where: { authAccountId: account.id } })
+  private getOrCreateEmailSetting(account: Connection & BaseEntity): EmailImportSetting & BaseEntity {
+    const existing = this.settingsRepo.query({ where: { connectionId: account.id } })
     if (existing.length > 0) return existing[0]
 
     const id = this.settingsRepo.save({
-      authAccountId: account.id,
+      connectionId: account.id,
       paused: false,
       importState: {},
     })

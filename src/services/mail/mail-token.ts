@@ -1,5 +1,5 @@
-import { clientAuth } from "@/lib/fyredb-config"
-import type { AuthAccount } from "@/services/entities"
+import { clientAuth } from "@/providers/fyredb-config"
+import type { Connection } from "@/entities"
 
 /** Refresh a token a little before it actually expires, to avoid races. */
 const EXPIRY_MARGIN_MS = 60_000
@@ -16,9 +16,9 @@ const DEFAULT_TTL_MS = 5 * 60_000
 export class MailTokenCache {
   private token: string | null = null
   private expiresAt = 0
-  private readonly account: AuthAccount
+  private readonly account: Connection
 
-  constructor(account: AuthAccount) {
+  constructor(account: Connection) {
     this.account = account
   }
 

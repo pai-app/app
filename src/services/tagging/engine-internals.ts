@@ -14,7 +14,7 @@ import { TAGGING } from "./constants";
 import { dice } from "./dice";
 import { classify, isWeakSignature, strengthOf } from "./strength";
 
-import type { TagRule } from "../entities/tag-rule";
+import type { TagRule } from "@/entities/tag-rule";
 import type {
   MatchVerdict,
   RuleDelta,

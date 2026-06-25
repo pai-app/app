@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach, vi } from "vitest"
 import type { FyreDb } from "@fyre-db/core"
 import { createTestFyreDb } from "../helpers/test-fyredb"
 import { SettingsService } from "@/services/settings-service"
-import { USER_SETTINGS_DEFAULTS } from "@/services/entities"
+import { USER_SETTINGS_DEFAULTS } from "@/entities"
 import { fiscalYearMonthKeys } from "@/lib/fiscal"
 
 describe("SettingsService", () => {

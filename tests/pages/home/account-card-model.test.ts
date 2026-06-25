@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest"
-import type { AccountStatement } from "@/services/entities"
+import type { AccountStatement } from "@/entities"
 import {
   balanceLabel,
   buildAccountCardModel,
   isCreditCard,
-} from "@/pages/home/account-card-model"
+} from "@/features/home/account-card-model"
 
 // A full credit-card snapshot — balance stored negative (liability), with the
 // credit-only extras populated.

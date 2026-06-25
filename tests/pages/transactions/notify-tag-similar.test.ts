@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { toast } from "sonner"
-import { notifyTagSimilar } from "@/pages/transactions/notify-tag-similar"
+import { notifyTagSimilar } from "@/features/transactions/notify-tag-similar"
 import type { SimilarFact } from "@/services/tagging/types"
 import type { TransactionsService } from "@/services/transactions-service"
 

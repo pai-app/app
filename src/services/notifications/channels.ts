@@ -1,5 +1,5 @@
 import type { NotificationChannel, NotificationDisplay } from "./registry"
-import type { Notification } from "@/services/entities/notification"
+import type { Notification } from "@/entities/notification"
 
 /**
  * Channel emitter registry. Non-persistent channels (toast, and later

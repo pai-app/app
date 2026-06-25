@@ -2,7 +2,7 @@ import { vi } from "vitest"
 
 /**
  * Web Storage polyfill for the node test environment. A few service modules
- * transitively import `@/lib/fyredb-config`, which reads `localStorage` (device
+ * transitively import `@/providers/fyredb-config`, which reads `localStorage` (device
  * id) at module-evaluation time and `sessionStorage` (one-shot OAuth creds) in
  * `ConnectionsService`'s constructor. This in-memory store makes those reads
  * harmless so the pure-TS services stay unit-testable without a DOM env.

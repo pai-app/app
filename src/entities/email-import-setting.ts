@@ -1,0 +1,55 @@
+import { defineEntity } from "@fyre-db/core"
+
+// ── Sliding-window cursor ───────────────────────────────
+
+/** Ported from old EmailImportProcessContext — marks a position in the
+ *  email timeline so successive sweeps don't re-scan. */
+export type EmailImportCursor = {
+  readonly date: number              // ms epoch
+  readonly emailId?: string          // tiebreaker within a day
+}
+
+export type EmailImportState = {
+  /**
+   * Newest email of the **current** (possibly interrupted) run. Captured once
+   * on the first page; becomes the next `endPoint` when the run completes.
+   */
+  readonly startPoint?: EmailImportCursor
+  /**
+   * Checkpoint — the last email actually processed. Persisted after every
+   * email so an interrupted run (crash / cancel / password prompt) resumes
+   * exactly where it stopped.
+   */
+  readonly currentPoint?: EmailImportCursor
+  /**
+   * High-water mark — newest email reached by the last *fully completed* run.
+   * Forward boundary that stops later runs from re-scanning old mail. Set only
+   * at completion (`endPoint = startPoint`).
+   */
+  readonly endPoint?: EmailImportCursor
+  readonly lastImportAt?: number     // ms epoch
+}
+
+/**
+ * Per-connected-account import configuration. Global — one row per
+ * `connectionId`. No `intervalMinutes` field yet (sync is manual);
+ * add it when background sync ships.
+ */
+export type EmailImportSetting = {
+  readonly connectionId: string     // → connectionEntity.id (also the entity id)
+  readonly paused: boolean
+  readonly importState: EmailImportState
+  /** Composite `importLog` id of the last failed run. Presence drives
+   *  "Resolve" in the UI and is cleared on next successful run. */
+  readonly lastErrorLogId?: string
+}
+
+export const emailImportSettingEntity = defineEntity<EmailImportSetting>(
+  "email-import-setting",
+  {
+    keyStrategy: "global",
+    // connectionId is a FyreDb composite id (e.g. "connection._.google:email:123")
+    // which contains dots — dots are reserved as FyreDb key separators, so replace them.
+    deriveId: (s) => s.connectionId.replaceAll(".", "-"),
+  },
+)

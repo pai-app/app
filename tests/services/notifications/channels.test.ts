@@ -5,7 +5,7 @@ import {
   type NotificationPayload,
 } from "@/services/notifications/channels"
 import { resolveDisplay } from "@/services/notifications/registry"
-import type { Notification } from "@/services/entities"
+import type { Notification } from "@/entities"
 
 const NOTE: Notification = { kind: "import-error", display: "info", title: "x" }
 

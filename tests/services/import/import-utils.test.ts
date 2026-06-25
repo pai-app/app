@@ -14,9 +14,9 @@ import {
   throwIfCancelled,
 } from "@/services/import/import-utils"
 import { ImportContext } from "@/services/import/import-context"
-import { transactionEntity } from "@/services/entities"
+import { transactionEntity } from "@/entities"
 import { createTestFyreDb } from "../../helpers/test-fyredb"
-import type { MoneyAccount } from "@/services/entities/money-account"
+import type { Account } from "@/entities/account"
 
 describe("accountNumbersMatch", () => {
   it("matches identical numbers", () => {
@@ -49,7 +49,7 @@ describe("accountNumbersMatch", () => {
   })
 })
 
-function account(over: Partial<MoneyAccount> & { id: string }): MoneyAccount & BaseEntity {
+function account(over: Partial<Account> & { id: string }): Account & BaseEntity {
   // `findMatchingAccounts` only reads id/bankId/kind/metadata; the rest of the
   // BaseEntity envelope is irrelevant to the test, so a minimal stub is cast
   // through `unknown` rather than constructing real HLC/version fields.
@@ -60,7 +60,7 @@ function account(over: Partial<MoneyAccount> & { id: string }): MoneyAccount & B
     bankId: "jupiter",
     metadata: {},
     ...over,
-  } as unknown as MoneyAccount & BaseEntity
+  } as unknown as Account & BaseEntity
 }
 
 describe("findMatchingAccounts", () => {

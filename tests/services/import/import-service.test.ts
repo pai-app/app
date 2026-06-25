@@ -23,16 +23,18 @@ import {
   importSourceEntity,
   importSourceMonthKey,
   transactionEntity,
-  moneyAccountEntity,
+  accountEntity,
   notificationEntity,
-  authAccountEntity,
+  connectionEntity,
   emailImportSettingEntity,
   userSettingsEntity,
-  type ImportLog,
-  type ImportLogStatus,
-  type MoneyAccount,
-  type AuthAccount,
-} from "@/services/entities"
+} from "@/entities"
+import type {
+  ImportLog,
+  ImportLogStatus,
+  Account,
+  Connection,
+} from "@/entities"
 import type { FileImportResult } from "@/services/import/file-import-context"
 import type {
   EmailResult,
@@ -94,7 +96,7 @@ function emailResult(over: Partial<EmailResult> = {}): EmailResult {
 
 const SUMMARY: EmailRunSummary = { newestAt: 1, cursorAt: 1, scanned: 1, imported: 1 }
 
-const EMAIL_ACCOUNT: AuthAccount = {
+const EMAIL_ACCOUNT: Connection = {
   provider: "google",
   feature: "email",
   userId: "user-1",
@@ -141,8 +143,8 @@ describe("ImportService", () => {
     makeService()
   }
 
-  function seedAuthAccount(over: Partial<AuthAccount> = {}): string {
-    return fyredb.repo(authAccountEntity).save({ ...EMAIL_ACCOUNT, ...over })
+  function seedConnection(over: Partial<Connection> = {}): string {
+    return fyredb.repo(connectionEntity).save({ ...EMAIL_ACCOUNT, ...over })
   }
 
   const waitForStatus = (logId: string, status: ImportLogStatus): Promise<void> =>
@@ -160,7 +162,7 @@ describe("ImportService", () => {
     await waitForStatus(logId, "completed")
 
     // A money account was created for the resolved bank.
-    const accounts = fyredb.repo(moneyAccountEntity).query()
+    const accounts = fyredb.repo(accountEntity).query()
     expect(accounts).toHaveLength(1)
     const account = accounts[0]
     expect(account.bankId).toBe("hdfc")
@@ -191,14 +193,14 @@ describe("ImportService", () => {
 
   it("file import (existing account): reuses the account and merges new metadata", async () => {
     await setup()
-    const accountId = fyredb.repo(moneyAccountEntity).save({
+    const accountId = fyredb.repo(accountEntity).save({
       kind: "bank",
       name: "HDFC",
       currency: "INR",
       bankId: "hdfc",
       offeringId: "savings",
       metadata: { accountNumber: ["1234567890"] },
-    } satisfies MoneyAccount)
+    } satisfies Account)
 
     runFileImportMock.mockResolvedValue(
       fileResult({
@@ -218,7 +220,7 @@ describe("ImportService", () => {
     await waitForStatus(logId, "completed")
 
     // No second account; the existing one gained the new metadata key.
-    const accounts = fyredb.repo(moneyAccountEntity).query()
+    const accounts = fyredb.repo(accountEntity).query()
     expect(accounts).toHaveLength(1)
     expect(accounts[0].id).toBe(accountId)
     expect(accounts[0].metadata["ifscCode"]).toEqual(["HDFC0001234"])
@@ -275,14 +277,14 @@ describe("ImportService", () => {
 
   it("startEmailSync: returns '' and creates no log for an unknown account", async () => {
     await setup()
-    const logId = svc.startEmailSync("auth-account._.nope")
+    const logId = svc.startEmailSync("connection._.nope")
     expect(logId).toBe("")
     expect(fyredb.repo(importLogEntity).query()).toHaveLength(0)
   })
 
   it("startEmailSync: a second trigger while active returns the same log id", async () => {
     await setup()
-    const accountId = seedAuthAccount()
+    const accountId = seedConnection()
     runEmailImportMock.mockReturnValue(new Promise<EmailRunSummary>(() => {})) // never settles
 
     const first = svc.startEmailSync(accountId)
@@ -295,7 +297,7 @@ describe("ImportService", () => {
 
   it("email sync commit path: resolves the account, writes a source + transactions, completes", async () => {
     await setup()
-    const accountId = seedAuthAccount()
+    const accountId = seedConnection()
     runEmailImportMock.mockImplementation(
       (_ctx: unknown, _account: unknown, _state: unknown, _pwds: unknown, _txRepo: unknown, hooks: EmailRunHooks) => {
         hooks.commitEmail(emailResult())
@@ -307,7 +309,7 @@ describe("ImportService", () => {
     await waitForStatus(logId, "completed")
 
     // Account lazily created from the email result.
-    const accounts = fyredb.repo(moneyAccountEntity).query()
+    const accounts = fyredb.repo(accountEntity).query()
     expect(accounts).toHaveLength(1)
     expect(accounts[0].bankId).toBe("hdfc")
 
@@ -378,14 +380,14 @@ describe("ImportService", () => {
 
   it("resume: revives a needs_input email log and re-invokes the email runner", async () => {
     await setup()
-    const accountId = seedAuthAccount()
+    const accountId = seedConnection()
     runEmailImportMock.mockReturnValue(new Promise<EmailRunSummary>(() => {})) // keep it parked
 
     const logId = fyredb.repo(importLogEntity).save({
       trigger: "manual",
       triggeredAt: Date.now(),
       status: "needs_input",
-      source: { kind: "email", authAccountId: accountId, emailId: "msg-9", receivedAt: TX_DATE, from: EMAIL_ACCOUNT.email, subject: "stmt" },
+      source: { kind: "email", connectionId: accountId, emailId: "msg-9", receivedAt: TX_DATE, from: EMAIL_ACCOUNT.email, subject: "stmt" },
       touchedAccountIds: [],
       counts: { parsed: 0, new: 0, duplicate: 0 },
       prompt: { kind: "password" },
@@ -419,7 +421,7 @@ describe("ImportService", () => {
       trigger: "manual",
       triggeredAt: Date.now(),
       status: "completed",
-      source: { kind: "email", authAccountId: "a", emailId: "", receivedAt: 0, from: "x", subject: "" },
+      source: { kind: "email", connectionId: "a", emailId: "", receivedAt: 0, from: "x", subject: "" },
       touchedAccountIds: [],
       counts: { parsed: 0, new: 0, duplicate: 0 },
     } satisfies ImportLog)
@@ -430,7 +432,7 @@ describe("ImportService", () => {
       trigger: "manual",
       triggeredAt: Date.now(),
       status: "needs_input",
-      source: { kind: "email", authAccountId: "auth-account._.ghost", emailId: "", receivedAt: 0, from: "x", subject: "" },
+      source: { kind: "email", connectionId: "connection._.ghost", emailId: "", receivedAt: 0, from: "x", subject: "" },
       touchedAccountIds: [],
       counts: { parsed: 0, new: 0, duplicate: 0 },
     } satisfies ImportLog)
@@ -441,7 +443,7 @@ describe("ImportService", () => {
 
   it("email sync: persists the import-setting cursor on saveState", async () => {
     await setup()
-    const accountId = seedAuthAccount()
+    const accountId = seedConnection()
     runEmailImportMock.mockImplementation(
       (_ctx: unknown, _account: unknown, _state: unknown, _pwds: unknown, _txRepo: unknown, hooks: EmailRunHooks) => {
         hooks.saveState({ currentPoint: { date: TX_DATE } })
@@ -452,13 +454,13 @@ describe("ImportService", () => {
     const logId = svc.startEmailSync(accountId)
     await waitForStatus(logId, "completed")
 
-    const setting = fyredb.repo(emailImportSettingEntity).query({ where: { authAccountId: accountId } })[0]
+    const setting = fyredb.repo(emailImportSettingEntity).query({ where: { connectionId: accountId } })[0]
     expect(setting.importState.currentPoint?.date).toBe(TX_DATE)
   })
 
   it("email sync: reports per-page progress onto the log's emailRun snapshot", async () => {
     await setup()
-    const accountId = seedAuthAccount()
+    const accountId = seedConnection()
     runEmailImportMock.mockImplementation(
       (_ctx: unknown, _account: unknown, _state: unknown, _pwds: unknown, _txRepo: unknown, hooks: EmailRunHooks) => {
         hooks.reportProgress({ newestAt: 100, cursorAt: 60, targetAt: 10, scanned: 3, imported: 1, currentFrom: "alerts@hdfcbank.net" })
@@ -475,15 +477,15 @@ describe("ImportService", () => {
 
   it("email sync: a parsed email reuses a matching account and merges all metadata fields", async () => {
     await setup()
-    const accountId = seedAuthAccount()
-    const moneyId = fyredb.repo(moneyAccountEntity).save({
+    const accountId = seedConnection()
+    const moneyId = fyredb.repo(accountEntity).save({
       kind: "bank",
       name: "HDFC",
       currency: "INR",
       bankId: "hdfc",
       offeringId: "savings",
       metadata: { accountNumber: ["1234567890"] },
-    } satisfies MoneyAccount)
+    } satisfies Account)
 
     runEmailImportMock.mockImplementation(
       (_ctx: unknown, _account: unknown, _state: unknown, _pwds: unknown, _txRepo: unknown, hooks: EmailRunHooks) => {
@@ -507,9 +509,9 @@ describe("ImportService", () => {
     const logId = svc.startEmailSync(accountId)
     await waitForStatus(logId, "completed")
 
-    const accounts = fyredb.repo(moneyAccountEntity).query()
+    const accounts = fyredb.repo(accountEntity).query()
     expect(accounts).toHaveLength(1) // reused, not duplicated
-    const merged = fyredb.repo(moneyAccountEntity).get(moneyId)
+    const merged = fyredb.repo(accountEntity).get(moneyId)
     expect(merged?.metadata["ifscCode"]).toEqual(["HDFC0001234"])
     expect(merged?.metadata["swiftCode"]).toEqual(["HDFCINBB"])
     expect(merged?.metadata["micrCode"]).toEqual(["400240001"])
@@ -519,7 +521,7 @@ describe("ImportService", () => {
 
   it("email sync password loop: parks on needs_input, notifies, then resumes to completion on answer", async () => {
     await setup()
-    const accountId = seedAuthAccount()
+    const accountId = seedConnection()
     let calls = 0
     runEmailImportMock.mockImplementation(
       (_ctx: unknown, _account: unknown, _state: unknown, _pwds: unknown, _txRepo: unknown, hooks: EmailRunHooks) => {
@@ -549,13 +551,13 @@ describe("ImportService", () => {
 
   it("email sync error: marks the log failed and records lastErrorLogId on the setting", async () => {
     await setup()
-    const accountId = seedAuthAccount()
+    const accountId = seedConnection()
     runEmailImportMock.mockRejectedValue(new Error("mailbox unreachable"))
 
     const logId = svc.startEmailSync(accountId)
     await waitForStatus(logId, "failed")
 
-    const setting = fyredb.repo(emailImportSettingEntity).query({ where: { authAccountId: accountId } })[0]
+    const setting = fyredb.repo(emailImportSettingEntity).query({ where: { connectionId: accountId } })[0]
     expect(setting.lastErrorLogId).toBe(logId)
     expect(fyredb.repo(notificationEntity).query().some((n) => n.kind === "import-error")).toBe(true)
   })
@@ -634,7 +636,7 @@ describe("ImportService", () => {
     const logId = svc.startFileImport(fakeFile())
     await waitForStatus(logId, "completed")
 
-    const account = fyredb.repo(moneyAccountEntity).query()[0]
+    const account = fyredb.repo(accountEntity).query()[0]
     expect(account.statement).toEqual({
       asOf: STMT_NEW,
       balance: -500000,
@@ -646,7 +648,7 @@ describe("ImportService", () => {
 
   it("email sync: persists the statement snapshot on a newly created account", async () => {
     await setup()
-    const accountId = seedAuthAccount()
+    const accountId = seedConnection()
     runEmailImportMock.mockImplementation(
       (_ctx: unknown, _account: unknown, _state: unknown, _pwds: unknown, _txRepo: unknown, hooks: EmailRunHooks) => {
         hooks.commitEmail(emailResult({ statement: { asOf: STMT_NEW, closingBalance: 123456 } }))
@@ -657,14 +659,14 @@ describe("ImportService", () => {
     const logId = svc.startEmailSync(accountId)
     await waitForStatus(logId, "completed")
 
-    const created = fyredb.repo(moneyAccountEntity).query()
+    const created = fyredb.repo(accountEntity).query()
     expect(created).toHaveLength(1)
     expect(created[0].statement).toEqual({ asOf: STMT_NEW, balance: 123456 })
   })
 
   it("file import latest-wins: a newer snapshot replaces, an older one is ignored", async () => {
     await setup()
-    const accountId = fyredb.repo(moneyAccountEntity).save({
+    const accountId = fyredb.repo(accountEntity).save({
       kind: "bank",
       name: "HDFC",
       currency: "INR",
@@ -672,7 +674,7 @@ describe("ImportService", () => {
       offeringId: "savings",
       metadata: { accountNumber: ["1234567890"] },
       statement: { asOf: STMT_OLD, balance: 100000 },
-    } satisfies MoneyAccount)
+    } satisfies Account)
 
     const reuse = (closingBalance: number, asOf: number): FileImportResult =>
       fileResult({
@@ -692,7 +694,7 @@ describe("ImportService", () => {
     runFileImportMock.mockResolvedValueOnce(reuse(50000, STMT_OLD - 1))
     let logId = svc.startFileImport(fakeFile())
     await waitForStatus(logId, "completed")
-    expect(fyredb.repo(moneyAccountEntity).get(accountId)?.statement).toEqual({
+    expect(fyredb.repo(accountEntity).get(accountId)?.statement).toEqual({
       asOf: STMT_OLD,
       balance: 100000,
     })
@@ -701,7 +703,7 @@ describe("ImportService", () => {
     runFileImportMock.mockResolvedValueOnce(reuse(75000, STMT_NEW))
     logId = svc.startFileImport(fakeFile())
     await waitForStatus(logId, "completed")
-    expect(fyredb.repo(moneyAccountEntity).get(accountId)?.statement).toEqual({
+    expect(fyredb.repo(accountEntity).get(accountId)?.statement).toEqual({
       asOf: STMT_NEW,
       balance: 75000,
     })
@@ -709,8 +711,8 @@ describe("ImportService", () => {
 
   it("email sync out-of-order backfill: an older statement imported later does not regress the balance", async () => {
     await setup()
-    const accountId = seedAuthAccount()
-    const moneyId = fyredb.repo(moneyAccountEntity).save({
+    const accountId = seedConnection()
+    const moneyId = fyredb.repo(accountEntity).save({
       kind: "bank",
       name: "HDFC",
       currency: "INR",
@@ -718,7 +720,7 @@ describe("ImportService", () => {
       offeringId: "savings",
       metadata: { accountNumber: ["1234567890"] },
       statement: { asOf: STMT_NEW, balance: 75000 },
-    } satisfies MoneyAccount)
+    } satisfies Account)
 
     runEmailImportMock.mockImplementation(
       (_ctx: unknown, _account: unknown, _state: unknown, _pwds: unknown, _txRepo: unknown, hooks: EmailRunHooks) => {
@@ -731,8 +733,8 @@ describe("ImportService", () => {
     await waitForStatus(logId, "completed")
 
     // Reused, not duplicated; the newer stored snapshot is preserved.
-    expect(fyredb.repo(moneyAccountEntity).query()).toHaveLength(1)
-    expect(fyredb.repo(moneyAccountEntity).get(moneyId)?.statement).toEqual({
+    expect(fyredb.repo(accountEntity).query()).toHaveLength(1)
+    expect(fyredb.repo(accountEntity).get(moneyId)?.statement).toEqual({
       asOf: STMT_NEW,
       balance: 75000,
     })
@@ -762,7 +764,7 @@ describe("ImportService", () => {
 
     const logId = svc.startFileImport(fakeFile())
     await waitForStatus(logId, "completed")
-    expect(fyredb.repo(moneyAccountEntity).query()[0].statement).toEqual({ asOf: d2, balance: 90000 })
+    expect(fyredb.repo(accountEntity).query()[0].statement).toEqual({ asOf: d2, balance: 90000 })
   })
 
   it("no snapshot when the summary lacks a closing balance", async () => {
@@ -782,7 +784,7 @@ describe("ImportService", () => {
 
     const logId = svc.startFileImport(fakeFile())
     await waitForStatus(logId, "completed")
-    expect(fyredb.repo(moneyAccountEntity).query()[0].statement).toBeUndefined()
+    expect(fyredb.repo(accountEntity).query()[0].statement).toBeUndefined()
   })
 
   it("no snapshot when the summary omits asOf and there are no transactions", async () => {
@@ -802,7 +804,7 @@ describe("ImportService", () => {
 
     const logId = svc.startFileImport(fakeFile())
     await waitForStatus(logId, "completed")
-    expect(fyredb.repo(moneyAccountEntity).query()[0].statement).toBeUndefined()
+    expect(fyredb.repo(accountEntity).query()[0].statement).toBeUndefined()
   })
 
   it("file import: carries the available balance onto the statement snapshot", async () => {
@@ -822,7 +824,7 @@ describe("ImportService", () => {
 
     const logId = svc.startFileImport(fakeFile())
     await waitForStatus(logId, "completed")
-    expect(fyredb.repo(moneyAccountEntity).query()[0].statement).toEqual({
+    expect(fyredb.repo(accountEntity).query()[0].statement).toEqual({
       asOf: STMT_NEW,
       balance: 90000,
       available: 85000,
@@ -863,7 +865,7 @@ describe("ImportService", () => {
     await setup()
     runFileImportMock.mockResolvedValue(
       fileResult({
-        accountId: "money-account._.ghost",
+        accountId: "account._.ghost",
         newAccount: false,
         transactions: [],
         newCount: 0,
@@ -883,7 +885,7 @@ describe("ImportService", () => {
     await waitForStatus(logId, "completed")
 
     // No account exists for the ghost id, so both merges short-circuit.
-    expect(fyredb.repo(moneyAccountEntity).get("money-account._.ghost")).toBeUndefined()
+    expect(fyredb.repo(accountEntity).get("account._.ghost")).toBeUndefined()
   })
 
   it("import error: coerces a non-Error rejection to a string message", async () => {
@@ -909,7 +911,7 @@ describe("ImportService", () => {
 
   it("resume: revives a FAILED email log whose error was password-required", async () => {
     await setup()
-    const accountId = seedAuthAccount()
+    const accountId = seedConnection()
     runEmailImportMock.mockReturnValue(new Promise<EmailRunSummary>(() => {})) // keep it parked
 
     const logId = fyredb.repo(importLogEntity).save({
@@ -917,7 +919,7 @@ describe("ImportService", () => {
       triggeredAt: Date.now(),
       status: "failed",
       error: { kind: "password-required", message: "locked" },
-      source: { kind: "email", authAccountId: accountId, emailId: "m1", receivedAt: TX_DATE, from: EMAIL_ACCOUNT.email, subject: "s" },
+      source: { kind: "email", connectionId: accountId, emailId: "m1", receivedAt: TX_DATE, from: EMAIL_ACCOUNT.email, subject: "s" },
       touchedAccountIds: [],
       counts: { parsed: 0, new: 0, duplicate: 0 },
     } satisfies ImportLog)
@@ -928,7 +930,7 @@ describe("ImportService", () => {
 
   it("email sync: names a new account after the auth email when the adapter has no bank id", async () => {
     await setup()
-    const accountId = seedAuthAccount()
+    const accountId = seedConnection()
     runEmailImportMock.mockImplementation(
       (_ctx: unknown, _account: unknown, _state: unknown, _pwds: unknown, _txRepo: unknown, hooks: EmailRunHooks) => {
         hooks.commitEmail(emailResult({ adapterId: "", accountDetails: { currency: "INR" } }))
@@ -939,14 +941,14 @@ describe("ImportService", () => {
     const logId = svc.startEmailSync(accountId)
     await waitForStatus(logId, "completed")
 
-    const created = fyredb.repo(moneyAccountEntity).query()
+    const created = fyredb.repo(accountEntity).query()
     expect(created).toHaveLength(1)
     expect(created[0].name).toBe(EMAIL_ACCOUNT.email)
   })
 
   it("email sync: cancelling while parked on a password prompt cancels the import", async () => {
     await setup()
-    const accountId = seedAuthAccount()
+    const accountId = seedConnection()
     runEmailImportMock.mockRejectedValue(new EmailPasswordError("msg-locked", new Error("password required")))
 
     const logId = svc.startEmailSync(accountId)
@@ -960,7 +962,7 @@ describe("ImportService", () => {
 
   it("email sync: a non-password answer to a password prompt fails the import", async () => {
     await setup()
-    const accountId = seedAuthAccount()
+    const accountId = seedConnection()
     runEmailImportMock.mockRejectedValue(new EmailPasswordError("msg-locked", new Error("password required")))
 
     const logId = svc.startEmailSync(accountId)
@@ -974,7 +976,7 @@ describe("ImportService", () => {
 
   it("startEmailSync: ignores an unrelated active file import when checking for a live sweep", async () => {
     await setup()
-    const accountId = seedAuthAccount()
+    const accountId = seedConnection()
     runFileImportMock.mockReturnValue(new Promise<FileImportResult>(() => {})) // file stays in flight
     runEmailImportMock.mockReturnValue(new Promise<EmailRunSummary>(() => {}))
 
@@ -987,7 +989,7 @@ describe("ImportService", () => {
 
   it("email sync: an email yielding zero new transactions writes no source row", async () => {
     await setup()
-    const accountId = seedAuthAccount()
+    const accountId = seedConnection()
     runEmailImportMock.mockImplementation(
       (_ctx: unknown, _account: unknown, _state: unknown, _pwds: unknown, _txRepo: unknown, hooks: EmailRunHooks) => {
         hooks.commitEmail(emailResult({ transactions: [hashedTx({ hash: "dup", isNew: false })], newCount: 0, duplicateCount: 1 }))

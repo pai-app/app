@@ -3,8 +3,9 @@ import { firstValueFrom } from "rxjs"
 import type { FyreDb } from "@fyre-db/core"
 import { createTestFyreDb } from "../helpers/test-fyredb"
 import { TransactionsService } from "@/services/transactions-service"
-import { transactionEntity, tagRuleEntity, type Transaction } from "@/services/entities"
-import { importSourceEntity } from "@/services/entities/import-source"
+import { transactionEntity, tagRuleEntity } from "@/entities"
+import type { Transaction } from "@/entities"
+import { importSourceEntity } from "@/entities/import-source"
 
 const JAN = "2026-01"
 

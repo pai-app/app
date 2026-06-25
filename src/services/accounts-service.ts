@@ -2,7 +2,7 @@
  * AccountsService — the per-tenant domain service for money accounts. One
  * instance per `FyreDb` (the provider owns the rebuild on tenant switch).
  *
- * It subscribes to the `MoneyAccount` repo once in the constructor and projects
+ * It subscribes to the `Account` repo once in the constructor and projects
  * each emission into two UI-safe, pure-data views: the masked account list
  * (`accounts$`) and the synthetic "account tags" (`accountTags$`) — the same
  * read-time projection the old `use-load-accounts` / `use-load-tags` hooks did,
@@ -12,70 +12,13 @@
 
 import { BehaviorSubject, Subscription } from "rxjs"
 import type { BaseEntity, FyreDb, RepositoryType as Repository } from "@fyre-db/core"
-import {
-  moneyAccountEntity,
-  type AccountStatement,
-  type MoneyAccount,
-  type MoneyAccountKind,
-} from "@/services/entities"
+import { accountEntity } from "@/entities"
+import type { Account, AccountRow } from "@/entities"
 import type { Disposable, ReadonlySubject } from "@/services/types"
+import type { AccountView } from "@/views/account-view"
+import type { AccountTagData } from "@/services/account-tag-data"
 
-/** A money account as the UI sees it — never the raw row. */
-export type AccountView = {
-  readonly id: string
-  readonly name: string
-  readonly kind: MoneyAccountKind
-  readonly icon?: string
-  readonly currency: string
-  readonly maskedNumber?: string // "****1234" from metadata.accountNumber, else undefined
-  readonly bankId?: string
-  readonly statement?: AccountStatement // latest closing-figure snapshot, if any
-  readonly archived: boolean
-}
-
-/**
- * Full, on-demand account detail for verification surfaces (the home card).
- * The ONLY view that carries raw `metadata` out of the service — kept explicit
- * and read synchronously, never streamed.
- */
-export type AccountDetails = {
-  readonly id: string
-  readonly name: string
-  readonly kind: MoneyAccountKind
-  readonly icon?: string
-  readonly currency: string
-  readonly statement?: AccountStatement
-  readonly bankId?: string
-  readonly offeringId?: string
-  readonly archived: boolean
-  readonly metadata: Record<string, readonly string[]>
-}
-
-/**
- * The structural subset of a money account the account icon needs. Both the raw
- * `MoneyAccount` row and the UI-safe `AccountView` satisfy this, so every call
- * site — raw-row or view-model — works without conversion. Lives in the service
- * layer so views (and synthetic account tags) can carry it without the UI
- * depending back on the service.
- */
-export type AccountIconData = {
-  readonly icon?: string
-  readonly bankId?: string
-  readonly kind: MoneyAccountKind
-}
-
-/** Pure account-tag data (the React icon is reattached at the UI edge). */
-export type AccountTagData = {
-  readonly id: string // `account-<accountId>`
-  readonly accountId: string
-  readonly name: string // "Name ****1234"
-  readonly icon?: string
-  readonly kind: MoneyAccountKind
-  readonly bankId?: string
-  readonly parent: "system-tag-selftransfer"
-}
-
-type AccountRow = MoneyAccount & BaseEntity
+type StoredAccount = Account & BaseEntity
 
 // `metadata` is typed non-optional, but legacy rows created before it became
 // mandatory may omit it (and individual keys) at runtime. These helpers take
@@ -103,23 +46,23 @@ function firstOf(list: readonly string[]): string | undefined {
 }
 
 /** Null-safe read of an account's stored numbers (legacy rows may lack metadata). */
-function accountNumbersOf(row: AccountRow): readonly string[] {
+function accountNumbersOf(row: StoredAccount): readonly string[] {
   return valuesFor(row.metadata, "accountNumber")
 }
 
 /** First stored account number, masked to "****" + last 4 (≥ 4 digits), else undefined. */
-function maskAccountNumber(row: AccountRow): string | undefined {
+function maskAccountNumber(row: StoredAccount): string | undefined {
   const first = firstOf(accountNumbersOf(row))
   if (first === undefined || first.length < 4) return undefined
   return `****${first.slice(-4)}`
 }
 
 /** Whether an account carries a full account number (length ≥ 4) — tag-worthy. */
-function hasFullDetails(row: AccountRow): boolean {
+function hasFullDetails(row: StoredAccount): boolean {
   return maskAccountNumber(row) !== undefined
 }
 
-function toAccountView(row: AccountRow): AccountView {
+function toAccountView(row: StoredAccount): AccountView {
   return {
     id: row.id,
     name: row.name,
@@ -133,7 +76,7 @@ function toAccountView(row: AccountRow): AccountView {
   }
 }
 
-function toAccountDetails(row: AccountRow): AccountDetails {
+function toAccountDetails(row: StoredAccount): AccountRow {
   return {
     id: row.id,
     name: row.name,
@@ -148,7 +91,7 @@ function toAccountDetails(row: AccountRow): AccountDetails {
   }
 }
 
-function toAccountTagData(row: AccountRow): AccountTagData {
+function toAccountTagData(row: StoredAccount): AccountTagData {
   const masked = maskAccountNumber(row)
   // Only invoked for rows passing `hasFullDetails`, so `masked` is always
   // defined here; the bare-name fallback is unreachable.
@@ -166,15 +109,15 @@ function toAccountTagData(row: AccountRow): AccountTagData {
 }
 
 export class AccountsService implements Disposable {
-  private readonly repo: Repository<MoneyAccount>
+  private readonly repo: Repository<Account>
   private readonly subs = new Subscription()
-  private current: readonly AccountRow[] = []
+  private current: readonly StoredAccount[] = []
 
   private readonly accounts = new BehaviorSubject<readonly AccountView[]>([])
   private readonly accountTags = new BehaviorSubject<readonly AccountTagData[]>([])
 
   constructor(fyredb: FyreDb) {
-    this.repo = fyredb.repo(moneyAccountEntity)
+    this.repo = fyredb.repo(accountEntity)
     this.subs.add(
       this.repo.observeQuery().subscribe((rows) => {
         this.current = rows
@@ -200,18 +143,18 @@ export class AccountsService implements Disposable {
   }
 
   /** On-demand: full account detail for verification surfaces, or undefined. */
-  getAccountDetails(id: string): AccountDetails | undefined {
+  getAccountDetails(id: string): AccountRow | undefined {
     const row = this.current.find((r) => r.id === id)
     if (row === undefined) return undefined
     return toAccountDetails(row)
   }
 
   // ── Ops ──────────────────────────────────────────────────
-  create(input: MoneyAccount): string {
+  create(input: Account): string {
     return this.repo.save(input)
   }
 
-  update(id: string, patch: Partial<MoneyAccount>): void {
+  update(id: string, patch: Partial<Account>): void {
     const row = this.repo.get(id)
     if (row === undefined) return
     this.repo.save({ ...row, ...patch })

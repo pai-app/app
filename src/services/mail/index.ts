@@ -1,4 +1,4 @@
-import type { AuthAccount } from "@/services/entities"
+import type { Connection } from "@/entities"
 import { MICROSOFT_AUTH_NAME } from "@shared/providers"
 import { GmailProvider } from "./gmail-provider"
 import { OutlookProvider } from "./outlook-provider"
@@ -18,7 +18,7 @@ export type {
  * `account.provider`. This is the single seam between the email-sync logic and
  * the underlying Gmail / Microsoft Graph APIs.
  */
-export function getMailProvider(account: AuthAccount): MailProvider {
+export function getMailProvider(account: Connection): MailProvider {
   return account.provider === MICROSOFT_AUTH_NAME
     ? new OutlookProvider(account)
     : new GmailProvider(account)

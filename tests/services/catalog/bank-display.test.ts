@@ -6,7 +6,7 @@ import {
   KIND_DISPLAY,
   getBankDisplay,
   getOfferingDisplay,
-} from "@/services/catalog/bank-display"
+} from "@/catalog/bank-display"
 
 /**
  * These tests pin `BANK_DISPLAY` to the package's `BANK_CATALOG` so the two
