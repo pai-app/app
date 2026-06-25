@@ -31,7 +31,7 @@ import {
 import { buildSignature, extractUpiId, keyOf } from "./extract";
 
 import type { Candidate } from "./engine-internals";
-import type { TagRule } from "../entities/tag-rule";
+import type { TagRule } from "@/entities/tag-rule";
 import type {
   MatchVerdict,
   RuleDelta,

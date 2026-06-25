@@ -4,7 +4,7 @@ import { TaggingEngine } from "@/services/tagging/engine"
 
 import { createFakeTaggingData, makeRule, makeTx } from "./fake-tagging-data"
 
-import type { TagRule } from "@/services/entities/tag-rule"
+import type { TagRule } from "@/entities/tag-rule"
 import type { RuleDelta, TaggingRule, TaggingTransaction } from "@/services/tagging/types"
 
 /**

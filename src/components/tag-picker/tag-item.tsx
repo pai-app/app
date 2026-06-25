@@ -1,6 +1,6 @@
-import type { TagView } from "@/services/tags-service"
+import type { TagView } from "@/entities/tag-view"
 import { cn } from "@/lib/utils"
-import { TagIcon } from "@/ui/tag-icon"
+import { TagIcon } from "@/components/tag-icon"
 import { REMOVE_TAG_ID, type TagWithChildren } from "./types"
 
 export type TagItemProps = {

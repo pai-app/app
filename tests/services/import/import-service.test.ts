@@ -28,11 +28,13 @@ import {
   authAccountEntity,
   emailImportSettingEntity,
   userSettingsEntity,
-  type ImportLog,
-  type ImportLogStatus,
-  type MoneyAccount,
-  type AuthAccount,
-} from "@/services/entities"
+} from "@/services/store/schema"
+import type {
+  ImportLog,
+  ImportLogStatus,
+  MoneyAccount,
+  AuthAccount,
+} from "@/entities"
 import type { FileImportResult } from "@/services/import/file-import-context"
 import type {
   EmailResult,

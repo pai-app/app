@@ -10,8 +10,8 @@
 import { buildSignature, extractUpiId, keyOf } from "@/services/tagging/extract"
 
 import type { BaseEntity, Hlc } from "@fyre-db/core"
-import type { TagRule } from "@/services/entities/tag-rule"
-import type { Transaction } from "@/services/entities/transaction"
+import type { TagRule } from "@/entities/tag-rule"
+import type { Transaction } from "@/entities/transaction"
 import type { TaggingData, TaggingRule, TaggingTransaction } from "@/services/tagging/types"
 
 const HLC: Hlc = { timestamp: 0, counter: 0, nodeId: "test" }

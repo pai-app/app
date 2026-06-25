@@ -2,11 +2,12 @@ import { describe, it, expect, afterEach, vi } from "vitest"
 import type { FyreDb } from "@fyre-db/core"
 import { createTestFyreDb } from "../helpers/test-fyredb"
 import { ConnectionsService } from "@/services/connections-service"
-import { authAccountEntity, type AuthAccount } from "@/services/entities"
+import { authAccountEntity } from "@/services/store/schema"
+import type { AuthAccount } from "@/entities"
 import {
   emailImportSettingEntity,
-  type EmailImportSetting,
-} from "@/services/entities/email-import-setting"
+} from "@/services/store/schema/email-import-setting"
+import type { EmailImportSetting } from "@/entities/email-import-setting"
 import { FEATURE_CREDS_KEY } from "@shared/providers"
 
 // `ConnectionsService` imports `clientAuth` from the app bootstrap module; mock
@@ -16,7 +17,7 @@ const { googleLogin, microsoftLogin } = vi.hoisted(() => ({
   googleLogin: vi.fn(),
   microsoftLogin: vi.fn(),
 }))
-vi.mock("@/lib/fyredb-config", () => ({
+vi.mock("@/providers/fyredb-config", () => ({
   clientAuth: {
     supportedAuths: () => [
       { name: "google", login: googleLogin },

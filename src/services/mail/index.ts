@@ -1,4 +1,4 @@
-import type { AuthAccount } from "@/services/entities"
+import type { AuthAccount } from "@/entities"
 import { MICROSOFT_AUTH_NAME } from "@shared/providers"
 import { GmailProvider } from "./gmail-provider"
 import { OutlookProvider } from "./outlook-provider"

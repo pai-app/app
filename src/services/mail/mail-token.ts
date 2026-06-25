@@ -1,5 +1,5 @@
-import { clientAuth } from "@/lib/fyredb-config"
-import type { AuthAccount } from "@/services/entities"
+import { clientAuth } from "@/providers/fyredb-config"
+import type { AuthAccount } from "@/entities"
 
 /** Refresh a token a little before it actually expires, to avoid races. */
 const EXPIRY_MARGIN_MS = 60_000

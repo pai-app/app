@@ -20,19 +20,15 @@
 import { BehaviorSubject, Subscription, type Observable } from "rxjs"
 import type { FyreDb, BaseEntity, RepositoryType as Repository } from "@fyre-db/core"
 
-import {
-  transactionEntity,
-  type Transaction,
-} from "@/services/entities/transaction"
-import {
-  tagRuleEntity,
-  type TagRule,
-} from "@/services/entities/tag-rule"
-import {
-  importSourceEntity,
-  type ImportSource,
-  type ImportSourceDescriptor,
-} from "@/services/entities/import-source"
+import { transactionEntity } from "@/services/store/schema/transaction"
+import type { Transaction, TransactionRow } from "@/entities/transaction"
+import { tagRuleEntity } from "@/services/store/schema/tag-rule"
+import type { TagRule } from "@/entities/tag-rule"
+import { importSourceEntity } from "@/services/store/schema/import-source"
+import type {
+  ImportSource,
+  ImportSourceDescriptor,
+} from "@/entities/import-source"
 import { TaggingEngine } from "@/services/tagging/engine"
 import { buildSignature, extractUpiId, keyOf } from "@/services/tagging/extract"
 import type {
@@ -50,8 +46,9 @@ export type TagResult = { readonly similar?: SimilarFact }
 /** A persisted `TagRule` row (carries the store's `BaseEntity` identity). */
 export type TagRuleRow = TagRule & BaseEntity
 
-/** A persisted `Transaction` row (carries the store's `BaseEntity` identity). */
-export type TransactionRow = Transaction & BaseEntity
+/** Re-export the pure UI transaction row (canonical def lives in
+ *  `@/entities/transaction`) so other services can keep importing it here. */
+export type { TransactionRow }
 
 export class TransactionsService implements TaggingData, Disposable {
   // ── Repos (synchronous, live over the in-memory store) ──
@@ -225,11 +222,13 @@ export class TransactionsService implements TaggingData, Disposable {
    * on-demand sweep over partitions the caller has hydrated (e.g. the current
    * fiscal year) — never overwrites an existing tag. Returns the number tagged.
    */
-  applyRulesToTransactions(txs: readonly TaggingTransaction[]): number {
+  applyRulesToTransactions(txs: readonly TransactionRow[]): number {
     const now = Date.now()
     let applied = 0
-    for (const tx of txs) {
-      if (tx.tagId !== undefined) continue // never clobber an existing tag
+    for (const row of txs) {
+      if (row.tagId !== undefined) continue // never clobber an existing tag
+      const tx = this.txRepo.get(row.id)
+      if (!tx) continue
       const verdict = this.engine.matchTransaction(tx, now)
       if (verdict.kind !== "auto") continue
       this.applyOutcome(this.engine.applyAutoTag(tx, verdict, now, this.resolveAdapterId(tx)))

@@ -12,11 +12,11 @@
 
 import { BehaviorSubject, Subscription } from "rxjs"
 import type { BaseEntity, FyreDb, RepositoryType as Repository } from "@fyre-db/core"
-import {
-  notificationEntity,
-  type Notification,
-  type NotificationRef,
-} from "@/services/entities/notification"
+import { notificationEntity } from "@/services/store/schema/notification"
+import type {
+  Notification,
+  NotificationRef,
+} from "@/entities/notification"
 import { resolveDisplay, resolveKind, type NotificationChannel } from "./registry"
 import { emitToChannel, type NotificationPayload } from "./channels"
 import type { Disposable, ReadonlySubject } from "@/services/types"

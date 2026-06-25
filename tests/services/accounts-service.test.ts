@@ -2,7 +2,8 @@ import { describe, it, expect, afterEach } from "vitest"
 import type { FyreDb } from "@fyre-db/core"
 import { createTestFyreDb } from "../helpers/test-fyredb"
 import { AccountsService } from "@/services/accounts-service"
-import { moneyAccountEntity, type MoneyAccount } from "@/services/entities"
+import { moneyAccountEntity } from "@/services/store/schema"
+import type { MoneyAccount } from "@/entities"
 
 const SAMPLE: MoneyAccount = {
   kind: "bank",

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
-import { Navbar } from "@/components/navbar/navbar"
+import { Navbar } from "@/features/shell/navbar"
 import { Dropzone } from "@/components/import/dropzone"
-import { ImportSurface } from "@/components/import/import-surface"
+import { ImportSurface } from "@/features/import/import-surface"
 import { BreadcrumbBar } from "@/components/breadcrumb-bar"
 import { useApp } from "@/providers/app-provider"
 

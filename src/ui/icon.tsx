@@ -1,7 +1,7 @@
 import { useEffect, useState, type ComponentType, type SVGProps } from 'react';
 import { loadIcon } from '@/lib/icons/icon-loader';
 import type { IconComponent } from '@/lib/icons';
-import { log } from '@/log';
+import { log } from '@/lib/log';
 
 export type IconProps = SVGProps<SVGSVGElement> & {
   readonly name: string;

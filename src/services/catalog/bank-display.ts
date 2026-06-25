@@ -18,7 +18,7 @@
  */
 
 import type { IconKey } from "@/lib/icons"
-import type { MoneyAccountKind } from "@/services/entities/money-account"
+import type { MoneyAccountKind } from "@/entities/money-account"
 
 /** Display details for a single offering (product) within a bank. */
 export type OfferingDisplay = {

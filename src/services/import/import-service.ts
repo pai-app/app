@@ -1,46 +1,41 @@
 import type { FyreDb, BaseEntity, RepositoryType as Repository, SingletonRepositoryType as SingletonRepository } from "@fyre-db/core"
 import type { Observable } from "rxjs"
-import {
-  importLogEntity,
-  type ImportLog,
-  type ImportLogFileSource,
-  type ImportLogEmailSource,
-} from "@/services/entities/import-log"
-import {
-  importSourceEntity,
-  importSourceMonthKey,
-  type ImportSource,
-  type ImportSourceDescriptor,
-} from "@/services/entities/import-source"
-import {
-  emailImportSettingEntity,
-  type EmailImportSetting,
-  type EmailImportState,
-} from "@/services/entities/email-import-setting"
+import { importLogEntity } from "@/services/store/schema/import-log"
+import type {
+  ImportLog,
+  ImportLogFileSource,
+  ImportLogEmailSource,
+} from "@/entities/import-log"
+import { importSourceEntity, importSourceMonthKey } from "@/services/store/schema/import-source"
+import type {
+  ImportSource,
+  ImportSourceDescriptor,
+} from "@/entities/import-source"
+import { emailImportSettingEntity } from "@/services/store/schema/email-import-setting"
+import type {
+  EmailImportSetting,
+  EmailImportState,
+} from "@/entities/email-import-setting"
 import type { NotificationsService } from "@/services/notifications/notifications-service"
+import { userSettingsEntity } from "@/services/store/schema/user-settings"
 import {
-  userSettingsEntity,
   USER_SETTINGS_DEFAULTS,
   type UserSettings,
-} from "@/services/entities/user-settings"
-import {
-  transactionEntity,
-  type Transaction,
-} from "@/services/entities/transaction"
-import {
-  moneyAccountEntity,
-  type MoneyAccount,
-} from "@/services/entities/money-account"
+} from "@/entities/user-settings"
+import { transactionEntity } from "@/services/store/schema/transaction"
+import type { Transaction } from "@/entities/transaction"
+import { moneyAccountEntity } from "@/services/store/schema/money-account"
+import type { MoneyAccount } from "@/entities/money-account"
 import type { TransactionsService } from "@/services/transactions-service"
 import type { Disposable } from "@/services/types"
-import type { AuthAccount } from "@/services/entities/auth-account"
-import { authAccountEntity } from "@/services/entities/auth-account"
+import type { AuthAccount } from "@/entities/auth-account"
+import { authAccountEntity } from "@/services/store/schema/auth-account"
 import { ImportContext } from "./import-context"
 import type { PromptAnswer } from "./import-context"
 import { runFileImport, type FileImportResult } from "./file-import-context"
 import { runEmailImport, type EmailResult, type EmailRunProgress } from "./email-import-context"
 import { CancelledError, EmailPasswordError, findMatchingAccounts, mergeMetadata } from "./import-utils"
-import { log } from "@/log"
+import { log } from "@/lib/log"
 
 // ── Active context entry ────────────────────────────────
 

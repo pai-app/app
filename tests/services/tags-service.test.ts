@@ -3,13 +3,8 @@ import type { FyreDb } from "@fyre-db/core"
 import { createTestFyreDb } from "../helpers/test-fyredb"
 import { AccountsService } from "@/services/accounts-service"
 import { TagsService } from "@/services/tags-service"
-import {
-  moneyAccountEntity,
-  tagEntity,
-  SYSTEM_TAGS,
-  type MoneyAccount,
-  type Tag,
-} from "@/services/entities"
+import { moneyAccountEntity, tagEntity } from "@/services/store/schema"
+import { SYSTEM_TAGS, type MoneyAccount, type Tag } from "@/entities"
 
 const ACCOUNT: MoneyAccount = {
   kind: "bank",

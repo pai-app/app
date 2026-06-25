@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { FyreDbConfigError } from "@fyre-db/core"
 import type { ImportContext } from "@/services/import/import-context"
 import { ServicesContext } from "@/providers/services-provider"
-import { registerNotificationAction } from "@/lib/notification-actions"
+import { registerNotificationAction } from "@/providers/notification-actions"
 
 // ── Context shape ───────────────────────────────────────
 

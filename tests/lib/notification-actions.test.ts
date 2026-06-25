@@ -3,8 +3,8 @@ import {
   registerNotificationAction,
   registerNotificationFallback,
   runNotificationAction,
-} from "@/lib/notification-actions"
-import type { NotificationRef } from "@/services/entities/notification"
+} from "@/providers/notification-actions"
+import type { NotificationRef } from "@/entities/notification"
 
 const importLogRef: NotificationRef = { type: "import-log", logId: "log-1" }
 

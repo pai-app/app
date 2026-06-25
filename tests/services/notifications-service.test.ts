@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach, vi } from "vitest"
 import type { FyreDb } from "@fyre-db/core"
 import { createTestFyreDb } from "../helpers/test-fyredb"
 import { NotificationsService } from "@/services/notifications/notifications-service"
-import type { Notification } from "@/services/entities"
+import type { Notification } from "@/entities"
 
 function notification(over: Partial<Notification> = {}): Notification {
   return {

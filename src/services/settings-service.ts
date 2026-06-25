@@ -1,10 +1,10 @@
 import { BehaviorSubject, Subscription } from "rxjs"
 import type { FyreDb, SingletonRepositoryType as SingletonRepository } from "@fyre-db/core"
+import { userSettingsEntity } from "@/services/store/schema"
 import {
   USER_SETTINGS_DEFAULTS,
-  userSettingsEntity,
   type UserSettings,
-} from "@/services/entities"
+} from "@/entities"
 import { fiscalYearMonthKeys } from "@/lib/fiscal"
 import type { Disposable, ReadonlySubject } from "@/services/types"
 

@@ -17,8 +17,8 @@
 
 import type { BaseEntity } from "@fyre-db/core";
 
-import type { Transaction } from "../entities/transaction";
-import type { TagRule } from "../entities/tag-rule";
+import type { Transaction } from "@/entities/transaction";
+import type { TagRule } from "@/entities/tag-rule";
 
 /** App transaction row, as the engine sees it through the port. */
 export type TaggingTransaction = Transaction & BaseEntity;
@@ -62,10 +62,8 @@ export type RuleDelta =
   | { op: "delete"; key: string };
 
 /** Untagged look-alikes the app MAY prompt to bulk-tag (loaded partitions only). */
-export type SimilarFact = {
-  readonly tagId: string;
-  readonly transactionIds: readonly string[];
-};
+export type { SimilarFact } from "@/entities/similar-fact"
+import type { SimilarFact } from "@/entities/similar-fact"
 
 /**
  * The minimal tag patch the engine owns. The service merges this onto the live

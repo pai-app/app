@@ -1,7 +1,7 @@
 import type { ImportData, AccountDetails } from "@pai-app/adapters"
 import type { BaseEntity } from "@fyre-db/core"
-import type { MoneyAccount } from "@/services/entities/money-account"
-import type { Transaction } from "@/services/entities/transaction"
+import type { MoneyAccount } from "@/entities/money-account"
+import type { Transaction } from "@/entities/transaction"
 import type { RepositoryType as Repository } from "@fyre-db/core"
 import { ImportContext } from "./import-context"
 

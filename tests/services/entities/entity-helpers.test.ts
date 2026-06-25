@@ -1,8 +1,9 @@
 import { describe, it, expect, afterEach } from "vitest"
 import type { FyreDb } from "@fyre-db/core"
 import { createTestFyreDb } from "../../helpers/test-fyredb"
-import { importLogEntity, sweepProgress, type ImportLogEmailRun } from "@/services/entities/import-log"
-import { importSourceEntity, importSourceMonthKey } from "@/services/entities/import-source"
+import { importLogEntity } from "@/services/store/schema/import-log"
+import { sweepProgress, type ImportLogEmailRun } from "@/entities/import-log"
+import { importSourceEntity, importSourceMonthKey } from "@/services/store/schema/import-source"
 
 function run(over: Partial<ImportLogEmailRun> = {}): ImportLogEmailRun {
   return {

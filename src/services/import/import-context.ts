@@ -1,5 +1,5 @@
 import { BehaviorSubject, type Observable } from "rxjs"
-import type { ImportLogStatus } from "@/services/entities/import-log"
+import type { ImportLogStatus } from "@/entities/import-log"
 
 // ── Status type for in-memory context ───────────────────
 

@@ -4,8 +4,8 @@ import type { RepositoryType as Repository } from "@fyre-db/core"
 import { ImportContext } from "./import-context"
 import { CancelledError, throwIfCancelled, findMatchingAccounts, hashAndDedup } from "./import-utils"
 import type { HashedTransaction } from "./import-utils"
-import type { MoneyAccount } from "@/services/entities/money-account"
-import type { Transaction } from "@/services/entities/transaction"
+import type { MoneyAccount } from "@/entities/money-account"
+import type { Transaction } from "@/entities/transaction"
 
 // ── Result ──────────────────────────────────────────────
 

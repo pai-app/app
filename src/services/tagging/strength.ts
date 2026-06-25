@@ -11,7 +11,7 @@
 
 import { TAGGING } from "./constants";
 
-import type { TagRule } from "../entities/tag-rule";
+import type { TagRule } from "@/entities/tag-rule";
 
 type Strength = {
   readonly winner?: string;

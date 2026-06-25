@@ -11,26 +11,17 @@
 
 import { BehaviorSubject, Subscription } from "rxjs"
 import type { BaseEntity, FyreDb, RepositoryType as Repository } from "@fyre-db/core"
-import { authAccountEntity, type AuthAccount } from "@/services/entities"
-import {
-  emailImportSettingEntity,
-  type EmailImportSetting,
-} from "@/services/entities/email-import-setting"
-import { clientAuth } from "@/lib/fyredb-config"
+import { authAccountEntity } from "@/services/store/schema"
+import type { AuthAccount } from "@/entities"
+import { emailImportSettingEntity } from "@/services/store/schema/email-import-setting"
+import type { EmailImportSetting } from "@/entities/email-import-setting"
+import { clientAuth } from "@/providers/fyredb-config"
 import { GOOGLE_AUTH_NAME, MICROSOFT_AUTH_NAME, FEATURE_CREDS_KEY } from "@shared/providers"
-import { log } from "@/log"
+import { log } from "@/lib/log"
 import type { Disposable, ReadonlySubject } from "@/services/types"
+import type { ConnectionView } from "@/entities/connection-view"
 
-/** A connected email account as the UI sees it — NO tokens. */
-export type ConnectionView = {
-  readonly id: string
-  readonly provider: string
-  readonly email: string
-  readonly name: string
-  readonly picture: string
-  readonly lastSyncedAt?: number // from the joined emailImportSetting.importState.lastImportAt
-  readonly hasError: boolean // !!emailImportSetting.lastErrorLogId
-}
+export type { ConnectionView } from "@/entities/connection-view"
 
 type AuthRow = AuthAccount & BaseEntity
 type SettingRow = EmailImportSetting & BaseEntity

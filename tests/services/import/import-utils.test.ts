@@ -14,9 +14,9 @@ import {
   throwIfCancelled,
 } from "@/services/import/import-utils"
 import { ImportContext } from "@/services/import/import-context"
-import { transactionEntity } from "@/services/entities"
+import { transactionEntity } from "@/services/store/schema"
 import { createTestFyreDb } from "../../helpers/test-fyredb"
-import type { MoneyAccount } from "@/services/entities/money-account"
+import type { MoneyAccount } from "@/entities/money-account"
 
 describe("accountNumbersMatch", () => {
   it("matches identical numbers", () => {

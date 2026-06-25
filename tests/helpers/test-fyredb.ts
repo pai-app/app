@@ -1,5 +1,5 @@
 import { FyreDb, MemoryStorageAdapter } from "@fyre-db/core"
-import { ENTITIES } from "@/services/entities"
+import { ENTITIES } from "@/services/store/schema"
 
 /**
  * A real, in-memory `FyreDb` with an open tenant — gives service unit tests
