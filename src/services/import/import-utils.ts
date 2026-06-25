@@ -1,6 +1,6 @@
 import type { ImportData, AccountDetails } from "@pai-app/adapters"
 import type { BaseEntity } from "@fyre-db/core"
-import type { MoneyAccount } from "@/entities/money-account"
+import type { Account } from "@/entities/account"
 import type { Transaction } from "@/entities/transaction"
 import type { RepositoryType as Repository } from "@fyre-db/core"
 import { ImportContext } from "./import-context"
@@ -24,11 +24,11 @@ export function monthKeyFromEpoch(epoch: number): string {
 // ── Account matching ────────────────────────────────────
 
 export function findMatchingAccounts(
-  accounts: ReadonlyArray<MoneyAccount & BaseEntity>,
+  accounts: ReadonlyArray<Account & BaseEntity>,
   bankId: string,
-  kind: MoneyAccount["kind"],
+  kind: Account["kind"],
   details: AccountDetails,
-): ReadonlyArray<MoneyAccount & BaseEntity> {
+): ReadonlyArray<Account & BaseEntity> {
   return accounts.filter((acct) => {
     if (acct.bankId !== bankId) return false
     // A bank can offer multiple products under one identifier (e.g. Paytm
@@ -40,7 +40,7 @@ export function findMatchingAccounts(
 }
 
 function matchesAccountDetails(
-  acct: MoneyAccount & BaseEntity,
+  acct: Account & BaseEntity,
   details: AccountDetails,
 ): boolean {
   if (!details.accountNumber) return false

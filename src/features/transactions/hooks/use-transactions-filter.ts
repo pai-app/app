@@ -4,10 +4,11 @@ import { TX_FILTER_KEY_PREFIX } from "@shared/providers"
 import { minorToMajor } from "@/lib/format"
 import { useObservable } from "@/providers/use-observable"
 import { useServices } from "@/providers/services-provider"
-import type { TransactionFilter, FilterState } from "@/entities/transaction-filter"
+import type { TransactionFilter } from "@/views/transaction-filter"
+import type { FilterState } from "@/views/filter-state"
 import type { TransactionRow } from "./use-transactions-query"
 
-export type { TagFilter, TransactionFilter } from "@/entities/transaction-filter"
+export type { TagFilter, TransactionFilter } from "@/views/transaction-filter"
 
 export const EMPTY_FILTER: TransactionFilter = {
   sort: "desc",

@@ -1,6 +1,7 @@
-import type { TagView } from "@/entities/tag-view"
+import type { TagView } from "@/views/tag-view"
 import { cn } from "@/lib/utils"
-import { TagIcon } from "@/components/tag-icon"
+import { Icon } from "@/ui/icon"
+import { tagIconName } from "@/catalog/icon-resolve"
 import { REMOVE_TAG_ID, type TagWithChildren } from "./types"
 
 export type TagItemProps = {
@@ -31,7 +32,7 @@ export function TagItem({ tag, onSelect, selectedTagId }: TagItemProps) {
         className="flex w-full flex-row items-center gap-2 text-left"
         onClick={(e) => { e.stopPropagation(); onSelect(tag); }}
       >
-        <TagIcon tag={tag} className="m-1 size-6 min-w-6" />
+        <Icon name={tagIconName(tag)} className="m-1 size-6 min-w-6" />
         <div className="flex flex-col">
           <span className="font-medium">{tag.name}</span>
           {tag.description && (
@@ -51,7 +52,7 @@ export function TagItem({ tag, onSelect, selectedTagId }: TagItemProps) {
                 selectedTagId === child.id && "border bg-accent/20",
               )}
             >
-              <TagIcon tag={child} className="size-6" />
+              <Icon name={tagIconName(child)} className="size-6" />
               <span>{child.name}</span>
             </button>
           ))}

@@ -18,7 +18,7 @@
  */
 
 import type { IconKey } from "@/lib/icons"
-import type { MoneyAccountKind } from "@/entities/money-account"
+import type { AccountKind } from "@/entities/account"
 
 /** Display details for a single offering (product) within a bank. */
 export type OfferingDisplay = {
@@ -85,10 +85,10 @@ export type KindDisplay = {
  * icon; `label` is the offering-subtitle fallback for accounts that predate
  * `offeringId` persistence (or were created without a parser).
  *
- * The `Record<MoneyAccountKind, …>` type enforces exhaustiveness: a new kind
+ * The `Record<AccountKind, …>` type enforces exhaustiveness: a new kind
  * fails to compile until it is added here.
  */
-export const KIND_DISPLAY: Readonly<Record<MoneyAccountKind, KindDisplay>> = {
+export const KIND_DISPLAY: Readonly<Record<AccountKind, KindDisplay>> = {
   bank: { label: "Bank Account", icon: "landmark" },
   "credit-card": { label: "Credit Card", icon: "credit-card" },
   cash: { label: "Cash", icon: "wallet" },

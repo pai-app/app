@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { TagPicker } from "@/features/transactions/containers/tag-picker"
-import { type TagView } from "@/entities/tag-view"
+import { type TagView } from "@/views/tag-view"
 import type { TransactionRow } from "@/entities/transaction"
 import { useServices } from "@/providers/services-provider"
 import { notifyTagSimilar } from "@/features/transactions/notify-tag-similar"

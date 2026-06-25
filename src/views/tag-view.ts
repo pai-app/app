@@ -1,4 +1,4 @@
-import type { AccountIconData } from "@/entities/account-view"
+import type { AccountIconData } from "@/views/account-icon-data"
 
 /** A tag as the UI consumes it — pure data; any React icon renderer is
  *  reattached at the UI edge (account tags carry `accountId` for that). */

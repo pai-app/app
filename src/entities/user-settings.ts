@@ -1,3 +1,5 @@
+import { defineEntity } from "@fyre-db/core"
+
 /**
  * Per-tenant user-controlled settings. Singleton — exactly one row per tenant.
  * Holds stable, intentional preferences synced across devices.
@@ -22,3 +24,7 @@ export const USER_SETTINGS_DEFAULTS: UserSettings = {
   firstDay: 1,      // Monday (ISO)
   filePasswords: [],
 }
+
+export const userSettingsEntity = defineEntity<UserSettings>("user-settings", {
+  keyStrategy: "singleton",
+})

@@ -1,6 +1,6 @@
 import { BehaviorSubject, Subscription } from "rxjs"
 import type { FyreDb, SingletonRepositoryType as SingletonRepository } from "@fyre-db/core"
-import { userSettingsEntity } from "@/services/store/schema"
+import { userSettingsEntity } from "@/entities"
 import {
   USER_SETTINGS_DEFAULTS,
   type UserSettings,

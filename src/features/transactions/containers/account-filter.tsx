@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/ui/dropdown-menu"
-import { MoneyAccountIcon } from "@/components/money-account-icon"
+import { accountIconName } from "@/catalog/icon-resolve"
 import { cn } from "@/lib/utils"
 import { useObservable } from "@/providers/use-observable"
 import { useServices } from "@/providers/services-provider"
@@ -62,7 +62,7 @@ export function AccountFilter({ state, variant = "bar", className }: FilterContr
               onCheckedChange={() => { toggle(account.id) }}
               onSelect={(e) => { e.preventDefault() }}
             >
-              <MoneyAccountIcon account={account} className="size-5 text-muted-foreground" />
+              <Icon name={accountIconName(account)} className="size-5 text-muted-foreground" />
               <span className="flex-1 truncate">{account.name}</span>
               {masked && <span className="text-xs text-muted-foreground">{masked}</span>}
             </DropdownMenuCheckboxItem>

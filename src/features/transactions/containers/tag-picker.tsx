@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from "react"
 import { AdaptiveSurface } from "@/components/adaptive-surface"
 import { useApp } from "@/providers/app-provider"
-import { type TagView } from "@/entities/tag-view"
+import { type TagView } from "@/views/tag-view"
 import { loadPack } from "@/lib/icons/icon-loader"
 import { log } from "@/lib/log"
 import { TagList } from "@/components/tag-picker/tag-list"

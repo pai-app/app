@@ -3,7 +3,7 @@ import { Button } from "@/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar"
 import { useServices } from "@/providers/services-provider"
 import { useObservable } from "@/providers/use-observable"
-import type { ConnectionView } from "@/entities/connection-view"
+import type { ConnectionView } from "@/views/connection-view"
 import { useImportService } from "@/providers/import-provider"
 
 export function AccountsSection() {

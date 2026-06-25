@@ -3,10 +3,10 @@ import { Icon } from "@/ui/icon"
 import { Separator } from "@/ui/separator"
 import { Textarea } from "@/ui/textarea"
 import { Money } from "@/components/money"
-import { MoneyAccountIcon } from "@/components/money-account-icon"
+import { accountIconName } from "@/catalog/icon-resolve"
 import { cn } from "@/lib/utils"
 import { useApp } from "@/providers/app-provider"
-import { type TagView } from "@/entities/tag-view"
+import { type TagView } from "@/views/tag-view"
 import type { TransactionRow } from "@/entities/transaction"
 import {
   type ImportSourceDescriptor,
@@ -136,7 +136,7 @@ export function TransactionDetail({ tx, onClose }: TransactionDetailProps) {
         <span>{debited ? "Debited from" : "Received in"}</span>
         {masked && <span className="text-muted-foreground">{masked}</span>}
         <div className="flex-1" />
-        {account && <MoneyAccountIcon account={account} className="size-6 text-muted-foreground" />}
+        {account && <Icon name={accountIconName(account)} className="size-6 text-muted-foreground" />}
       </div>
 
       <Separator />

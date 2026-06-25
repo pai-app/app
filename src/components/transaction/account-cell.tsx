@@ -1,6 +1,7 @@
-import { MoneyAccountIcon } from "@/components/money-account-icon"
+import { Icon } from "@/ui/icon"
+import { accountIconName } from "@/catalog/icon-resolve"
 import { cn } from "@/lib/utils"
-import type { AccountView } from "@/entities/account-view"
+import type { AccountView } from "@/views/account-view"
 
 export type AccountCellProps = {
   readonly account: AccountView
@@ -17,7 +18,7 @@ export function AccountCell({ account, className }: AccountCellProps) {
   const masked = account.maskedNumber
   return (
     <div className={cn("flex flex-row items-center gap-2", className)}>
-      <MoneyAccountIcon account={account} className="size-5 text-muted-foreground" />
+      <Icon name={accountIconName(account)} className="size-5 text-muted-foreground" />
       {masked && <span className="text-sm font-light text-muted-foreground">{masked}</span>}
     </div>
   )

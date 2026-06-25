@@ -1,3 +1,5 @@
+import { defineEntity } from "@fyre-db/core"
+
 /**
  * TagRule — a learned association between a recurring transaction key and the
  * tags users apply to it. Stored globally per tenant (single in-memory
@@ -18,3 +20,8 @@ export type TagRule = {
   readonly sourceAdapterIds: readonly string[]
   readonly lastMatchedAt: number
 }
+
+export const tagRuleEntity = defineEntity<TagRule>("tagRule", {
+  keyStrategy: "global",
+  deriveId: (r) => r.key,
+})

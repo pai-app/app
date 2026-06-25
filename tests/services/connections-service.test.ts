@@ -2,11 +2,11 @@ import { describe, it, expect, afterEach, vi } from "vitest"
 import type { FyreDb } from "@fyre-db/core"
 import { createTestFyreDb } from "../helpers/test-fyredb"
 import { ConnectionsService } from "@/services/connections-service"
-import { authAccountEntity } from "@/services/store/schema"
-import type { AuthAccount } from "@/entities"
+import { connectionEntity } from "@/entities"
+import type { Connection } from "@/entities"
 import {
   emailImportSettingEntity,
-} from "@/services/store/schema/email-import-setting"
+} from "@/entities/email-import-setting"
 import type { EmailImportSetting } from "@/entities/email-import-setting"
 import { FEATURE_CREDS_KEY } from "@shared/providers"
 
@@ -26,7 +26,7 @@ vi.mock("@/providers/fyredb-config", () => ({
   },
 }))
 
-const EMAIL_ACCOUNT: AuthAccount = {
+const EMAIL_ACCOUNT: Connection = {
   provider: "google",
   feature: "email",
   userId: "user-1",
@@ -36,9 +36,9 @@ const EMAIL_ACCOUNT: AuthAccount = {
   refreshToken: "super-secret-token",
 }
 
-function setting(authAccountId: string): EmailImportSetting {
+function setting(connectionId: string): EmailImportSetting {
   return {
-    authAccountId,
+    connectionId,
     paused: false,
     importState: { lastImportAt: 1700000000000 },
   }
@@ -68,7 +68,7 @@ describe("ConnectionsService", () => {
 
   it("joins an email account with its import setting into a token-free view", async () => {
     await setup()
-    const id = fyredb.repo(authAccountEntity).save(EMAIL_ACCOUNT)
+    const id = fyredb.repo(connectionEntity).save(EMAIL_ACCOUNT)
     fyredb.repo(emailImportSettingEntity).save(setting(id))
 
     // The global partitions project on a later tick; poll until they settle.
@@ -85,7 +85,7 @@ describe("ConnectionsService", () => {
 
   it("excludes auth accounts whose feature is not email", async () => {
     await setup()
-    fyredb.repo(authAccountEntity).save({ ...EMAIL_ACCOUNT, feature: "drive" })
+    fyredb.repo(connectionEntity).save({ ...EMAIL_ACCOUNT, feature: "drive" })
 
     await vi.waitFor(() => {
       expect(svc.connections$.value).toHaveLength(0)
@@ -94,14 +94,14 @@ describe("ConnectionsService", () => {
 
   it("reveals the full row including the token via the on-demand reader", async () => {
     await setup()
-    const id = fyredb.repo(authAccountEntity).save(EMAIL_ACCOUNT)
+    const id = fyredb.repo(connectionEntity).save(EMAIL_ACCOUNT)
 
-    expect(svc.getAuthAccount(id)?.refreshToken).toBe("super-secret-token")
+    expect(svc.getConnection(id)?.refreshToken).toBe("super-secret-token")
   })
 
   it("deletes the auth account and its import setting on disconnect", async () => {
     await setup()
-    const id = fyredb.repo(authAccountEntity).save(EMAIL_ACCOUNT)
+    const id = fyredb.repo(connectionEntity).save(EMAIL_ACCOUNT)
     const settingId = fyredb.repo(emailImportSettingEntity).save(setting(id))
 
     // Wait for the joined view to populate before disconnecting.
@@ -110,7 +110,7 @@ describe("ConnectionsService", () => {
     })
     svc.disconnect(id)
 
-    expect(fyredb.repo(authAccountEntity).get(id)).toBeUndefined()
+    expect(fyredb.repo(connectionEntity).get(id)).toBeUndefined()
     expect(fyredb.repo(emailImportSettingEntity).get(settingId)).toBeUndefined()
   })
 
@@ -140,7 +140,7 @@ describe("ConnectionsService", () => {
     )
   }
 
-  it("materialises a saved AuthAccount from google feature creds on construction", async () => {
+  it("materialises a saved Connection from google feature creds on construction", async () => {
     fyredb = await createTestFyreDb()
     seedCreds("google", { sub: "g-1", email: "g@example.com", name: "G User", picture: "p.png" })
 
@@ -150,14 +150,14 @@ describe("ConnectionsService", () => {
       expect(svc.connections$.value).toHaveLength(1)
     })
 
-    const rows = fyredb.repo(authAccountEntity).query()
+    const rows = fyredb.repo(connectionEntity).query()
     expect(rows).toHaveLength(1)
     expect(rows[0].email).toBe("g@example.com")
     expect(rows[0].refreshToken).toBe("rt")
     expect(sessionStorage.getItem(FEATURE_CREDS_KEY)).toBeNull() // consumed
   })
 
-  it("materialises a microsoft AuthAccount from the graph userinfo shape", async () => {
+  it("materialises a microsoft Connection from the graph userinfo shape", async () => {
     fyredb = await createTestFyreDb()
     seedCreds("microsoft", { id: "m-1", userPrincipalName: "m@example.com", displayName: "M User" })
 
@@ -167,7 +167,7 @@ describe("ConnectionsService", () => {
       expect(svc.connections$.value).toHaveLength(1)
     })
 
-    const rows = fyredb.repo(authAccountEntity).query()
+    const rows = fyredb.repo(connectionEntity).query()
     expect(rows).toHaveLength(1)
     expect(rows[0].email).toBe("m@example.com")
     expect(rows[0].name).toBe("M User")
@@ -182,7 +182,7 @@ describe("ConnectionsService", () => {
       expect(svc.connections$.value).toHaveLength(1)
     })
 
-    expect(fyredb.repo(authAccountEntity).query()[0].email).toBe("viamail@example.com")
+    expect(fyredb.repo(connectionEntity).query()[0].email).toBe("viamail@example.com")
   })
 
   it("stores an empty email when userinfo carries an identity but no address", async () => {
@@ -194,16 +194,16 @@ describe("ConnectionsService", () => {
       expect(svc.connections$.value).toHaveLength(1)
     })
 
-    expect(fyredb.repo(authAccountEntity).query()[0].email).toBe("")
+    expect(fyredb.repo(connectionEntity).query()[0].email).toBe("")
   })
 
   it("disconnect removes the auth account even when no import setting exists", async () => {
     await setup()
-    const id = fyredb.repo(authAccountEntity).save(EMAIL_ACCOUNT)
+    const id = fyredb.repo(connectionEntity).save(EMAIL_ACCOUNT)
 
     svc.disconnect(id) // no email-import-setting was ever saved for this account
 
-    expect(fyredb.repo(authAccountEntity).get(id)).toBeUndefined()
+    expect(fyredb.repo(connectionEntity).get(id)).toBeUndefined()
   })
 
   it("is a no-op when no feature creds are present", async () => {
@@ -211,7 +211,7 @@ describe("ConnectionsService", () => {
     svc = new ConnectionsService(fyredb)
 
     // No creds → the constructor returns synchronously without saving.
-    expect(fyredb.repo(authAccountEntity).query()).toHaveLength(0)
+    expect(fyredb.repo(connectionEntity).query()).toHaveLength(0)
   })
 
   it("does not save when userinfo lacks an identity (no userId)", async () => {
@@ -221,7 +221,7 @@ describe("ConnectionsService", () => {
     svc = new ConnectionsService(fyredb)
 
     // Userinfo carries no identity → nothing is ever saved.
-    expect(fyredb.repo(authAccountEntity).query()).toHaveLength(0)
+    expect(fyredb.repo(connectionEntity).query()).toHaveLength(0)
   })
 
   it("is a no-op when the feature creds are not valid JSON", async () => {
@@ -231,7 +231,7 @@ describe("ConnectionsService", () => {
     svc = new ConnectionsService(fyredb)
 
     // Invalid JSON is consumed and rejected synchronously, before any save.
-    expect(fyredb.repo(authAccountEntity).query()).toHaveLength(0)
+    expect(fyredb.repo(connectionEntity).query()).toHaveLength(0)
     expect(sessionStorage.getItem(FEATURE_CREDS_KEY)).toBeNull() // still consumed
   })
 
@@ -247,6 +247,6 @@ describe("ConnectionsService", () => {
     svc = new ConnectionsService(fyredb)
 
     // The userinfo request fails → no identity, so nothing is saved.
-    expect(fyredb.repo(authAccountEntity).query()).toHaveLength(0)
+    expect(fyredb.repo(connectionEntity).query()).toHaveLength(0)
   })
 })

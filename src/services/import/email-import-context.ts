@@ -4,7 +4,7 @@ import type { BaseEntity } from "@fyre-db/core"
 import type { RepositoryType as Repository } from "@fyre-db/core"
 import { getMailProvider } from "@/services/mail"
 import type { EmailSummary, MailCursor, MailQuery } from "@/services/mail"
-import type { AuthAccount } from "@/entities/auth-account"
+import type { Connection } from "@/entities/connection"
 import type { Transaction } from "@/entities/transaction"
 import type { EmailImportState, EmailImportCursor } from "@/entities/email-import-setting"
 import { ImportContext } from "./import-context"
@@ -85,7 +85,7 @@ export type EmailRunHooks = {
  */
 export async function runEmailImport(
   ctx: ImportContext,
-  account: AuthAccount & BaseEntity,
+  account: Connection & BaseEntity,
   initialState: EmailImportState,
   filePasswords: readonly string[],
   transactionRepo: Repository<Transaction>,

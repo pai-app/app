@@ -3,7 +3,7 @@ import { Button } from "@/ui/button"
 import { Icon } from "@/ui/icon"
 import { Input } from "@/ui/input"
 import { cn } from "@/lib/utils"
-import type { FilterControlProps } from "@/entities/transaction-filter"
+import type { FilterControlProps } from "@/views/filter-control-props"
 
 export type SearchBarProps = FilterControlProps & {
   readonly autoFocus?: boolean

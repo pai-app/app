@@ -1,10 +1,10 @@
 import { Button } from "@/ui/button"
 import { Icon } from "@/ui/icon"
-import { TagIcon } from "@/components/tag-icon"
+import { tagIconName } from "@/catalog/icon-resolve"
 import { classify, isDormant, strengthOf } from "@/services/tagging/strength"
 import { cn } from "@/lib/utils"
 import type { TagRuleRow } from "@/services/transactions-service"
-import type { TagView } from "@/entities/tag-view"
+import type { TagView } from "@/views/tag-view"
 
 type RuleCardProps = {
   readonly rule: TagRuleRow
@@ -39,7 +39,7 @@ export function RuleCard({ rule, now, tagsById, onDelete }: RuleCardProps) {
         <div className="flex items-center gap-1.5 text-sm font-medium">
           {winnerTag ? (
             <>
-              <TagIcon tag={winnerTag} className="size-4 shrink-0" />
+              <Icon name={tagIconName(winnerTag)} className="size-4 shrink-0" />
               <span className="truncate">{winnerTag.name}</span>
             </>
           ) : (

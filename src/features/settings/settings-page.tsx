@@ -1,18 +1,16 @@
-import { useParams } from "react-router"
-import { SectionShell, type NavSection } from "@/components/section-shell"
-import { useApp } from "@/providers/app-provider"
+import { SectionPage, type Section } from "@/components/section-page"
+import { GeneralSection } from "@/features/settings/sections/general-section"
+import { AccountsSection } from "@/features/settings/sections/accounts-section"
+import { ImportsSection } from "@/features/settings/sections/imports-section"
+import { RulesSection } from "@/features/settings/sections/rules-section"
+
+const sections: Section[] = [
+  { key: "general", label: "General", icon: "settings", path: "general", element: <GeneralSection /> },
+  { key: "accounts", label: "Accounts", icon: "mail", path: "accounts", element: <AccountsSection /> },
+  { key: "imports", label: "Imports", icon: "upload", path: "imports", element: <ImportsSection /> },
+  { key: "rules", label: "Tag Rules", icon: "sparkles", path: "rules", element: <RulesSection /> },
+]
 
 export function SettingsPage() {
-  const { tenantId } = useParams()
-  const { isMobile } = useApp()
-  const basePath = `/t/${tenantId}/settings`
-
-  const sections: NavSection[] = [
-    { key: "general", label: "General", icon: "settings", to: `${basePath}/general` },
-    { key: "accounts", label: "Accounts", icon: "mail", to: `${basePath}/accounts` },
-    { key: "imports", label: "Imports", icon: "upload", to: `${basePath}/imports` },
-    { key: "rules", label: "Tag Rules", icon: "sparkles", to: `${basePath}/rules` },
-  ]
-
-  return <SectionShell title="Settings" sections={sections} nav={isMobile ? "list" : "pill"} />
+  return <SectionPage title="Settings" sections={sections} />
 }

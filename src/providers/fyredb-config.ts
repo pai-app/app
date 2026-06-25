@@ -13,10 +13,10 @@ import {
   FEATURE_CREDS_KEY,
   DEVICE_ID_KEY,
 } from "@shared/providers"
-import { ENTITIES } from "@/services/store/schema"
+import { ENTITIES } from "@/entities"
 import { sessionSlot, xorTransform, getOrCreateDeviceId } from "@/providers/web-storage"
 
-export { ENTITIES } from "@/services/store/schema"
+export { ENTITIES } from "@/entities"
 
 export const APP_ID = "pai"
 

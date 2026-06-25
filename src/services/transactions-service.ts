@@ -20,11 +20,11 @@
 import { BehaviorSubject, Subscription, type Observable } from "rxjs"
 import type { FyreDb, BaseEntity, RepositoryType as Repository } from "@fyre-db/core"
 
-import { transactionEntity } from "@/services/store/schema/transaction"
+import { transactionEntity } from "@/entities/transaction"
 import type { Transaction, TransactionRow } from "@/entities/transaction"
-import { tagRuleEntity } from "@/services/store/schema/tag-rule"
+import { tagRuleEntity } from "@/entities/tag-rule"
 import type { TagRule } from "@/entities/tag-rule"
-import { importSourceEntity } from "@/services/store/schema/import-source"
+import { importSourceEntity } from "@/entities/import-source"
 import type {
   ImportSource,
   ImportSourceDescriptor,

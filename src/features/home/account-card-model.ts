@@ -1,4 +1,4 @@
-import type { AccountStatement, MoneyAccountKind } from "@/entities"
+import type { AccountStatement, AccountKind } from "@/entities"
 
 /**
  * Pure presentation model for the home `AccountCard`. Keeps every decision the
@@ -11,12 +11,12 @@ import type { AccountStatement, MoneyAccountKind } from "@/entities"
  */
 
 /** Credit cards are the only liability kind surfaced today; everything else is an asset. */
-export function isCreditCard(kind: MoneyAccountKind): boolean {
+export function isCreditCard(kind: AccountKind): boolean {
   return kind === "credit-card"
 }
 
 /** Header label for the primary figure — assets show a "Balance", credit cards what's "Due". */
-export function balanceLabel(kind: MoneyAccountKind): string {
+export function balanceLabel(kind: AccountKind): string {
   return isCreditCard(kind) ? "Due" : "Balance"
 }
 
@@ -52,7 +52,7 @@ function statementMetaRows(statement: AccountStatement | undefined): readonly St
 
 /** Build the card model from an account's kind and its (optional) latest snapshot. */
 export function buildAccountCardModel(
-  kind: MoneyAccountKind,
+  kind: AccountKind,
   statement: AccountStatement | undefined,
 ): AccountCardModel {
   const creditCard = isCreditCard(kind)

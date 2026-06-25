@@ -65,7 +65,7 @@ export function TransactionsPage() {
   const stickyTop = (isMobile ? 0 : 72) + filterHeight
 
   // Warm the bank-icons pack so account marks render in a single chunk
-  // instead of each `<MoneyAccountIcon>` triggering its own dynamic import.
+  // instead of each `<AccountIcon>` triggering its own dynamic import.
   useEffect(() => {
     loadPack("bank-icons").catch((err: unknown) => {
       log.icons.warn("failed to load bank-icons pack: %o", err)

@@ -11,8 +11,7 @@ import { cn } from "@/lib/utils"
 import { useApp } from "@/providers/app-provider"
 import { useObservable } from "@/providers/use-observable"
 import { useServices } from "@/providers/services-provider"
-import { useRegisterCrumbs } from "@/providers/breadcrumb-provider"
-import { ENTITIES } from "@/services/store/schema"
+import { ENTITIES } from "@/entities"
 
 type Row = Record<string, unknown> & BaseEntity
 
@@ -36,10 +35,9 @@ function monthKeysForYear(year: number): string[] {
 }
 
 /**
- * Generic entity data browser. The selected entity lives in the route
- * (`/dev/data/:entityName`) so it deep-links and joins the breadcrumb trail.
- * Lists all registered entities and adapts the surface to each entity's key
- * strategy:
+ * Generic entity data browser. The selected entity lives in the route splat
+ * (`/dev/data/*`) so it deep-links. Lists all registered entities and adapts
+ * the surface to each entity's key strategy:
  *  - `singleton`  → renders the single row as JSON, no table.
  *  - `global`     → table over the one `_` partition (auto-loaded).
  *  - `partitioned`→ a year stepper drives which monthly partitions load.
@@ -47,25 +45,13 @@ function monthKeysForYear(year: number): string[] {
  */
 export function DataSection() {
   const { isMobile } = useApp()
-  const { tenantId, entityName } = useParams()
+  const params = useParams()
+  const tenantId = params.tenantId
   const navigate = useNavigate()
 
   const dataBase = `/t/${tenantId ?? ""}/dev/data`
   const entityNames = useMemo(() => ENTITIES.map((e) => e.name).sort(), [])
-  const selected = entityName ?? null
-
-  // On mobile (list nav) the selected entity extends the shared breadcrumb
-  // trail (`Dev tools › Data browser › <entity>`). On desktop the entity list
-  // is a persistent sidebar and the dev hub shows a segmented pill, so no
-  // breadcrumb is registered.
-  useRegisterCrumbs(
-    isMobile && selected
-      ? [
-          { label: "Data browser", to: dataBase },
-          { label: selected, to: `${dataBase}/${selected}` },
-        ]
-      : null,
-  )
+  const selected = params["*"] ? params["*"] : null
 
   const selectEntity = (name: string) => { void navigate(`${dataBase}/${name}`) }
 

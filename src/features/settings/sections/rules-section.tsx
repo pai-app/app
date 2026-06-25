@@ -14,7 +14,7 @@ import { isDormant, strengthOf } from "@/services/tagging/strength"
 import { useServices } from "@/providers/services-provider"
 import { useObservable } from "@/providers/use-observable"
 import type { TagRuleRow } from "@/services/transactions-service"
-import type { AccountView } from "@/entities/account-view"
+import type { AccountView } from "@/views/account-view"
 import { useTransactionsQuery } from "@/features/transactions/hooks/use-transactions-query"
 import { RuleCard } from "./rules/rule-card"
 

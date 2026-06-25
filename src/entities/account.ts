@@ -1,4 +1,6 @@
-import type { AccountKind } from "@pai-app/adapters"
+import { defineEntity } from "@fyre-db/core"
+
+import type { AccountKind as AdapterAccountKind } from "@pai-app/adapters"
 import type { Money } from "./money"
 
 /**
@@ -11,7 +13,7 @@ import type { Money } from "./money"
  * app account kinds are the same closed enum by rule, so there is a single
  * source of truth. Adding a new kind is a deliberate change in one place.
  */
-export type MoneyAccountKind = AccountKind
+export type AccountKind = AdapterAccountKind
 
 /**
  * Latest statement snapshot for an account. Captures the closing figures the
@@ -49,8 +51,8 @@ export type AccountStatement = {
  * - `statement` is the latest closing-figure snapshot (balance/due as of a
  *   date); optional and superseded latest-wins on import (never a match-key).
  */
-export type MoneyAccount = {
-  readonly kind: MoneyAccountKind
+export type Account = {
+  readonly kind: AccountKind
   readonly name: string
   readonly currency: string                                    // ISO 4217
   readonly bankId?: string
@@ -60,3 +62,14 @@ export type MoneyAccount = {
   readonly statement?: AccountStatement
   readonly archived?: boolean
 }
+
+/**
+ * A persisted money account as the UI consumes it — the domain fields plus the
+ * stable `id`. The service's stored row (`Account & BaseEntity`) is a
+ * superset, so it satisfies this without leaking fyre-db internals into the UI.
+ */
+export type AccountRow = Account & { readonly id: string }
+
+export const accountEntity = defineEntity<Account>("account", {
+  keyStrategy: "global",
+})

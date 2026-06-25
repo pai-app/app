@@ -1,5 +1,5 @@
 import { toast } from "sonner"
-import type { SimilarFact } from "@/entities/similar-fact"
+import type { SimilarFact } from "@/views/similar-fact"
 import type { TransactionsService } from "@/services/transactions-service"
 
 /**

@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Logo } from "@/components/logo"
-import { SyncStatus } from "@/features/shell/sync-status"
+import { SyncStatus } from "@/features/navbar/sync-status"
 import { cn } from "@/lib/utils"
 
 type BrandPillProps = {

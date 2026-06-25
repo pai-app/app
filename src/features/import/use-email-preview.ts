@@ -33,7 +33,7 @@ export function useEmailPreview(log: (ImportLog & BaseEntity) | null): EmailPrev
     setFetchedFor(key)
     setEmail(null)
     setLoading(true)
-    const account = connections.getAuthAccount(source.authAccountId)
+    const account = connections.getConnection(source.connectionId)
     if (account) {
       void getMailProvider(account).fetchPreview(source.emailId)
         .then(setEmail)

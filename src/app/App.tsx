@@ -5,7 +5,6 @@ import { AppProvider } from "@/providers/app-provider"
 import { ServicesProvider } from "@/providers/services-provider"
 import { ImportProvider } from "@/providers/import-provider"
 import { NotificationProvider } from "@/providers/notification-provider"
-import { BreadcrumbProvider } from "@/providers/breadcrumb-provider"
 import { ThemeProvider } from "@/providers/theme-provider"
 import { Toaster } from "@/providers/sonner"
 import { AppRouter } from "./router"
@@ -22,9 +21,7 @@ export function App() {
               <ServicesProvider>
                 <ImportProvider>
                   <NotificationProvider>
-                    <BreadcrumbProvider>
-                      <AppRouter />
-                    </BreadcrumbProvider>
+                    <AppRouter />
                   </NotificationProvider>
                 </ImportProvider>
               </ServicesProvider>

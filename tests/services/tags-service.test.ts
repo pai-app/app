@@ -3,10 +3,11 @@ import type { FyreDb } from "@fyre-db/core"
 import { createTestFyreDb } from "../helpers/test-fyredb"
 import { AccountsService } from "@/services/accounts-service"
 import { TagsService } from "@/services/tags-service"
-import { moneyAccountEntity, tagEntity } from "@/services/store/schema"
-import { SYSTEM_TAGS, type MoneyAccount, type Tag } from "@/entities"
+import { accountEntity, tagEntity } from "@/entities"
+import { type Account, type Tag } from "@/entities"
+import { SYSTEM_TAGS } from "@/catalog/system-tags"
 
-const ACCOUNT: MoneyAccount = {
+const ACCOUNT: Account = {
   kind: "bank",
   name: "Test Bank",
   currency: "INR",
@@ -47,7 +48,7 @@ describe("TagsService", () => {
   it("orders system tags, then user tags, then account tags", async () => {
     await setup()
     const userId = fyredb.repo(tagEntity).save(USER_TAG)
-    fyredb.repo(moneyAccountEntity).save(ACCOUNT)
+    fyredb.repo(accountEntity).save(ACCOUNT)
 
     await vi.waitFor(() => {
       const tags = svc.displayTags$.value

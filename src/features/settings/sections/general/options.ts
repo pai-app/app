@@ -1,7 +1,7 @@
 import { CURRENCIES } from "@/lib/format"
-import type { SettingOption } from "@/entities/setting-option"
+import type { SettingOption } from "@/components/select-setting"
 
-export type { SettingOption } from "@/entities/setting-option"
+export type { SettingOption } from "@/components/select-setting"
 
 /** Currency choices sourced from the shared currency table. */
 export function currencyOptions(): readonly SettingOption[] {

@@ -62,8 +62,8 @@ export type RuleDelta =
   | { op: "delete"; key: string };
 
 /** Untagged look-alikes the app MAY prompt to bulk-tag (loaded partitions only). */
-export type { SimilarFact } from "@/entities/similar-fact"
-import type { SimilarFact } from "@/entities/similar-fact"
+export type { SimilarFact } from "@/views/similar-fact"
+import type { SimilarFact } from "@/views/similar-fact"
 
 /**
  * The minimal tag patch the engine owns. The service merges this onto the live

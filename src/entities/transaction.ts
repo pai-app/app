@@ -1,3 +1,5 @@
+import { defineEntity, partitioned } from "@fyre-db/core"
+
 import type { Money } from "./money"
 
 /**
@@ -13,7 +15,7 @@ import type { Money } from "./money"
  * an optional override if/when multi-currency support lands.
  */
 export type Transaction = {
-  readonly accountId: string                     // → MoneyAccount.id
+  readonly accountId: string                     // → Account.id
   readonly tagId?: string                        // → Tag.id (real or synthetic 'account-<id>')
   /** `true` ⇒ this row's tag was auto-applied by the engine and is counted in
    *  the rule's `autoApplied` histogram; cleared on any human tag change/untag.
@@ -36,3 +38,19 @@ export type Transaction = {
  * superset, so it satisfies this without leaking fyre-db internals into the UI.
  */
 export type TransactionRow = Transaction & { readonly id: string }
+
+/** YYYY-MM partition key derived from the transaction date. */
+function monthKey(t: Transaction): string {
+  const d = new Date(t.transactionAt)
+  const year = d.getUTCFullYear()
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0")
+  return `${year}-${month}`
+}
+
+export const transactionEntity = defineEntity<Transaction>("transaction", {
+  keyStrategy: partitioned<Transaction>(monthKey),
+  // Use the hash as the entity id so importing the same statement twice
+  // upserts the same row instead of creating duplicates. Manual entries
+  // are responsible for supplying their own hash (e.g. uuid).
+  deriveId: (t) => t.hash,
+})

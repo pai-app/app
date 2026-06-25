@@ -88,7 +88,7 @@ export default defineConfig([
       'src/services/**/*.{ts,tsx}',
       'src/providers/services-provider.tsx',
       'src/providers/app-provider.tsx',
-      'src/features/shell/sync-status.tsx',
+      'src/features/navbar/sync-status.tsx',
       'src/features/dev/sections/data-section.tsx',
     ],
     rules: {
@@ -113,7 +113,7 @@ export default defineConfig([
       'boundaries/ignore': ['src/lib/icons/generated/**', 'src/assets/**', 'src/**/*.css'],
       'boundaries/elements': [
         { type: 'app',        pattern: 'src/{app/**,main.tsx}', mode: 'full' },
-        { type: 'pages',      pattern: 'src/{features/*/*-page.tsx,marketing/**}', mode: 'full' },
+        { type: 'pages',      pattern: 'src/features/*/*-page.tsx', mode: 'full' },
         { type: 'templates',  pattern: 'src/templates/**', mode: 'full' },
         { type: 'feature',    pattern: 'src/features/**', mode: 'full' },
         { type: 'providers',  pattern: 'src/providers/**', mode: 'full' },
@@ -121,6 +121,8 @@ export default defineConfig([
         { type: 'components', pattern: 'src/components/**', mode: 'full' },
         { type: 'ui',         pattern: 'src/ui/**', mode: 'full' },
         { type: 'entities',   pattern: 'src/entities/**', mode: 'full' },
+        { type: 'views',      pattern: 'src/views/**', mode: 'full' },
+        { type: 'catalog',    pattern: 'src/catalog/**', mode: 'full' },
         { type: 'lib',        pattern: 'src/lib/**', mode: 'full' },
       ],
     },
@@ -135,25 +137,31 @@ export default defineConfig([
           // `app` (main + router) composes the route table from feature route
           // elements and shared chrome, so it may also reach feature/components.
           { from: 'app',        allow: ['app', 'pages', 'templates', 'feature', 'providers', 'components', 'ui', 'lib'] },
-          { from: 'pages',      allow: ['pages', 'feature', 'templates', 'providers', 'components', 'ui', 'entities', 'lib'] },
-          { from: 'templates',  allow: ['templates', 'feature', 'providers', 'components', 'ui', 'entities', 'lib'] },
-          { from: 'feature',    allow: ['feature', 'providers', 'components', 'ui', 'entities', 'lib'] },
-          { from: 'providers',  allow: ['providers', 'services', 'components', 'ui', 'entities', 'lib'] },
-          { from: 'services',   allow: ['services', 'entities', 'lib'] },
-          { from: 'components', allow: ['components', 'ui', 'entities', 'lib'] },
+          { from: 'pages',      allow: ['pages', 'feature', 'templates', 'providers', 'components', 'ui', 'views', 'entities', 'catalog', 'lib'] },
+          { from: 'templates',  allow: ['templates', 'feature', 'providers', 'components', 'ui', 'views', 'entities', 'catalog', 'lib'] },
+          { from: 'feature',    allow: ['feature', 'providers', 'components', 'ui', 'views', 'entities', 'catalog', 'lib'] },
+          { from: 'providers',  allow: ['providers', 'services', 'components', 'ui', 'views', 'entities', 'catalog', 'lib'] },
+          { from: 'services',   allow: ['services', 'views', 'entities', 'catalog', 'lib'] },
+          { from: 'components', allow: ['components', 'ui', 'views', 'entities', 'catalog', 'lib'] },
           { from: 'ui',         allow: ['ui', 'lib'] },
+          { from: 'views',     allow: ['views', 'entities', 'lib'] },
           { from: 'entities',  allow: ['entities', 'lib'] },
+          { from: 'catalog',   allow: ['catalog', 'views', 'entities', 'lib'] },
           { from: 'lib',       allow: ['lib'] },
         ],
       }],
       // fyre-db DATA packages (@fyre-db/core, @fyre-db/plugins) are restricted
-      // to the service layer. The React-integration package
-      // (@fyre-db/plugins-ui — providers, hooks, guards, login buttons) is
-      // allowed everywhere it's needed, so it is deliberately NOT in `disallow`.
+      // to the service layer for DATA ACCESS. Exception: `entities/` may import
+      // the @fyre-db/core DEFINITION api (`defineEntity`, `partitioned`) because
+      // each entity co-locates its declarative schema with its type — that's
+      // schema definition, not data access, which stays services-only. The
+      // React-integration package (@fyre-db/plugins-ui — providers, hooks,
+      // guards, login buttons) is allowed everywhere it's needed, so it is
+      // deliberately NOT in `disallow`.
       'boundaries/external': ['error', {
         default: 'allow',
         rules: [
-          { from: ['ui', 'components', 'entities', 'lib', 'feature', 'pages', 'templates', 'app'],
+          { from: ['ui', 'components', 'lib', 'views', 'catalog', 'feature', 'pages', 'templates', 'app'],
             disallow: ['@fyre-db/core', '@fyre-db/core/*', '@fyre-db/plugins', '@fyre-db/plugins/*'],
             message: 'fyre-db core/plugins access is restricted to src/services/**. Use a domain service via useServices().' },
         ],
@@ -167,19 +175,15 @@ export default defineConfig([
     rules: { 'boundaries/external': 'off' },
   },
   {
-    // Sanctioned app-wide domain widgets. These are presentational-but-data-
-    // aware: `<Money>` reads the active user's currency/locale from
-    // `settings$`, and `<TagIcon>`/`<MoneyAccountIcon>` resolve their glyph
-    // from the tags/accounts services. They render at hundreds of call sites,
-    // so hoisting their tiny data reads into feature containers would ripple
-    // far more than it's worth. NARROW exception: these specific files (and
-    // only these) may cross the components→providers/services edge.
-    // Follow-up: pass currency/locale + resolved icon in as props so these can
-    // return to pure `components/`.
+    // Sanctioned app-wide domain widget. `<Money>` reads the active user's
+    // currency/locale from `settings$`, so it renders at hundreds of call
+    // sites but stays data-aware. Hoisting its tiny data read into feature
+    // containers would ripple far more than it's worth. NARROW exception: this
+    // file (and only this) may cross the components→providers/services edge.
+    // Follow-up: pass currency/locale in as props so it can return to pure
+    // `components/`.
     files: [
       'src/components/money.tsx',
-      'src/components/tag-icon.tsx',
-      'src/components/money-account-icon.tsx',
     ],
     rules: { 'boundaries/element-types': 'off' },
   },
@@ -234,10 +238,10 @@ export default defineConfig([
     // exception. Follow-up: relocate the pure display helpers
     // (catalog / tagging-strength / notification registry) to `lib/`.
     files: [
-      'src/features/home/home-page.tsx',
+
       'src/features/settings/sections/rules-section.tsx',
       'src/features/settings/sections/rules/rule-card.tsx',
-      'src/features/shell/profile-pill.tsx',
+      'src/features/navbar/profile-pill.tsx',
       'src/features/transactions/notify-tag-similar.ts',
     ],
     rules: { 'boundaries/element-types': 'off' },

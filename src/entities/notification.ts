@@ -1,3 +1,5 @@
+import { defineEntity } from "@fyre-db/core"
+
 /**
  * Where a notification, when clicked, takes the user. Extend this union as
  * new producers add targets (e.g. `{ type: "account"; accountId }`). The
@@ -27,3 +29,7 @@ export type Notification = {
   readonly ref?: NotificationRef
   readonly actionLabel?: string      // optional CTA label (toast action)
 }
+
+export const notificationEntity = defineEntity<Notification>("notification", {
+  keyStrategy: "global",
+})

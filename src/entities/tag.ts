@@ -1,3 +1,5 @@
+import { defineEntity } from "@fyre-db/core"
+
 /**
  * Tag — categorises transactions. Stored globally per tenant. Hierarchical via
  * the optional `parent` reference to another Tag id; flat at the schema level,
@@ -13,3 +15,7 @@ export type Tag = {
   readonly description?: string
   readonly parent?: string
 }
+
+export const tagEntity = defineEntity<Tag>("tag", {
+  keyStrategy: "global",
+})

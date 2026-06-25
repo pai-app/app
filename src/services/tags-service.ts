@@ -12,16 +12,15 @@
 
 import { BehaviorSubject, Subscription } from "rxjs"
 import type { BaseEntity, FyreDb, RepositoryType as Repository } from "@fyre-db/core"
-import { tagEntity } from "@/services/store/schema"
-import { SYSTEM_TAGS, type Tag } from "@/entities"
+import { tagEntity } from "@/entities"
+import { type Tag } from "@/entities"
+import { SYSTEM_TAGS } from "@/catalog/system-tags"
 import type { Disposable, ReadonlySubject } from "@/services/types"
-import type {
-  AccountsService,
-  AccountTagData,
-} from "@/services/accounts-service"
-import type { TagView, TagNode } from "@/entities/tag-view"
+import type { AccountsService } from "@/services/accounts-service"
+import type { AccountTagData } from "@/services/account-tag-data"
+import type { TagView, TagNode } from "@/views/tag-view"
 
-export type { TagView, TagNode } from "@/entities/tag-view"
+export type { TagView, TagNode } from "@/views/tag-view"
 
 type TagRow = Tag & BaseEntity
 

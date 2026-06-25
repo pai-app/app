@@ -3,7 +3,7 @@ import type { FyreDb } from "@fyre-db/core"
 import { createTestFyreDb } from "../../helpers/test-fyredb"
 import { ImportContext } from "@/services/import/import-context"
 import { CancelledError } from "@/services/import/import-utils"
-import { moneyAccountEntity, transactionEntity } from "@/services/store/schema"
+import { accountEntity, transactionEntity } from "@/entities"
 
 // Mock only the parse boundary; the rest of runFileImport runs for real.
 const { parseFileMock } = vi.hoisted(() => ({ parseFileMock: vi.fn() }))
@@ -25,7 +25,7 @@ describe("runFileImport — password persistence", () => {
 
   it("persists a newly-entered password the moment it validates, even if the import is then cancelled", async () => {
     fyredb = await createTestFyreDb()
-    const accountRepo = fyredb.repo(moneyAccountEntity)
+    const accountRepo = fyredb.repo(accountEntity)
     const txRepo = fyredb.repo(transactionEntity)
 
     // First parse attempt is locked; after the password is supplied it opens.
@@ -60,7 +60,7 @@ describe("runFileImport — password persistence", () => {
 
   it("does not persist anything when the file opens with an already-known password", async () => {
     fyredb = await createTestFyreDb()
-    const accountRepo = fyredb.repo(moneyAccountEntity)
+    const accountRepo = fyredb.repo(accountEntity)
     const txRepo = fyredb.repo(transactionEntity)
 
     parseFileMock.mockResolvedValueOnce({

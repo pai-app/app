@@ -12,7 +12,7 @@
 
 import { BehaviorSubject, Subscription } from "rxjs"
 import type { BaseEntity, FyreDb, RepositoryType as Repository } from "@fyre-db/core"
-import { notificationEntity } from "@/services/store/schema/notification"
+import { notificationEntity } from "@/entities/notification"
 import type {
   Notification,
   NotificationRef,

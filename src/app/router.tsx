@@ -8,17 +8,10 @@ import { HomePage } from "@/features/home/home-page"
 import { TenantsPage } from "@/features/tenants/tenants-page"
 import { LoginPage } from "@/features/auth/login-page"
 import { AuthCallbackPage } from "@/features/auth/auth-callback-page"
-import { LandingPage } from "@/marketing/landing-page"
+import { LandingPage } from "@/features/landing/landing-page"
 import { SettingsPage } from "@/features/settings/settings-page"
 import { TransactionsPage } from "@/features/transactions/transactions-page"
-import { GeneralSection } from "@/features/settings/sections/general-section"
-import { AccountsSection } from "@/features/settings/sections/accounts-section"
-import { ImportsSection } from "@/features/settings/sections/imports-section"
-import { RulesSection } from "@/features/settings/sections/rules-section"
 import { DevHubPage } from "@/features/dev/dev-hub-page"
-import { LoggingSection } from "@/features/dev/sections/logging-section"
-import { ComponentsSection } from "@/features/dev/sections/components-section"
-import { DataSection } from "@/features/dev/sections/data-section"
 
 function AuthGuardRoute() {
   const status = useStatus()
@@ -103,28 +96,15 @@ export function AppRouter() {
         <Route path="/" element={<RootRoute />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
-        <Route path="/dev" element={<DevHubPage />}>
-          <Route path="logging" element={<LoggingSection />} />
-          <Route path="components" element={<ComponentsSection />} />
-        </Route>
+        <Route path="/dev/*" element={<DevHubPage />} />
         <Route element={<AuthGuardRoute />}>
           <Route path="/tenants" element={<TenantsPage />} />
           <Route path="/t/:tenantId" element={<TenantGuardRoute />}>
             <Route element={<DefaultLayoutRoute />}>
               <Route index element={<HomePage />} />
               <Route path="transactions" element={<TransactionsPage />} />
-              <Route path="settings" element={<SettingsPage />}>
-                <Route path="general" element={<GeneralSection />} />
-                <Route path="accounts" element={<AccountsSection />} />
-                <Route path="imports" element={<ImportsSection />} />
-                <Route path="rules" element={<RulesSection />} />
-              </Route>
-              <Route path="dev" element={<DevHubPage />}>
-                <Route path="logging" element={<LoggingSection />} />
-                <Route path="components" element={<ComponentsSection />} />
-                <Route path="data" element={<DataSection />} />
-                <Route path="data/:entityName" element={<DataSection />} />
-              </Route>
+              <Route path="settings/*" element={<SettingsPage />} />
+              <Route path="dev/*" element={<DevHubPage />} />
             </Route>
           </Route>
         </Route>

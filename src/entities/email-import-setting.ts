@@ -1,3 +1,5 @@
+import { defineEntity } from "@fyre-db/core"
+
 // ── Sliding-window cursor ───────────────────────────────
 
 /** Ported from old EmailImportProcessContext — marks a position in the
@@ -30,14 +32,24 @@ export type EmailImportState = {
 
 /**
  * Per-connected-account import configuration. Global — one row per
- * `authAccountId`. No `intervalMinutes` field yet (sync is manual);
+ * `connectionId`. No `intervalMinutes` field yet (sync is manual);
  * add it when background sync ships.
  */
 export type EmailImportSetting = {
-  readonly authAccountId: string     // → authAccountEntity.id (also the entity id)
+  readonly connectionId: string     // → connectionEntity.id (also the entity id)
   readonly paused: boolean
   readonly importState: EmailImportState
   /** Composite `importLog` id of the last failed run. Presence drives
    *  "Resolve" in the UI and is cleared on next successful run. */
   readonly lastErrorLogId?: string
 }
+
+export const emailImportSettingEntity = defineEntity<EmailImportSetting>(
+  "email-import-setting",
+  {
+    keyStrategy: "global",
+    // connectionId is a FyreDb composite id (e.g. "connection._.google:email:123")
+    // which contains dots — dots are reserved as FyreDb key separators, so replace them.
+    deriveId: (s) => s.connectionId.replaceAll(".", "-"),
+  },
+)

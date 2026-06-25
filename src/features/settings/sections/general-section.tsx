@@ -1,7 +1,7 @@
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { useObservable } from "@/providers/use-observable"
 import { useServices } from "@/providers/services-provider"
-import { SettingRow } from "@/components/setting-row"
+import { Row } from "@/ui/row"
 import { SelectSetting } from "@/components/select-setting"
 import { currencyOptions, dayOptions, monthOptions } from "./general/options"
 
@@ -11,9 +11,7 @@ export function GeneralSection() {
 
   return (
     <div className="flex flex-col gap-6">
-      <SettingRow label="Theme">
-        <ThemeSwitcher />
-      </SettingRow>
+      <Row title="Theme" trailing={<ThemeSwitcher />} />
 
       <SelectSetting
         label="Currency"

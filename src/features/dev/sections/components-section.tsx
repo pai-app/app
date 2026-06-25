@@ -4,15 +4,15 @@ import { Currency } from "@/components/currency"
 import { Icon } from "@/ui/icon"
 import { Money } from "@/components/money"
 import { OverflowBar } from "@/ui/overflow-bar"
-import { TagIcon } from "@/components/tag-icon"
+import { tagIconName } from "@/catalog/icon-resolve"
 import { Text } from "@/ui/text"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { FullPageSpinner } from "@/components/full-page-spinner"
 import { Logo } from "@/components/logo"
-import { SyncStatus } from "@/features/shell/sync-status"
-import { Navbar } from "@/features/shell/navbar"
+import { SyncStatus } from "@/features/navbar/sync-status"
+import { Navbar } from "@/features/navbar/navbar"
 import { TagPicker } from "@/features/transactions/containers/tag-picker"
-import type { TagView } from "@/entities/tag-view"
+import type { TagView } from "@/views/tag-view"
 import { useServices } from "@/providers/services-provider"
 
 function Section({ title, children }: { readonly title: string; readonly children: ReactNode }) {
@@ -190,7 +190,7 @@ function TagPickerDemo() {
         <Button variant="outline">
           {selected ? (
             <>
-              <TagIcon tag={selected} className="size-4" />
+              <Icon name={tagIconName(selected)} className="size-4" />
               {selected.name}
             </>
           ) : (

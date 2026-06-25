@@ -1,3 +1,5 @@
+import { defineEntity, partitioned } from "@fyre-db/core"
+
 // ── Status & trigger ────────────────────────────────────
 
 export type ImportLogStatus =
@@ -22,7 +24,7 @@ export type ImportLogFileSource = {
 
 export type ImportLogEmailSource = {
   readonly kind: "email"
-  readonly authAccountId: string     // → authAccountEntity.id
+  readonly connectionId: string     // → connectionEntity.id
   readonly emailId: string           // provider message id
   readonly receivedAt: number        // ms epoch
   readonly from: string
@@ -66,7 +68,7 @@ export type ImportLog = {
   readonly status: ImportLogStatus
   readonly source: ImportLogSource
   readonly adapterId?: string                              // resolved bank/offering adapter id
-  readonly touchedAccountIds: ReadonlyArray<string>        // MoneyAccount ids written to
+  readonly touchedAccountIds: ReadonlyArray<string>        // Account ids written to
   /** Accumulated as transactions commit (not just at the end), so partial
    *  progress survives cancel / crash / reload. */
   readonly counts: {
@@ -123,3 +125,12 @@ export function sweepProgress(
   }
   return { value: 1 - Math.exp(-scanned / 200), estimated: true }
 }
+
+function monthKey(l: ImportLog): string {
+  const d = new Date(l.triggeredAt)
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`
+}
+
+export const importLogEntity = defineEntity<ImportLog>("import-log", {
+  keyStrategy: partitioned<ImportLog>(monthKey),
+})

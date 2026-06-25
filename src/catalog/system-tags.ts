@@ -1,4 +1,4 @@
-import type { Tag } from "./tag"
+import type { Tag } from "@/entities"
 
 /** Slugify a tag name to use as part of its system id. */
 function slug(name: string): string {

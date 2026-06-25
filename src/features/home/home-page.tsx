@@ -1,10 +1,11 @@
 import { Icon } from "@/ui/icon"
 import { Money } from "@/components/money"
-import { MoneyAccountIcon } from "@/components/money-account-icon"
-import { getBankDisplay, getOfferingDisplay, KIND_DISPLAY } from "@/services/catalog/bank-display"
+import { accountIconName } from "@/catalog/icon-resolve"
+import { getBankDisplay, getOfferingDisplay, KIND_DISPLAY } from "@/catalog/bank-display"
 import { useObservable } from "@/providers/use-observable"
 import { useServices } from "@/providers/services-provider"
-import type { AccountDetails, AccountView } from "@/entities/account-view"
+import type { Account } from "@/entities"
+import type { AccountView } from "@/views/account-view"
 import { buildAccountCardModel } from "./account-card-model"
 
 /**
@@ -76,7 +77,7 @@ function maskNumber(value: string): string {
 }
 
 /** First stored value for a metadata key, or undefined (key may be absent at runtime). */
-function firstMeta(metadata: AccountDetails["metadata"], key: string): string | undefined {
+function firstMeta(metadata: Account["metadata"], key: string): string | undefined {
   return (metadata[key] ?? [])[0]
 }
 
@@ -134,7 +135,7 @@ function AccountCard({ account }: { account: AccountView }) {
       {/* Header: two columns — bank identity (left) + balance/due (right). */}
       <div className="relative flex items-start justify-between gap-3 p-4 pb-3">
         <div className="flex min-w-0 items-center gap-3">
-          <MoneyAccountIcon account={account} className="size-8 shrink-0" />
+          <Icon name={accountIconName(account)} className="size-8 shrink-0" />
           <div className="min-w-0">
             <div className="truncate text-sm font-semibold">{bankLabel ?? account.name}</div>
             <div className="truncate text-xs text-muted-foreground">{offeringLabel}</div>

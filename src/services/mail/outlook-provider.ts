@@ -1,5 +1,5 @@
 import type { MailMessage, MailAttachment } from "@pai-app/adapters"
-import type { AuthAccount } from "@/entities"
+import type { Connection } from "@/entities"
 import type { EmailPreview } from "@/services/email-types"
 import { MailTokenCache } from "./mail-token"
 import type {
@@ -44,7 +44,7 @@ export class OutlookProvider implements MailProvider {
   readonly name: string
   private readonly tokens: MailTokenCache
 
-  constructor(account: AuthAccount) {
+  constructor(account: Connection) {
     this.name = account.provider
     this.tokens = new MailTokenCache(account)
   }

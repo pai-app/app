@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ChangeEvent } from "react"
 import { Subject, debounceTime, distinctUntilChanged } from "rxjs"
 import { useObservable } from "@/providers/use-observable"
 import { useServices } from "@/providers/services-provider"
-import type { TagView } from "@/entities/tag-view"
+import type { TagView } from "@/views/tag-view"
 import { REMOVE_TAG, type TagWithChildren } from "@/components/tag-picker/types"
 
 function tokenize(text: string): readonly string[] {
