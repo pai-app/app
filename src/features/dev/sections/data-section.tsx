@@ -51,7 +51,9 @@ export function DataSection() {
 
   const dataBase = `/t/${tenantId ?? ""}/dev/data`
   const entityNames = useMemo(() => ENTITIES.map((e) => e.name).sort(), [])
-  const selected = params["*"] ? params["*"] : null
+  // Mounted under the `dev/*` splat, so the route splat is `data` or
+  // `data/<entity>`; strip the `data/` prefix to get the selected entity.
+  const selected = (params["*"] ?? "").replace(/^data\/?/, "") || null
 
   const selectEntity = (name: string) => { void navigate(`${dataBase}/${name}`) }
 
