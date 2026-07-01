@@ -25,6 +25,9 @@ export type { Money } from "./money"
 export type { Account, AccountKind, AccountRow, AccountStatement } from "./account"
 export { accountEntity } from "./account"
 
+export type { Budget, BudgetPeriod, BudgetRow } from "./budget"
+export { budgetEntity, budgetYearKey } from "./budget"
+
 export type { Notification, NotificationRef } from "./notification"
 export { notificationEntity } from "./notification"
 
@@ -46,6 +49,7 @@ import { emailImportSettingEntity } from "./email-import-setting"
 import { importLogEntity } from "./import-log"
 import { importSourceEntity } from "./import-source"
 import { accountEntity } from "./account"
+import { budgetEntity } from "./budget"
 import { notificationEntity } from "./notification"
 import { tagEntity } from "./tag"
 import { tagRuleEntity } from "./tag-rule"
@@ -58,6 +62,7 @@ export const ENTITIES = [
   tagEntity,
   tagRuleEntity,
   accountEntity,
+  budgetEntity,
   transactionEntity,
   importLogEntity,
   importSourceEntity,
