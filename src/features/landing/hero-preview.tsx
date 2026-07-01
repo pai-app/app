@@ -12,7 +12,7 @@ const ROWS: readonly PreviewRow[] = [
   { label: "Blue Tokai Coffee", tag: "Dining", dot: "bg-amber-500", amount: "−₹420" },
   { label: "Salary — Acme Inc", tag: "Income", dot: "bg-emerald-500", amount: "+₹1,80,000", positive: true },
   { label: "Airtel Broadband", tag: "Bills · Internet", dot: "bg-sky-500", amount: "−₹999" },
-  { label: "Swiggy", tag: "Eating In", dot: "bg-orange-500", amount: "−₹640" },
+  { label: "Swiggy", tag: "Food · Delivery", dot: "bg-orange-500", amount: "−₹640" },
   { label: "HDFC Mutual Fund", tag: "Investments", dot: "bg-violet-500", amount: "−₹10,000" },
 ]
 
