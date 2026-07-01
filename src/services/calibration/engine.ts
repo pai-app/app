@@ -85,17 +85,24 @@ export class CalibrationEngine {
 
     // Rules 0 and 3 both compare this month to the trailing median, differing
     // only in the threshold: committed amounts should be stable (tighter), a
-    // frequent category has to run genuinely hot (looser). Below the trailing
-    // floor we stay silent rather than guess (§9 cold-start guard).
-    if (!hasEnoughTrailing(spend.trailing)) {
-      return silentVerdict(spend.tagId, rule)
-    }
+    // frequent category has to run genuinely hot (looser).
 
+    // No history yields no median (a cold-start month): stay silent rather than
+    // guess (§9). Computing the median first also narrows `expected` to a number
+    // for the comparison below.
     const expected = median(spend.trailing)
     if (expected === undefined) {
       return silentVerdict(spend.tagId, rule)
     }
 
+    // Even with a baseline, require enough months before trusting it — a single
+    // prior month is too lumpy to compare against (§9 guard, Appendix ruler).
+    if (!hasEnoughTrailing(spend.trailing)) {
+      return silentVerdict(spend.tagId, rule)
+    }
+
+    // A zero baseline has no meaningful ratio (e.g. an all-zero trailing window);
+    // deviationFraction returns undefined and we stay silent.
     const deviation = deviationFraction(spend.thisMonth, expected)
     if (deviation === undefined) {
       return silentVerdict(spend.tagId, rule)
@@ -149,16 +156,12 @@ export class CalibrationEngine {
     spends: readonly CategorySpend[],
     limit: number = CALIBRATION.ATTENTION_SLOTS,
   ): readonly CalibrationVerdict[] {
-    const alerts: CalibrationVerdict[] = []
+    const alerts: Extract<CalibrationVerdict, { kind: "alert" }>[] = []
     for (const spend of spends) {
       const verdict = this.calibrate(spend)
       if (verdict.kind === "alert") alerts.push(verdict)
     }
-    alerts.sort((a, b) => {
-      const sa = a.kind === "alert" ? a.severity : 0
-      const sb = b.kind === "alert" ? b.severity : 0
-      return sb - sa
-    })
+    alerts.sort((a, b) => b.severity - a.severity)
     return alerts.slice(0, limit)
   }
 }

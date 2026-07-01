@@ -107,6 +107,73 @@ describe("Rule 4 — unbudgeted sporadic", () => {
   })
 })
 
+describe("trailing guards (§9 cold-start)", () => {
+  const food = makeTag({ id: "system-tag-food", type: "Everyday", flow: "expense" })
+
+  it("stays silent with no history at all (empty trailing → no median)", () => {
+    const verdict = engineWith([food]).calibrate(
+      makeSpend({ tagId: food.id, thisMonth: 23000, trailing: [] }),
+    )
+    expect(verdict).toMatchObject({ kind: "silent", rule: "frequent" })
+  })
+
+  it("stays silent with a single prior month (has a median, too few to trust)", () => {
+    // Distinct path from the empty case: median exists, but hasEnoughTrailing fails.
+    const verdict = engineWith([food]).calibrate(
+      makeSpend({ tagId: food.id, thisMonth: 23000, trailing: [15000] }),
+    )
+    expect(verdict).toMatchObject({ kind: "silent", rule: "frequent" })
+  })
+
+  it("stays silent against an all-zero baseline (no meaningful ratio)", () => {
+    const verdict = engineWith([food]).calibrate(
+      makeSpend({ tagId: food.id, thisMonth: 5000, trailing: [0, 0] }),
+    )
+    expect(verdict).toMatchObject({ kind: "silent", rule: "frequent" })
+  })
+})
+
+describe("floor direction — unbudgeted target (Income is Fixed + target)", () => {
+  // Income routes to committed (Fixed) with a floor flow (target): an under-run
+  // is the thing worth flagging ("your salary came in light"), an over-run is a
+  // win and stays quiet — the mirror image of a ceiling.
+  const income = makeTag({ id: "system-tag-income", type: "Fixed", flow: "target" })
+
+  it("alerts when a floor category comes in below expected", () => {
+    const verdict = engineWith([income]).calibrate(
+      makeSpend({ tagId: income.id, thisMonth: 150000, trailing: [200000, 200000] }), // -25%
+    )
+    expect(verdict).toMatchObject({
+      kind: "alert",
+      rule: "committed",
+      direction: "floor",
+      comparison: "below",
+    })
+    if (verdict.kind === "alert") expect(verdict.deviation).toBeLessThan(0)
+  })
+
+  it("stays silent when a floor category comes in above expected (a win)", () => {
+    const verdict = engineWith([income]).calibrate(
+      makeSpend({ tagId: income.id, thisMonth: 260000, trailing: [200000, 200000] }), // +30%
+    )
+    expect(verdict).toMatchObject({ kind: "silent", rule: "committed" })
+  })
+})
+
+describe("calibrateMany", () => {
+  it("maps every category to its verdict in one pass", () => {
+    const food = makeTag({ id: "system-tag-food", type: "Everyday", flow: "expense" })
+    const travel = makeTag({ id: "system-tag-travel", type: "Occasional", flow: "expense" })
+    const verdicts = engineWith([food, travel]).calibrateMany([
+      makeSpend({ tagId: food.id, thisMonth: 23000, trailing: [15000, 14000, 16000] }),
+      makeSpend({ tagId: travel.id, thisMonth: 80000, trailing: [5000, 6000] }),
+    ])
+    expect(verdicts.size).toBe(2)
+    expect(verdicts.get("system-tag-food")?.kind).toBe("alert")
+    expect(verdicts.get("system-tag-travel")?.kind).toBe("silent")
+  })
+})
+
 describe("Rule 1 — budgeted directly", () => {
   it("returns a progress bar (not an alert) for a budgeted tag", () => {
     const food = makeTag({ id: "system-tag-food", type: "Everyday", flow: "expense" })
@@ -131,6 +198,16 @@ describe("Rule 1 — budgeted directly", () => {
     if (verdict.kind === "progress") {
       expect(verdict.fraction).toBeCloseTo(0.4, 5) // "40k of 100k invested"
     }
+  })
+
+  it("reports zero progress against a zero-amount budget without dividing by zero", () => {
+    const food = makeTag({ id: "system-tag-food", type: "Everyday", flow: "expense" })
+    const budget = makeBudget({ tagId: food.id, amount: 0, period: "monthly" })
+    const verdict = engineWith([food], [budget]).calibrate(
+      makeSpend({ tagId: food.id, thisMonth: 5000, yearToDate: 5000 }),
+    )
+    expect(verdict).toMatchObject({ kind: "progress", rule: "budgeted-direct" })
+    if (verdict.kind === "progress") expect(verdict.fraction).toBe(0)
   })
 })
 
