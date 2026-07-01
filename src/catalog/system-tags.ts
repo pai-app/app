@@ -1,37 +1,47 @@
-import type { Tag } from "@/entities"
+import type { Tag, TagType, TagFlow } from "@/entities"
 
 /** Slugify a tag name to use as part of its system id. */
 function slug(name: string): string {
   return name.replaceAll(/[^\w]/g, "").toLowerCase()
 }
 
-type SystemTagsTree = Record<string, {
+type SystemTagNode = {
   readonly icon: string
   readonly description?: string
+  /** Predictability class for calibration. Inherited by children unless overridden. */
+  readonly type?: TagType
+  /** Role in spend totals (default `expense`). Inherited by children unless overridden. */
+  readonly flow?: TagFlow
   readonly children?: SystemTagsTree
-}>
+}
+
+type SystemTagsTree = Record<string, SystemTagNode>
 
 const TREE: SystemTagsTree = {
   "Bank Charges": {
     icon: "eye-closed",
     description: "Fees, penalties, or service charges applied by banks for account, ATM, or card usage.",
+    type: "Occasional",
   },
   "Bills": {
     icon: "receipt-text",
+    type: "Metered",
     children: {
       "Electricity": { icon: "zap" },
       "Gas": { icon: "gas" },
-      "Internet": { icon: "wifi" },
-      "Mobile Recharge": { icon: "tablet-smartphone" },
-      "DTH": { icon: "satellite-dish" },
+      "Internet": { icon: "wifi", type: "Fixed" },
+      "Mobile Recharge": { icon: "tablet-smartphone", type: "Fixed" },
+      "DTH": { icon: "satellite-dish", type: "Fixed" },
       "Water": { icon: "droplet" },
     },
   },
-  "Cash Deposit": { icon: "banknote-arrow-up", description: "Cash deposited into a bank account." },
-  "Cash Withdrawal": { icon: "banknote-arrow-down", description: "Cash withdrawn from an ATM or bank." },
+  "Cash Deposit": { icon: "banknote-arrow-up", description: "Cash deposited into a bank account.", flow: "excluded" },
+  "Cash Withdrawal": { icon: "banknote-arrow-down", description: "Cash withdrawn from an ATM or bank.", flow: "excluded" },
   "Cashback": {
     icon: "coins",
     description: "Cashback or rewards received from payments or wallets.",
+    type: "Occasional",
+    flow: "target",
     children: {
       "Google Pay": { icon: "googlepay" },
       "Paytm": { icon: "paytm" },
@@ -40,6 +50,7 @@ const TREE: SystemTagsTree = {
   },
   "Commute": {
     icon: "car-front",
+    type: "Everyday",
     children: {
       "Auto": { icon: "auto" },
       "Bus": { icon: "bus" },
@@ -59,6 +70,7 @@ const TREE: SystemTagsTree = {
   "Credit & Pay Later": {
     icon: "credit-card",
     description: "Buy now pay later, credit card, or pay-later app transactions.",
+    flow: "excluded",
     children: {
       "Amazon Pay": { icon: "amazon-pay" },
       "CRED": { icon: "cred" },
@@ -68,10 +80,11 @@ const TREE: SystemTagsTree = {
       "Slice": { icon: "slice" },
     },
   },
-  "Donation": { icon: "heart-plus", description: "Charitable donations or contributions to a cause." },
+  "Donation": { icon: "heart-plus", description: "Charitable donations or contributions to a cause.", type: "Occasional" },
   "EMI": {
     icon: "landmark",
     description: "Monthly instalments for loans, education, house, vehicle, or electronics.",
+    type: "Fixed",
     children: {
       "Education": { icon: "graduation-cap" },
       "Electronics": { icon: "laptop", description: "Electronics bought on instalments or EMI (financed). For an outright purchase, use Shopping → Electronics." },
@@ -81,6 +94,7 @@ const TREE: SystemTagsTree = {
   },
   "Entertainment": {
     icon: "monitor-play",
+    type: "Occasional",
     children: {
       "Bowling": { icon: "bowling" },
       "Movies": { icon: "clapperboard" },
@@ -92,6 +106,7 @@ const TREE: SystemTagsTree = {
   },
   "Events": {
     icon: "calendar",
+    type: "Occasional",
     children: {
       "Party": { icon: "party-popper" },
       "Spiritual": { icon: "flame" },
@@ -100,19 +115,21 @@ const TREE: SystemTagsTree = {
   },
   "Fitness": {
     icon: "dumbbell",
+    type: "Occasional",
     children: {
       "Badminton": { icon: "shuttlecock" },
       "Classes": { icon: "calendar-days" },
       "Cricket": { icon: "cricket" },
       "Equipment": { icon: "dumbbell" },
       "Football": { icon: "football" },
-      "Gym": { icon: "biceps-flexed" },
+      "Gym": { icon: "biceps-flexed", type: "Fixed" },
       "Nutrition": { icon: "pill-bottle" },
     },
   },
   "Food": {
     icon: "utensils",
     description: "Eating out or ordering in — restaurants, cafés, street food, delivery, and takeaway.",
+    type: "Everyday",
     children: {
       "Restaurant": { icon: "hand-platter" },
       "Street Food": { icon: "sandwich" },
@@ -134,9 +151,10 @@ const TREE: SystemTagsTree = {
       "Dessert": { icon: "ice-cream-bowl" },
     },
   },
-  "Gift": { icon: "gift", description: "A one-off gift given to someone." },
+  "Gift": { icon: "gift", description: "A one-off gift given to someone.", type: "Occasional" },
   "Groceries": {
     icon: "grape",
+    type: "Everyday",
     children: {
       "Dairy": { icon: "milk" },
       "Bakery": { icon: "croissant" },
@@ -149,24 +167,28 @@ const TREE: SystemTagsTree = {
   },
   "House": {
     icon: "house",
+    type: "Fixed",
     children: {
       "Rent Paid": { icon: "house" },
-      "Maintenance": { icon: "building", description: "House or society maintenance, repairs, or service charges." },
+      "Maintenance": { icon: "building", description: "House or society maintenance, repairs, or service charges.", type: "Occasional" },
     },
   },
   "Income": {
     icon: "hand-coins",
     description: "Income from salary, freelance work, rent, interest, or dividends.",
+    type: "Fixed",
+    flow: "target",
     children: {
-      "Interest": { icon: "sparkles", description: "Interest earned from savings accounts, fixed deposits, or investments." },
-      "Dividends": { icon: "diamond-percent", description: "Dividend income received from stocks or mutual funds." },
+      "Interest": { icon: "sparkles", description: "Interest earned from savings accounts, fixed deposits, or investments.", type: "Occasional" },
+      "Dividends": { icon: "diamond-percent", description: "Dividend income received from stocks or mutual funds.", type: "Occasional" },
       "Salary": { icon: "banknote-arrow-down" },
-      "Freelance": { icon: "laptop", description: "Income earned from freelance, consulting, or contract work." },
+      "Freelance": { icon: "laptop", description: "Income earned from freelance, consulting, or contract work.", type: "Occasional" },
       "Rent Received": { icon: "house" },
     },
   },
   "Insurance": {
     icon: "shield-user",
+    type: "Fixed",
     children: {
       "Health": { icon: "cross" },
       "Life": { icon: "house-heart" },
@@ -175,6 +197,8 @@ const TREE: SystemTagsTree = {
   },
   "Investments": {
     icon: "chart-candlestick",
+    type: "Occasional",
+    flow: "target",
     children: {
       "Fixed Deposits": { icon: "vault" },
       "Gold": { icon: "goldbar" },
@@ -182,7 +206,7 @@ const TREE: SystemTagsTree = {
       "Mutual Funds": { icon: "sprout" },
       "NPS": { icon: "nps" },
       "PPF": { icon: "ppf" },
-      "Recurring Deposit": { icon: "vault" },
+      "Recurring Deposit": { icon: "vault", type: "Fixed" },
       "Stocks": { icon: "chart-candlestick" },
       "ULIP": { icon: "shield-user" },
     },
@@ -190,6 +214,7 @@ const TREE: SystemTagsTree = {
   "Logistics": {
     icon: "truck",
     description: "Courier, delivery, packers and movers, or shipping services.",
+    type: "Occasional",
     children: {
       "Packers & Movers": { icon: "truck" },
       "Courier": { icon: "package" },
@@ -197,6 +222,7 @@ const TREE: SystemTagsTree = {
   },
   "Medical": {
     icon: "pill",
+    type: "Occasional",
     children: {
       "Clinic": { icon: "stethoscope" },
       "Dentist": { icon: "tooth" },
@@ -208,6 +234,7 @@ const TREE: SystemTagsTree = {
   },
   "Personal": {
     icon: "user",
+    type: "Occasional",
     children: {
       "Grooming": { icon: "scissors" },
       "Parlour": { icon: "scissors" },
@@ -216,8 +243,9 @@ const TREE: SystemTagsTree = {
   },
   "Pet Care": {
     icon: "paw-print",
+    type: "Occasional",
     children: {
-      "Pet Food": { icon: "soup" },
+      "Pet Food": { icon: "soup", type: "Everyday" },
       "Pet Grooming": { icon: "scissors" },
       "Toys": { icon: "toy-brick" },
       "Vet": { icon: "stethoscope" },
@@ -226,33 +254,36 @@ const TREE: SystemTagsTree = {
   "Professional": {
     icon: "briefcase-business",
     description: "Fees paid to professionals like CA, lawyer, or consultants.",
+    type: "Occasional",
     children: {
       "CA": { icon: "glasses" },
       "Legal": { icon: "scale" },
     },
   },
-  "Self Transfer": { icon: "arrow-left-right", description: "Transfers between your own bank accounts or wallets." },
+  "Self Transfer": { icon: "arrow-left-right", description: "Transfers between your own bank accounts or wallets.", flow: "excluded" },
   "Services": {
     icon: "user-star",
     description: "Payments for household and personal services like maid, plumber, or driver.",
+    type: "Occasional",
     children: {
       "Painting": { icon: "paint-roller" },
-      "Maid": { icon: "brush-cleaning", description: "Domestic help, cleaning staff, or house help payments." },
-      "Cook": { icon: "chef-hat" },
+      "Maid": { icon: "brush-cleaning", description: "Domestic help, cleaning staff, or house help payments.", type: "Fixed" },
+      "Cook": { icon: "chef-hat", type: "Fixed" },
       "Laundry": { icon: "washing-machine", description: "Laundry, dry cleaning, washing, or ironing services." },
       "Electrician": { icon: "cable" },
       "Plumber": { icon: "wrench" },
       "Mechanic": { icon: "car", description: "Vehicle repair, servicing, or garage charges." },
       "Carpenter": { icon: "hammer", description: "Woodwork, furniture repair, or carpentry services." },
-      "Driver": { icon: "car", description: "Payments to a personal or hired driver." },
+      "Driver": { icon: "car", description: "Payments to a personal or hired driver.", type: "Fixed" },
       "Photographer": { icon: "camera" },
       "Tailor": { icon: "sewing", description: "Clothing stitching, alteration, or repair services." },
       "Driving School": { icon: "car", description: "Fees paid to a driving school for lessons or license training." },
     },
   },
-  "Shared": { icon: "handshake", description: "Shared expenses or money borrowed, lent, split, or exchanged with friends or family that needs to be settled." },
+  "Shared": { icon: "handshake", description: "Shared expenses or money borrowed, lent, split, or exchanged with friends or family that needs to be settled.", flow: "excluded" },
   "Shopping": {
     icon: "shopping-bag",
+    type: "Occasional",
     children: {
       "Clothes": { icon: "shirt" },
       "Cosmetics": { icon: "makeup" },
@@ -269,6 +300,7 @@ const TREE: SystemTagsTree = {
   "Support": {
     icon: "heart-plus",
     description: "Recurring financial support or allowance given to family members.",
+    type: "Fixed",
     children: {
       "Dad": { icon: "father" },
       "Mom": { icon: "mother" },
@@ -278,6 +310,7 @@ const TREE: SystemTagsTree = {
   },
   "Subscription": {
     icon: "calendar-sync",
+    type: "Fixed",
     children: {
       "Apple": { icon: "apple" },
       "Bumble": { icon: "bumble" },
@@ -293,6 +326,7 @@ const TREE: SystemTagsTree = {
   },
   "Tax": {
     icon: "badge-indian-rupee",
+    type: "Occasional",
     children: {
       "Water Tax": { icon: "badge-indian-rupee" },
       "Property Tax": { icon: "badge-indian-rupee" },
@@ -302,6 +336,7 @@ const TREE: SystemTagsTree = {
   },
   "Travel": {
     icon: "car-front",
+    type: "Occasional",
     children: {
       "Car": { icon: "car" },
       "Bus": { icon: "bus" },
@@ -315,6 +350,7 @@ const TREE: SystemTagsTree = {
   },
   "Trips": {
     icon: "plane",
+    type: "Occasional",
     children: {
       "Hotel": { icon: "bed" },
       "Hostel": { icon: "backpack" },
@@ -331,12 +367,15 @@ const TREE: SystemTagsTree = {
  * Flattened list of Tag rows for system tags. The id is stable across
  * tenants so seeding is idempotent: writing the same row twice is a no-op
  * after the first sync.
+ *
+ * `type` and `flow` inherit parent → child unless the child overrides them,
+ * so the effective calibration metadata is resolved onto every row here.
  */
 export const SYSTEM_TAGS: readonly (Tag & { readonly id: string })[] = (() => {
   const out: (Tag & { id: string })[] = []
   for (const [name, node] of Object.entries(TREE)) {
     const parentId = `system-tag-${slug(name)}`
-    out.push({ id: parentId, name, icon: node.icon, description: node.description })
+    out.push({ id: parentId, name, icon: node.icon, description: node.description, type: node.type, flow: node.flow })
     if (node.children) {
       for (const [childName, child] of Object.entries(node.children)) {
         out.push({
@@ -344,6 +383,8 @@ export const SYSTEM_TAGS: readonly (Tag & { readonly id: string })[] = (() => {
           name: childName,
           icon: child.icon,
           description: child.description,
+          type: child.type ?? node.type,
+          flow: child.flow ?? node.flow,
           parent: parentId,
         })
       }

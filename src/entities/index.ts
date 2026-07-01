@@ -28,7 +28,7 @@ export { accountEntity } from "./account"
 export type { Notification, NotificationRef } from "./notification"
 export { notificationEntity } from "./notification"
 
-export type { Tag } from "./tag"
+export type { Tag, TagType, TagFlow } from "./tag"
 export { tagEntity } from "./tag"
 
 export type { TagRule } from "./tag-rule"
